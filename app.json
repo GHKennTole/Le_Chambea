@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Le_Chambea",
+    "scheme": "lechambea",
+    "slug": "Le_Chambea",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lechambea.app"
+    },
+    "android": {
+      "package": "com.lechambea.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "@react-native-community/datetimepicker",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "googleWebClientId": "PON_AQUI_TU_WEB_CLIENT_ID",
+      "googleAndroidClientId": "PON_AQUI_TU_ANDROID_CLIENT_ID"
+    }
+  }
+}
