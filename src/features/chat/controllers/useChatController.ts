@@ -23,6 +23,7 @@ export function useChatController(chatId: string, otherUserId: string) {
   const [sending, setSending] = useState(false);
   const navigation = useNavigation<any>();
   const subscriptionRef = useRef<any>(null);
+  const [otherUser, setOtherUser] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -30,6 +31,14 @@ export function useChatController(chatId: string, otherUserId: string) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setCurrentUser(user);
+
+      // Fetch other user profile
+      const { data: otherData } = await supabase
+        .from('usuarios')
+        .select('nombre, apellidos, foto_perfil')
+        .eq('id', otherUserId)
+        .single();
+      if (otherData) setOtherUser(otherData);
 
       const { data: chatData, error: chatError } = await supabase
         .from('chats')
@@ -87,7 +96,17 @@ export function useChatController(chatId: string, otherUserId: string) {
         .eq('chat_id', chatId)
         .order('fecha_creacion', { ascending: true });
 
-      if (msgData) setMessages(msgData);
+      if (msgData) {
+        setMessages(msgData);
+
+        // Mark all messages from the other user as read
+        await supabase
+          .from('mensajes')
+          .update({ leido: true })
+          .eq('chat_id', chatId)
+          .neq('remitente_id', user.id)
+          .eq('leido', false);
+      }
 
     } catch (e) {
       console.error('Error fetching chat data:', e);
@@ -101,8 +120,13 @@ export function useChatController(chatId: string, otherUserId: string) {
   }, [fetchData]);
 
   useEffect(() => {
+    if (!chatId) return;
+
+    const uniqueId = Math.random().toString(36).substring(2, 9);
+    const channelName = `chat-${chatId}-${uniqueId}`;
+
     const channel = supabase
-      .channel(`chat-${chatId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -114,6 +138,15 @@ export function useChatController(chatId: string, otherUserId: string) {
         (payload) => {
           const newMsg = payload.new as Message;
           if (newMsg && newMsg.chat_id === chatId) {
+            // Since we are looking at this chat right now, mark this message as read in the DB
+            if (currentUser && newMsg.remitente_id !== currentUser.id) {
+              supabase
+                .from('mensajes')
+                .update({ leido: true })
+                .eq('id', newMsg.id)
+                .then();
+            }
+
             setMessages((prev) => {
               if (prev.find(m => m.id === newMsg.id)) return prev;
               const next = [...prev, newMsg];
@@ -141,7 +174,7 @@ export function useChatController(chatId: string, otherUserId: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chatId, fetchData]);
+  }, [chatId, currentUser, fetchData]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || !currentUser || sending) return;
@@ -220,6 +253,38 @@ export function useChatController(chatId: string, otherUserId: string) {
     });
   };
 
+  const reportIncongruency = async (reason: string) => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: senderProfile } = await supabase
+        .from('usuarios')
+        .select('nombre, apellidos')
+        .eq('id', user.id)
+        .single();
+      
+      const senderFullName = senderProfile ? `${senderProfile.nombre} ${senderProfile.apellidos}`.trim() : 'Un usuario';
+
+      // Insert admin notification (usuario_id = null for system/admin alert)
+      await supabase.from('notificaciones').insert({
+        usuario_id: null,
+        titulo: `⚠️ REPORTE: Incongruencia en Chat`,
+        cuerpo: `El usuario ${senderFullName} reportó una incongruencia en el chat ${chatId}. Motivo: ${reason}`,
+        leido: false
+      });
+
+      const successMsg = "Gracias por tu reporte. Los administradores han sido notificados.";
+      if (Platform.OS === 'web') window.alert(successMsg);
+      else Alert.alert("Reporte Enviado", successMsg);
+    } catch (e) {
+      console.error(notiError => console.error(notiError));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const isClient = useMemo(() => chatInfo?.cliente_id === currentUser?.id, [chatInfo, currentUser]);
   const isProfessional = useMemo(() => chatInfo?.profesional_id === currentUser?.id, [chatInfo, currentUser]);
 
@@ -234,10 +299,12 @@ export function useChatController(chatId: string, otherUserId: string) {
     isClient,
     isProfessional,
     isReviewed,
+    otherUser,
     sendMessage,
     requestJob,
     updateJobStatus,
     leaveReview,
+    reportIncongruency,
     refetch: fetchData
   };
 }

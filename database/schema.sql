@@ -25,6 +25,7 @@ CREATE TABLE mensajes (
   chat_id uuid  ,
   remitente_id uuid  ,
   contenido text NOT NULL ,
+  leido boolean DEFAULT false,
   fecha_creacion timestamp with time zone  DEFAULT now()
 );
 
@@ -77,6 +78,15 @@ CREATE TABLE usuarios (
   perfil_publico boolean  DEFAULT true
 );
 
+CREATE TABLE notificaciones (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  usuario_id uuid,
+  titulo text NOT NULL,
+  cuerpo text,
+  leido boolean DEFAULT false,
+  fecha_creacion timestamp with time zone DEFAULT now()
+);
+
 -- POLICIES
 
 -- Table: perfiles_profesionales | Policy: Professionals can manage own profile | Cmd: ALL
@@ -94,6 +104,11 @@ CREATE TABLE usuarios (
   WHERE ((c.id = mensajes.chat_id) AND ((c.cliente_id = auth.uid()) OR (c.profesional_id = auth.uid()))))))
 
 -- Table: mensajes | Policy: Users can read messages in their chats | Cmd: SELECT
+-- USING: (EXISTS ( SELECT 1
+   FROM chats c
+  WHERE ((c.id = mensajes.chat_id) AND ((c.cliente_id = auth.uid()) OR (c.profesional_id = auth.uid())))))
+
+-- Table: mensajes | Policy: Users can update messages in their chats | Cmd: UPDATE
 -- USING: (EXISTS ( SELECT 1
    FROM chats c
   WHERE ((c.id = mensajes.chat_id) AND ((c.cliente_id = auth.uid()) OR (c.profesional_id = auth.uid())))))
@@ -118,4 +133,11 @@ CREATE TABLE usuarios (
 
 -- Table: usuarios | Policy: Users can read own data | Cmd: SELECT
 -- USING: (auth.uid() = id)
+
+-- Table: notificaciones | Policy: Users can manage own notifications | Cmd: ALL
+-- USING: (auth.uid() = usuario_id)
+
+-- Table: notificaciones | Policy: Anyone can insert notifications | Cmd: INSERT
+-- WITH CHECK: true
+
 

@@ -1,0 +1,297 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Entregables Encuentro 4 - Le Chambea</title>
+<style>
+  body {
+    font-family: 'Calibri', 'Arial', sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #333333;
+  }
+  h1 {
+    font-size: 16pt;
+    color: #4A154B;
+    border-bottom: 2px solid #4A154B;
+    padding-bottom: 5px;
+    margin-top: 24pt;
+  }
+  h2 {
+    font-size: 13pt;
+    color: #2E6B9E;
+    margin-top: 18pt;
+  }
+  h3 {
+    font-size: 11pt;
+    color: #333333;
+    margin-top: 12pt;
+    font-weight: bold;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12pt 0;
+  }
+  th {
+    background-color: #F2F2F2;
+    border: 1px solid #D3D3D3;
+    padding: 8px;
+    font-weight: bold;
+    text-align: left;
+    font-size: 10pt;
+  }
+  td {
+    border: 1px solid #D3D3D3;
+    padding: 8px;
+    font-size: 10pt;
+    vertical-align: top;
+  }
+  .alert-box {
+    background-color: #FFF3CD;
+    border-left: 6px solid #FFC107;
+    padding: 10px;
+    margin: 12pt 0;
+    font-style: italic;
+  }
+  .highlight {
+    background-color: #E8F0FE;
+    font-weight: bold;
+  }
+  .bullet-list {
+    margin-left: 20px;
+  }
+</style>
+</head>
+<body>
+
+<h1>ENTREGABLE DE TUTORÍA - ENCUENTRO 4</h1>
+<p><strong>Proyecto de Graduación:</strong> Desarrollo de aplicación móvil y web para conectar clientes con profesionales según servicios y necesidades requeridas ("Le Chambea")</p>
+<p><strong>Autores:</strong> Br. Jeril Kener Toledo Hernández</p>
+<p><strong>Asesor:</strong> MSc. Isamar Bonilla Martínez</p>
+
+<div class="alert-box">
+  <strong>Nota de Uso:</strong> Este documento contiene los textos técnicos corregidos y redactados con rigor académico para el Encuentro 4 de Tutoría, listos para copiar e integrar en tu documento principal de tesis. Se ha corregido la inconsistencia de Firebase por Supabase, alineando la teoría de la base de datos con el software desarrollado real, y se ha diseñado el cuadro funcional para la pantalla de Inteligencia Artificial (Chamby) que te hacía falta completar.
+</div>
+
+<hr />
+
+<h1>I. PROPUESTA DE CORRECCIÓN: OBJETIVOS DEL PROYECTO</h1>
+
+<h2>Objetivo General Corregido:</h2>
+<p style="font-size: 12pt; font-style: italic; padding-left: 15px;">
+  "Desarrollo de una aplicación móvil y web 'Le Chambea', como una plataforma digital que facilite la conexión entre profesionales y empleadores, promoviendo oportunidades de crecimiento económico en la ciudad de Juigalpa, Chontales en el segundo semestre del año 2025, utilizando la metodología ágil Scrum y las tecnologías React Native, React Native Web con <strong style="color: #d9534f; text-decoration: underline;">Supabase</strong>."
+</p>
+
+<h2>Objetivo Específico 3 (Coherente):</h2>
+<p style="font-size: 12pt; font-style: italic; padding-left: 15px;">
+  "Desarrollo del código frontend con React Native y React Native Web, integrando servicios de <strong>Supabase</strong> para autenticación y base de datos relacional en tiempo real."
+</p>
+
+<hr />
+
+<h1>II. SECCIÓN III: JUSTIFICACIÓN TECNOLÓGICA Y SELECCIÓN DE HERRAMIENTAS</h1>
+<p>Para la implementación de la base de datos y la arquitectura de servicios en la nube de la aplicación "Le Chambea", se realizó una investigación técnica rigurosa. A continuación se expone la justificación de la selección de <strong>Supabase</strong> como el gestor de base de datos relacional y Backend as a Service (BaaS) del proyecto, contrastado con otras alternativas líderes de la industria.</p>
+
+<h2>Cuadro Comparativo de las Distintas Bases de Datos (Reemplazo Tabla 10)</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Base de datos</th>
+      <th>Lenguaje / Consulta</th>
+      <th>Paradigma / Modelo</th>
+      <th>Características principales</th>
+      <th>Ventajas clave para "Le Chambea"</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="highlight">Supabase</td>
+      <td>SQL (PostgreSQL estándar)</td>
+      <td>Relacional (SQL) + Backend as a Service (BaaS)</td>
+      <td>
+        • Base de datos relacional nativa (PostgreSQL)<br>
+        • APIs RESTful y GraphQL auto-generadas al instante<br>
+        • Sincronización en tiempo real (Realtime subscriptions)<br>
+        • Sistema de autenticación integrado con RLS (Row Level Security)<br>
+        • Almacenamiento seguro de archivos (Storage Buckets)
+      </td>
+      <td>
+        • <strong>Estructura Relacional Robusta:</strong> Ideal para vincular usuarios con perfiles profesionales y reseñas mediante llaves foráneas.<br>
+        • <strong>Integración con IA (Vectores):</strong> Soporta búsquedas semánticas y llamadas a funciones complejas mediante Gemini de forma directa.<br>
+        • <strong>Seguridad Extrema (RLS):</strong> Permite que solo los clientes dueños de sus datos puedan modificarlos.<br>
+        • <strong>Código Abierto (Open Source):</strong> Sin vendor lock-in comercial.
+      </td>
+    </tr>
+    <tr>
+      <td>Firebase</td>
+      <td>SDK estructurado por objetos / JSON NoSQL</td>
+      <td>NoSQL orientado a documentos (Firestore)</td>
+      <td>
+        • Base de datos NoSQL de documentos jerárquicos<br>
+        • Sincronización en tiempo real nativa y veloz<br>
+        • Autenticación simplificada integrada<br>
+        • Cloud Functions para lógica de servidor
+      </td>
+      <td>
+        • Configuración inicial sumamente veloz.<br>
+        • Excelente soporte para notificaciones push.<br>
+        • <i>Desventaja para el proyecto:</i> Al ser NoSQL, la gestión de relaciones complejas (como calcular el promedio de reseñas de múltiples profesionales y asociarlos a usuarios) requiere duplicación de datos o consultas anidadas ineficientes.
+      </td>
+    </tr>
+    <tr>
+      <td>MongoDB</td>
+      <td>MQL (MongoDB Query Language)</td>
+      <td>NoSQL basado en documentos (BSON)</td>
+      <td>
+        • Flexibilidad total de esquemas sin restricciones rígidas<br>
+        • Alto rendimiento en escrituras masivas de datos independientes<br>
+        • Escalabilidad horizontal avanzada (Sharding)<br>
+        • Indexación y agregación potentes
+      </td>
+      <td>
+        • Ideal para registros de logs o datos cambiantes.<br>
+        • <i>Desventaja para el proyecto:</i> No ofrece servicios BaaS de autenticación y almacenamiento integrados nativamente en su plan estándar, lo que requeriría programar un backend personalizado intermedio y retrasaría el desarrollo.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Texto Justificativo de la Selección (Soporte Académico):</h3>
+<p>Luego de un análisis técnico exhaustivo enfocado en la arquitectura del módulo de Inteligencia Artificial (Chamby) y el flujo de navegación de la aplicación Le Chambea, se decidió implementar <strong>Supabase</strong> como la base de datos principal y motor Backend as a Service (BaaS) en sustitución de soluciones NoSQL tradicionales como Firebase.</p>
+<p>Supabase se fundamenta directamente sobre <strong>PostgreSQL</strong>, un motor de base de datos relacional de nivel empresarial con soporte completo para transacciones ACID, integridad referencial y llaves foráneas. En el modelo relacional de "Le Chambea", la interconectividad de datos es fundamental: cada reseña en la tabla <code>resenas</code> debe enlazarse de forma rígida a un profesional en <code>perfiles_profesionales</code> y a un cliente en <code>usuarios</code> mediante llaves foráneas controladas con restricciones <code>ON DELETE CASCADE</code>. Realizar estas consultas estructuradas en una base de datos relacional SQL permite ejecutar operaciones complejas de agregación al instante (como el cálculo del rating promedio y conteo de reseñas individuales de profesionales) garantizando la consistencia absoluta de los datos, algo que en bases de datos orientadas a documentos como Firebase Firestore provocaría redundancia o latencia excesiva debido a la falta de operaciones <code>JOIN</code> nativas.</p>
+<p>Un factor técnico crítico fue la compatibilidad directa de Supabase con el motor de Inteligencia Artificial <strong>Gemini 2.5 Flash</strong>. El sistema utiliza <em>Function Calling</em> (Llamada a Funciones): cuando el usuario interactúa con el asistente virtual "Chamby" describiendo un problema del hogar, Gemini procesa semánticamente la petición e invoca automáticamente la función <code>search_professionals</code>. Supabase permite interceptar esta llamada desde el cliente React Native mediante sentencias SQL optimizadas con filtros de texto <code>ilike</code> dinámicos (que comparan profesiones, categorías y descripciones), retornando al modelo una respuesta JSON estructurada y limpia que la IA utiliza para generar recomendaciones empáticas y precisas en milisegundos. Esta robusta arquitectura híbrida backend-cliente-IA asegura que el software de la tesis cumpla con los estándares más exigentes de ingeniería de software moderna, rendimiento multiplataforma y escalabilidad en la nube.</p>
+
+<hr />
+
+<h1>III. SECCIÓN IV: JUSTIFICACIÓN DE LA METODOLOGÍA</h1>
+<p>Para la organización del ciclo de vida del desarrollo del software de "Le Chambea", se determinó que la aplicación de metodologías tradicionales (cascada) generaba riesgos excesivos ante requerimientos cambiantes y la complejidad de la integración de Inteligencia Artificial. A continuación, se justifica técnicamente el uso del marco de trabajo ágil <strong>Scrum</strong>.</p>
+
+<h2>Cuadro Comparativo de Metodologías Ágiles (Reemplazo Tabla 11)</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Metodología ágil</th>
+      <th>Características distintivas</th>
+      <th>Ventajas clave para "Le Chambea"</th>
+      <th>Aplicación en el proyecto</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="highlight">Scrum</td>
+      <td>
+        • Ciclos de trabajo fijos (Sprints de 1 a 4 semanas)<br>
+        • Roles definidos (Product Owner, Scrum Master, Developers)<br>
+        • Eventos fijos (Daily, Sprint Planning, Review, Retrospective)<br>
+        • Entregas funcionales incrementales y de alto valor
+      </td>
+      <td>
+        • <strong>Adaptabilidad al Cambio:</strong> Permite probar la integración con Gemini en un Sprint y reajustar los prompts en el siguiente según el feedback.<br>
+        • <strong>Reducción de Riesgos:</strong> Al entregar incrementos de software funcionales cada Sprint, el tutor y el jurado pueden evaluar el avance real y usable paso a paso.
+      </td>
+      <td>
+        Se estructura el desarrollo de la aplicación en 4 Sprints quincenales, priorizando en los primeros Sprints el Core del sistema (Base de datos y Autenticación) y en los últimos la integración de Chamby e interfaces de navegación adaptables.
+      </td>
+    </tr>
+    <tr>
+      <td>Kanban</td>
+      <td>
+        • Flujo continuo de trabajo sin límites de tiempo estrictos<br>
+        • Visualización en tablero (To Do, In Progress, Done)<br>
+        • Limitación del trabajo en proceso (WIP Limit)
+      </td>
+      <td>
+        • Extrema flexibilidad operativa.<br>
+        • Ideal para soporte de errores en producción y mantenimiento continuo.<br>
+        • <i>Desventaja para el proyecto:</i> Carece del enfoque incremental estructurado y de los hitos fijos de tiempo necesarios para el cumplimiento estricto del cronograma de tesis académica.
+      </td>
+      <td>
+        Se utiliza el tablero Kanban de manera interna y visual dentro de cada Sprint de Scrum para monitorear el estado individual de las tareas de codificación de la app móvil.
+      </td>
+    </tr>
+    <tr>
+      <td>Crystal Methodologies</td>
+      <td>
+        • Enfoque centrado en las personas y su comunicación osmótica<br>
+        • Clasificación por colores según el tamaño del equipo (Clear, Yellow, Orange)<br>
+        • Prioriza la seguridad personal y entrega frecuente
+      </td>
+      <td>
+        • Procesos ligeros y sin burocracia innecesaria.<br>
+        • <i>Desventaja para el proyecto:</i> Al estar diseñado para equipos pequeños autogestionados de forma muy libre, carece de guías técnicas explícitas para estructurar los backlogs de producto y las pruebas de software que exige la normativa académica.
+      </td>
+      <td>
+        No aplicable directamente de forma aislada, aunque se retiene el principio de comunicación continua entre los desarrolladores y el asesor académico.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Texto Justificativo de la Selección de Scrum:</h3>
+<p>El desarrollo de un sistema multiplataforma móvil y web de alta interacción que integra servicios relacionales y llamadas cognitivas a una API de Inteligencia Artificial en tiempo real, exige un marco de trabajo de desarrollo que minimice la incertidumbre y fomente la iteración constante. Por estas razones, se seleccionó la metodología ágil <strong>Scrum</strong>.</p>
+<p>La estructura incremental basada en <strong>Sprints</strong> (iteraciones de tiempo cerrado y fijo, establecidas en este proyecto en períodos de 2 semanas) es ideal para mitigar los riesgos técnicos asociados a la integración de APIs externas como Supabase y Gemini. En un esquema tradicional en cascada, los errores de acoplamiento o latencia en las llamadas de función a la IA se detectarían únicamente al finalizar el proyecto durante la etapa de pruebas finales, resultando en costos de rediseño inviables. Bajo el marco Scrum, el desarrollo se dividió en hitos funcionales que entregan valor utilizable inmediatamente: el Sprint 1 consolidó el modelo de base de datos relacional y autenticación en Supabase; el Sprint 2 abordó la maquetación de pantallas y flujo de navegación; el Sprint 3 integró la lógica conversacional del asistente Chamby y el procesamiento del Function Calling; y el Sprint 4 se dedicó al testing de usabilidad y depuración de prompts en entornos simulados.</p>
+<p>Asimismo, los eventos y roles nativos de Scrum proporcionan una excelente transparencia académica. Las reuniones de <em>Sprint Review</em> y la elaboración progresiva del <em>Product Backlog</em> permiten al tutor académico evaluar el progreso del software en tiempo real y reorientar las prioridades funcionales en base a prototipos interactivos reales, garantizando que el proyecto se entregue en tiempo y forma en perfecta consonancia con el cronograma oficial de la tesis.</p>
+
+<hr />
+
+<h1>IV. CUADROS DE SCREENS (AÑADIDO EXTRA: PANTALLA ASISTENTE IA CHAMBY)</h1>
+<p>Para completar de manera robusta la sección 3.2 de <strong>Diseño de Navegación Móvil</strong>, se aporta la tabla funcional correspondiente a la pantalla del Chat de Inteligencia Artificial, alineando la teoría y capturas pendientes con tu desarrollo en React Native (<code>AiScreen.tsx</code>).</p>
+
+<h2>Tabla Funcional de Diseño de Pantalla (Nueva Tabla 8)</h2>
+<table>
+  <thead>
+    <tr>
+      <th colspan="2">Diseño de vista: Chat de Chamby (Asistente de IA)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Vista:</strong></td>
+      <td>AI / Chamby Chat Screen (Pantalla de Asistencia Virtual)</td>
+    </tr>
+    <tr>
+      <td><strong>Objetivo:</strong></td>
+      <td>Ofrecer una interfaz conversacional fluida que permita al usuario interactuar en tiempo real con el asistente virtual "Chamby" para diagnosticar problemas domésticos cotidianos de baja complejidad (enfoque de bricolaje/DIY) o, en su defecto, buscar y recomendar perfiles profesionales en la comunidad mediante Supabase.</td>
+    </tr>
+    <tr>
+      <td><strong>Validaciones:</strong></td>
+      <td>
+        • <strong>Validación de entrada vacía:</strong> Deshabilitar el botón de envío y evitar peticiones a la API si la caja de entrada de texto se encuentra vacía o solo contiene espacios.<br>
+        • <strong>Control de Estado de Carga (Loading State):</strong> Mostrar indicador de carga visual continuo en el chat e inhabilitar el botón de envío mientras la IA procesa la respuesta cognitiva de Gemini.<br>
+        • <strong>Intercepción de Function Calling:</strong> Validar el retorno del esquema JSON de Gemini y, en caso de detectar la petición de búsqueda, ejecutar la consulta física de profesionales activos a Supabase automáticamente.<br>
+        • <strong>Control de Excepciones de Red:</strong> Mostrar un globo informativo con un mensaje de error amigable en caso de caída de conexión a internet o fallas de la API externa.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Elementos del Diseño:</strong></td>
+      <td>
+        1. <strong>Cabecera (Header):</strong> Nombre del asistente "Chamby", un indicador visual verde de estado ("En línea") y botón flotante en la esquina superior izquierda para regresar a la pantalla de Inicio.<br>
+        2. <strong>Contenedor de Conversación (ScrollView):</strong> Historial dinámico de mensajes renderizado en globos (burbujas) asimétricos coloreados: morado degradado para el usuario en el margen derecho y gris claro para Chamby en el margen izquierdo.<br>
+        3. <strong>Tarjetas de Profesionales (Recommended Cards):</strong> Renderizadas inline dentro del chat tras una búsqueda automática, conteniendo:<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• Foto de perfil (avatar circular del profesional).<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• Nombre completo y especialidad técnica.<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• Calificación promedio en formato de estrellas (ej. ⭐ 4.8) junto con el total de reseñas registradas.<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• Extracto de descripción de perfil y habilidades.<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• Botón de acción interactivo destacado "Ver Perfil" / "Contratar".<br>
+        4. <strong>Barra de Entrada de Texto (Input Area):</strong> Campo de texto flotante inferior <code>TextInput</code> con marcador de posición ("Escribe tu problema...") y botón interactivo adyacente con ícono de flecha de envío.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Interacciones del Usuario:</strong></td>
+      <td>
+        • <strong>Acceso a la vista:</strong> Al ingresar, se genera de manera automática el mensaje inicial de bienvenida y guía del asistente virtual Chamby.<br>
+        • <strong>Envío de consulta:</strong> Clic en el botón de enviar o presionar "Enter" para adjuntar el mensaje al historial e iniciar la comunicación asíncrona con el modelo cognitivo.<br>
+        • <strong>Navegación a perfil público:</strong> Clic en el botón "Ver Perfil" / "Contratar" de cualquiera de las tarjetas de recomendación para redirigir fluidamente al usuario al perfil profesional completo y permitir la contratación del servicio.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Nota:</strong></td>
+      <td>Descripción de los componentes funcionales, validaciones técnicas y flujo de interacción de la interfaz del Asistente Virtual Chamby.</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>

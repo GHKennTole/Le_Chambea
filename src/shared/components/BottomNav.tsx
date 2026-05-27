@@ -1,15 +1,17 @@
-import { View, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Image, Text } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { RootStackParamList } from "../../core/navigation/types";
+import { useAppBadges } from "../hooks/useAppBadges";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function BottomNav({ active }: { active: keyof RootStackParamList }) {
   const nav = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
+  const { unreadChatsCount } = useAppBadges();
 
   return (
     <View style={[styles.wrapper, { marginBottom: insets.bottom > 0 ? insets.bottom : 37 }]}>
@@ -18,8 +20,13 @@ export default function BottomNav({ active }: { active: keyof RootStackParamList
           <MaterialCommunityIcons name="home" size={28} color={active === "Home" ? "#5A2D82" : "gray"} />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => nav.navigate("ChatList")}>
+        <TouchableOpacity onPress={() => nav.navigate("ChatList")} style={styles.iconContainer}>
           <MaterialCommunityIcons name="chat" size={28} color={active === "ChatList" ? "#5A2D82" : "gray"} />
+          {unreadChatsCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadChatsCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.centerBtn} onPress={() => nav.navigate("AI")}>
@@ -65,4 +72,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logo: { width: 50, height: 50 },
+  iconContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    backgroundColor: '#ff3b30',
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: 'white',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 9,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
 });
