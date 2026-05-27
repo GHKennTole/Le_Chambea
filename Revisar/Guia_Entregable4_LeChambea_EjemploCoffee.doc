@@ -1,0 +1,428 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Guía de Entregable 4 - Le Chambea</title>
+<style>
+  body {
+    font-family: 'Calibri', 'Arial', sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #333333;
+  }
+  h1 {
+    font-size: 15pt;
+    color: #4A154B;
+    border-bottom: 2px solid #4A154B;
+    padding-bottom: 5px;
+    margin-top: 24pt;
+  }
+  h2 {
+    font-size: 13pt;
+    color: #2E6B9E;
+    margin-top: 18pt;
+  }
+  h3 {
+    font-size: 11pt;
+    color: #555555;
+    margin-top: 12pt;
+    font-style: italic;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12pt 0;
+  }
+  th {
+    background-color: #F2F2F2;
+    border: 1px solid #C0C0C0;
+    padding: 8px;
+    font-weight: bold;
+    text-align: left;
+    font-size: 10pt;
+  }
+  td {
+    border: 1px solid #C0C0C0;
+    padding: 8px;
+    font-size: 10pt;
+    vertical-align: top;
+  }
+  .highlight {
+    background-color: #E8F0FE;
+    font-weight: bold;
+  }
+  .info-box {
+    background-color: #E8F5E9;
+    border-left: 6px solid #4CAF50;
+    padding: 10px;
+    margin: 12pt 0;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<h1>GUÍA DE ENTREGABLE 4 - ADAPTACIÓN AL MODELO EXITOSO "CENTRALCOFFEE"</h1>
+<p><strong>Proyecto:</strong> Le Chambea — Aplicación Móvil y Web</p>
+<p><strong>Recinto:</strong> Centro Universitario Regional de Chontales (CUR-Chontales)</p>
+<p><strong>Asesora:</strong> MSc. Isamar Bonilla Martínez</p>
+
+<div class="info-box">
+  <strong>Guía de Copiado:</strong> Este documento ha sido diseñado siguiendo la estructura, escala de evaluación, estilo de redacción y formato de tablas del proyecto aprobado <strong>CentralCoffee</strong>. Utiliza este material para rellenar de manera definitiva los capítulos de tu borrador de tesis Word.
+</div>
+
+<hr style="border: 1px solid #ccc;"/>
+
+<h1>IV. JUSTIFICACIÓN DE LA TECNOLOGÍA (ESTILO CENTRALCOFFEE)</h1>
+<p>Para determinar la viabilidad del gestor de base de datos y la arquitectura de servicios en la nube para Le Chambea, se evaluaron tres tecnologías Backend as a Service (BaaS): Firebase, Supabase y Appwrite, bajo ocho parámetros técnicos esenciales utilizando la escala de 1 (Muy baja) a 5 (Muy alta).</p>
+
+<h2>Tabla 20: Comparativa del gestor de base de datos</h2>
+<p><i>Escala: 1 = Muy baja, 2 = baja, 3 = media, 4 = alta, 5 = muy alta</i></p>
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th>Supabase</th>
+      <th>Firebase</th>
+      <th>Appwrite</th>
+      <th>Recomendación y justificación</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Escalabilidad de almacenamiento</td>
+      <td>5</td>
+      <td>5</td>
+      <td>4</td>
+      <td>Firebase y Supabase ofrecen escalabilidad en la nube de alta disponibilidad.</td>
+    </tr>
+    <tr>
+      <td>Capacidades en tiempo real</td>
+      <td>5</td>
+      <td>5</td>
+      <td>4</td>
+      <td>Supabase y Firebase cuentan con suscripciones realtime nativas sumamente estables.</td>
+    </tr>
+    <tr>
+      <td>Sincronización de datos</td>
+      <td>5</td>
+      <td>4</td>
+      <td>4</td>
+      <td>Supabase es superior al basarse en PostgreSQL, garantizando transacciones ACID nativas e integridad de relaciones.</td>
+    </tr>
+    <tr>
+      <td>Soporte para autentificación</td>
+      <td>5</td>
+      <td>5</td>
+      <td>4</td>
+      <td>Ambos integran Auth seguro con Google, correo y proveedores externos de forma nativa.</td>
+    </tr>
+    <tr>
+      <td>Soporte para funciones de IA</td>
+      <td>5</td>
+      <td>3</td>
+      <td>2</td>
+      <td><strong>Supabase destaca rotundamente:</strong> Su extensión <code>pgvector</code> permite guardar embeddings vectoriales y realizar búsquedas de similitud semántica para la IA de forma directa en SQL.</td>
+    </tr>
+    <tr>
+      <td>Servicio de Storage</td>
+      <td>5</td>
+      <td>5</td>
+      <td>4</td>
+      <td>Excelente almacenamiento y políticas de acceso para fotos de perfil y archivos multimedia.</td>
+    </tr>
+    <tr>
+      <td>Curva de aprendizaje</td>
+      <td>4</td>
+      <td>5</td>
+      <td>4</td>
+      <td>Firebase tiene una curva de inicio ligeramente más baja para desarrolladores web principiantes.</td>
+    </tr>
+    <tr>
+      <td>Costos</td>
+      <td>5</td>
+      <td>4</td>
+      <td>4</td>
+      <td>Supabase cuenta con planes gratuitos muy generosos y es de código abierto, evitando el cobro excesivo por lecturas de Firebase.</td>
+    </tr>
+    <tr class="highlight">
+      <td>TOTAL (Sobre 40 pts)</td>
+      <td>39 / 40</td>
+      <td>36 / 40</td>
+      <td>30 / 40</td>
+      <td><strong>Supabase: 97.5% de idoneidad</strong> frente al 90% de Firebase y 75% de Appwrite.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Texto Justificativo del Ganador (Supabase):</h3>
+<p>Luego de evaluar las tres soluciones de Backend as a Service mediante ocho parámetros críticos para Le Chambea, los resultados mostraron a <strong>Supabase</strong> como la tecnología mejor calificada con un <strong>97.5% de idoneidad (39/40 puntos)</strong>, superando a Firebase (90%) y Appwrite (75%).</p>
+<p>Supabase no solo lidera técnicamente debido a su robustez relacional al estar construido sobre <strong>PostgreSQL</strong>, sino que garantiza la integridad absoluta de datos en los flujos críticos de la aplicación. En el ecosistema de Le Chambea, donde es indispensable asociar de manera confiable a los clientes con perfiles de trabajadores y calificaciones mediante restricciones de integridad referencial, el uso de una base de datos relacional SQL evita la duplicidad de datos y las lecturas inconsistentes comunes en la base de datos NoSQL orientada a documentos de Firebase.</p>
+<p>Adicionalmente, el factor estratégico decisivo fue el soporte de Supabase para características avanzadas de Inteligencia Artificial. La integración nativa de la extensión <code>pgvector</code> y el almacenamiento en base de datos de datos estructurados permiten que el asistente conversacional Chamby (Gemini 2.5 Flash) ejecute llamadas a funciones (Function Calling) consultando la base de datos de manera semántica e instantánea, asegurando una transición de bricolaje (DIY) a perfiles de profesionales calificados de manera fluida y con altísimo rendimiento técnico.</p>
+
+<hr style="border: 1px solid #ccc;"/>
+
+<h1>V. JUSTIFICACIÓN DE LA METODOLOGÍA (ESTILO CENTRALCOFFEE)</h1>
+<p>Para la planeación, control y ejecución incremental del proyecto Le Chambea, se evaluaron tres metodologías ágiles bajo seis parámetros fundamentales en una escala de 1 a 5.</p>
+
+<h2>Tabla 23: Comparación de metodologías ágiles</h2>
+<p><i>Escala: 1 = Muy baja, 2 = baja, 3 = media, 4 = alta, 5 = muy alta</i></p>
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th>Scrum</th>
+      <th>Kanban</th>
+      <th>Crystal</th>
+      <th>Recomendación y justificación</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Adaptabilidad al cambio</td>
+      <td>5</td>
+      <td>5</td>
+      <td>5</td>
+      <td>Todas las opciones se adaptan ágilmente a cambios del entorno.</td>
+    </tr>
+    <tr>
+      <td>Gestión de tareas</td>
+      <td>4</td>
+      <td>4</td>
+      <td>3</td>
+      <td>Scrum y Kanban manejan tableros visuales sumamente claros.</td>
+    </tr>
+    <tr>
+      <td>Tamaño del equipo</td>
+      <td>4</td>
+      <td>5</td>
+      <td>5</td>
+      <td>Kanban y Crystal demuestran flexibilidad en equipos grandes o variables.</td>
+    </tr>
+    <tr>
+      <td>Enfoque en la colaboración</td>
+      <td>5</td>
+      <td>4</td>
+      <td>5</td>
+      <td>Scrum fomenta la comunicación y retroalimentación activa mediante roles y ceremonias fijas.</td>
+    </tr>
+    <tr>
+      <td>Frecuencia de entregas</td>
+      <td>4</td>
+      <td>5</td>
+      <td>4</td>
+      <td>Kanban destaca en entregas y despliegues continuos rápidos.</td>
+    </tr>
+    <tr>
+      <td>Nivel de formalidad</td>
+      <td>5</td>
+      <td>2</td>
+      <td>3</td>
+      <td>Scrum ofrece un marco de trabajo de tesis altamente estructurado y medible por hitos de tiempo.</td>
+    </tr>
+    <tr class="highlight">
+      <td>TOTAL (Sobre 30 pts)</td>
+      <td>27 / 30</td>
+      <td>25 / 30</td>
+      <td>25 / 30</td>
+      <td><strong>Scrum: 90.0% de idoneidad</strong> frente al 83.3% de Kanban y Crystal.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Texto Justificativo de la Metodología (Scrum):</h3>
+<p>Se analizaron tres metodologías ágiles: Scrum, Kanban y Crystal, bajo seis parámetros clave. Los resultados mostraron que <strong>Scrum obtuvo la puntuación más alta con 27/30 (90%)</strong>, mientras que Kanban y Crystal alcanzaron 25/30 (83.3%). Dado que Scrum combina una estructura organizada, roles bien delimitados (Product Owner, Scrum Master, Developers), ceremonias periódicas que reducen riesgos y un enfoque de avance incremental y tangible, se concluye que es la metodología idónea para garantizar el éxito y la entrega en tiempo del proyecto Le Chambea.</p>
+
+<hr style="border: 1px solid #ccc;"/>
+
+<h1>VI. DISEÑO DE NAVEGACIÓN Y TABLAS DE PANTALLAS (MÓVIL)</h1>
+<p>A continuación se presentan los cuadros técnicos descriptivos de las pantallas principales del sistema Le Chambea, siguiendo la estructura del modelo CentralCoffee (Foto del mockup a la izquierda, descripción funcional y flujos a la derecha).</p>
+
+<h2>Tabla 24: Diseño de vista Inicio (HomeScreen)</h2>
+<table>
+  <tr>
+    <td style="width: 35%; text-align: center; border: 1px solid #C0C0C0;">
+      <div style="background-color: #f7f7f7; padding: 50px 10px; color: #777; font-style: italic; border: 1px dashed #bbb;">
+        [Insertar aquí Captura de HomeScreen.tsx]
+      </div>
+      <br>
+      <strong>Figura X</strong><br>Vista de pantalla de Inicio
+    </td>
+    <td style="width: 65%; border: 1px solid #C0C0C0;">
+      <strong>Vista: Inicio / HomeScreen</strong><br><br>
+      <strong>Objetivo:</strong> Ofrecer la pantalla principal de la aplicación que sirve como panel de control, permitiendo al usuario acceder rápidamente a las categorías de servicios, buscar profesionales de forma directa y visualizar un acceso directo al asistente de IA Chamby.<br><br>
+      <strong>Validaciones:</strong><br>
+      • Verificación de sesión de usuario activa en Supabase Auth.<br>
+      • Carga dinámica y asíncrona de las categorías de oficios en el panel.<br><br>
+      <strong>Elementos:</strong><br>
+      ❖ Cabecera superior con botón de menú lateral y nombre de la app "Le Chambea".<br>
+      ❖ Barra de búsqueda textual para introducir nombres o profesiones técnicas.<br>
+      ❖ Carrusel interactivo de categorías con íconos (Carpintería, Plomería, Electricidad, Cuidado Personal, etc.).<br>
+      ❖ Botón de acceso directo flotante en la parte inferior derecha para abrir el chat del Asistente Virtual "Chamby".<br><br>
+      <strong>Interacciones:</strong><br>
+      ❖ Clic en la barra de búsqueda para abrir la pantalla de filtrado.<br>
+      ❖ Clic en un ícono de categoría para listar profesionales correspondientes.<br>
+      ❖ Clic en el botón flotante para navegar fluidamente hacia <code>AiScreen</code>.<br><br>
+      <strong>Flujo:</strong><br>
+      Inicio → Filtrado de Categoría / Asistente IA
+    </td>
+  </tr>
+</table>
+
+<h2>Tabla 25: Diseño de vista Búsqueda de Expertos (SearchScreen)</h2>
+<table>
+  <tr>
+    <td style="width: 35%; text-align: center; border: 1px solid #C0C0C0;">
+      <div style="background-color: #f7f7f7; padding: 50px 10px; color: #777; font-style: italic; border: 1px dashed #bbb;">
+        [Insertar aquí Captura de SearchScreen.tsx]
+      </div>
+      <br>
+      <strong>Figura X</strong><br>Vista de pantalla de Búsqueda
+    </td>
+    <td style="width: 65%; border: 1px solid #C0C0C0;">
+      <strong>Vista: Búsqueda / SearchScreen</strong><br><br>
+      <strong>Objetivo:</strong> Mostrar los resultados de búsqueda semántica o textual de los profesionales que coinciden con los criterios de necesidad ingresados por el cliente.<br><br>
+      <strong>Validaciones:</strong><br>
+      • Filtrado automático en Supabase de perfiles profesionales con estado <code>esta_activo = true</code>.<br>
+      • Manejo de estado vacío en caso de no encontrar ningún profesional registrado para la especialidad buscada.<br><br>
+      <strong>Elementos:</strong><br>
+      ❖ Barra de búsqueda superior con botón de retorno rápido.<br>
+      ❖ Lista de tarjetas de profesionales encontrados que muestran:<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;• Foto de perfil del profesional.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;• Nombre completo, profesión e índice de calificación de estrellas.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;• Breve descripción de experiencia y tarifa base sugerida.<br><br>
+      <strong>Interacciones:</strong><br>
+      ❖ Introducir texto en la barra de búsqueda y presionar buscar para recargar la lista.<br>
+      ❖ Clic en la tarjeta de un profesional para redirigir a <code>PublicProfileScreen</code>.<br>
+      ❖ Clic en el botón de retroceso para volver a la pantalla HomeScreen.<br><br>
+      <strong>Flujo:</strong><br>
+      Búsqueda → Ver Perfil Público
+    </td>
+  </tr>
+</table>
+
+<h2>Tabla 26: Diseño de vista Perfil de Profesional (PublicProfileScreen)</h2>
+<table>
+  <tr>
+    <td style="width: 35%; text-align: center; border: 1px solid #C0C0C0;">
+      <div style="background-color: #f7f7f7; padding: 50px 10px; color: #777; font-style: italic; border: 1px dashed #bbb;">
+        [Insertar aquí Captura de PublicProfileScreen.tsx]
+      </div>
+      <br>
+      <strong>Figura X</strong><br>Vista de pantalla Perfil Profesional
+    </td>
+    <td style="width: 65%; border: 1px solid #C0C0C0;">
+      <strong>Vista: Perfil Profesional Público / PublicProfileScreen</strong><br><br>
+      <strong>Objetivo:</strong> Presentar detalladamente la información de un profesional específico, incluyendo sus tarifas, especialidades, valoraciones de clientes anteriores y permitir chatear de forma privada para contratar sus servicios.<br><br>
+      <strong>Validaciones:</strong><br>
+      • Consulta dinámica a la tabla <code>resenas</code> vinculada al <code>perfil_profesional_id</code> para calcular y renderizar el rating real.<br>
+      • Validación de permisos de mensajería (que un profesional no intente abrir un chat consigo mismo).<br><br>
+      <strong>Elementos:</strong><br>
+      ❖ Banner superior y avatar circular con foto de perfil.<br>
+      ❖ Bloque de datos: Nombre completo, especialidad principal y calificación promedio (ej. ⭐ 4.9 basada en reseñas reales).<br>
+      ❖ Sección "Sobre mí" con descripción larga del servicio.<br>
+      ❖ Lista interactiva de comentarios y calificaciones de clientes anteriores.<br>
+      ❖ Botón destacado en el pie de pantalla: "Iniciar Chat / Contratar".<br><br>
+      <strong>Interacciones:</strong><br>
+      ❖ Clic en el botón "Iniciar Chat" para abrir una sala de chat directo con el profesional (redirige a <code>ChatScreen</code>).<br>
+      ❖ Clic en el botón de favoritos para guardar el profesional en la lista de preferidos del usuario.<br><br>
+      <strong>Flujo:</strong><br>
+      Perfil Público → Chat de Negociación / Escribir Reseña
+    </td>
+  </tr>
+</table>
+
+<h2>Tabla 27: Diseño de vista Chat de Chamby (AiScreen)</h2>
+<table>
+  <tr>
+    <td style="width: 35%; text-align: center; border: 1px solid #C0C0C0;">
+      <div style="background-color: #f7f7f7; padding: 50px 10px; color: #777; font-style: italic; border: 1px dashed #bbb;">
+        [Insertar aquí Captura de AiScreen.tsx]
+      </div>
+      <br>
+      <strong>Figura X</strong><br>Vista de pantalla Chat de Chamby
+    </td>
+    <td style="width: 65%; border: 1px solid #C0C0C0;">
+      <strong>Vista: Asistente IA / AiScreen</strong><br><br>
+      <strong>Objetivo:</strong> Ofrecer la interfaz conversacional con el asistente cognitivo Chamby (Gemini 2.5 Flash + Supabase), guiando al usuario en fallas del hogar, brindando diagnósticos DIY o recomendando profesionales técnicos interactivos.<br><br>
+      <strong>Validaciones:</strong><br>
+      • Bloqueo del botón de envío si el campo de texto inferior está vacío.<br>
+      • Manejo visual del estado de carga (indicador de "Chamby está pensando...") mientras se procesa la llamada a la API de Google Gemini.<br>
+      • Intercepción automática y en segundo plano de la llamada a la función SQL de Supabase <code>search_professionals</code>.<br><br>
+      <strong>Elementos:</strong><br>
+      ❖ Barra superior con avatar de Chamby y estado en línea.<br>
+      ❖ Historial de conversación con globos asimétricos: morado para el cliente (derecha), gris/blanco para la IA (izquierda).<br>
+      ❖ Tarjetas clicables de recomendación insertadas directamente en el chat con fotos de perfiles, nombres, estrellas y botón de contratar.<br>
+      ❖ Área de entrada de texto con TextInput inferior y botón de enviar.<br><br>
+      <strong>Interacciones:</strong><br>
+      ❖ Escribir una duda y presionar enviar para registrar el mensaje en el historial.<br>
+      ❖ Clic en "Ver Perfil" de cualquier tarjeta recomendada para abrir el perfil público del profesional.<br><br>
+      <strong>Flujo:</strong><br>
+      Chat de IA → Perfil del Profesional Recomendado
+    </td>
+  </tr>
+</table>
+
+<h2>Tabla 28: Diseño de vista Bandeja de Entrada (ChatListScreen)</h2>
+<table>
+  <tr>
+    <td style="width: 35%; text-align: center; border: 1px solid #C0C0C0;">
+      <div style="background-color: #f7f7f7; padding: 50px 10px; color: #777; font-style: italic; border: 1px dashed #bbb;">
+        [Insertar aquí Captura de ChatListScreen.tsx]
+      </div>
+      <br>
+      <strong>Figura X</strong><br>Vista de pantalla Bandeja de Entrada
+    </td>
+    <td style="width: 65%; border: 1px solid #C0C0C0;">
+      <strong>Vista: Bandeja de Entrada / ChatListScreen</strong><br><br>
+      <strong>Objetivo:</strong> Listar todas las conversaciones activas que el usuario (ya sea cliente o profesional) mantiene abiertas con otros usuarios de la aplicación, ordenadas de forma cronológica.<br><br>
+      <strong>Validaciones:</strong><br>
+      • Sincronización en tiempo real con la base de datos de Supabase para reflejar instantáneamente la recepción de nuevos mensajes.<br>
+      • Validación del remitente y receptor para dibujar correctamente los nombres y avatares correspondientes.<br><br>
+      <strong>Elementos:</strong><br>
+      ❖ Título superior "Bandeja de Entrada".<br>
+      ❖ Lista vertical de chats que incluye por cada fila:<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;• Foto de perfil del otro usuario.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;• Nombre completo del contacto.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;• Último mensaje enviado o recibido como vista previa.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;• Hora o fecha del último mensaje.<br><br>
+      <strong>Interacciones:</strong><br>
+      ❖ Clic en cualquiera de las filas de chat para abrir la conversación privada a pantalla completa (navega a <code>ChatScreen</code>).<br><br>
+      <strong>Flujo:</strong><br>
+      Bandeja de Entrada → Conversación de Chat
+    </td>
+  </tr>
+</table>
+
+<h2>Tabla 29: Diseño de vista Chat Privado (ChatScreen)</h2>
+<table>
+  <tr>
+    <td style="width: 35%; text-align: center; border: 1px solid #C0C0C0;">
+      <div style="background-color: #f7f7f7; padding: 50px 10px; color: #777; font-style: italic; border: 1px dashed #bbb;">
+        [Insertar aquí Captura de ChatScreen.tsx]
+      </div>
+      <br>
+      <strong>Figura X</strong><br>Vista de pantalla Chat Privado
+    </td>
+    <td style="width: 65%; border: 1px solid #C0C0C0;">
+      <strong>Vista: Chat Privado / ChatScreen</strong><br><br>
+      <strong>Objetivo:</strong> Permitir la comunicación directa en tiempo real entre un cliente y un profesional para negociar los términos del servicio, definir precios, horarios y coordinar la visita técnica.<br><br>
+      <strong>Validaciones:</strong><br>
+      • Envío de datos asíncronos en tiempo real mediante suscripciones de PostgreSQL en Supabase.<br>
+      • Bloqueo del envío de mensajes si no hay conexión de internet o si el contenido es vacío.<br><br>
+      <strong>Elementos:</strong><br>
+      ❖ Barra superior con foto del contacto, nombre y botón de llamada o regreso.<br>
+      ❖ Historial de mensajes en tiempo real con burbujas de conversación diferenciadoras por color.<br>
+      ❖ Caja de entrada de texto inferior con botón interactivo de envío con ícono de avión de papel.<br><br>
+      <strong>Interacciones:</strong><br>
+      ❖ Clic en el botón de retroceso para regresar a la lista de chats.<br>
+      ❖ Escribir y presionar enviar para propagar el mensaje instantáneamente al otro dispositivo.<br><br>
+      <strong>Flujo:</strong><br>
+      Chat Privado → Bandeja de Entrada / Ver Perfil del Profesional
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

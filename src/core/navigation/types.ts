@@ -25,7 +25,7 @@ export type RootStackParamList = {
   Reviews: { userId?: string };
   WriteReview: { professionalId: string; profileId?: string; jobId: string };
   Search: undefined;
-  PublicProfile: { id: string; fromChat?: boolean };
+  PublicProfile: { id: string; professionalProfileId?: string; fromChat?: boolean };
   ChatList: undefined;
   Chat: { chatId: string, otherUserId: string };
   Security: undefined;

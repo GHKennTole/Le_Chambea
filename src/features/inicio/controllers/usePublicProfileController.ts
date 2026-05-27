@@ -9,7 +9,7 @@ export type ServiceWithRating = ProfessionalProfile & {
   totalReviews: number;
 };
 
-export function usePublicProfileController(professionalId: string) {
+export function usePublicProfileController(professionalId: string, professionalProfileId?: string) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [services, setServices] = useState<ServiceWithRating[]>([]);
@@ -68,7 +68,13 @@ export function usePublicProfileController(professionalId: string) {
           };
         });
 
-        setServices(servicesWithRatings);
+        // Filter services to show only the selected one if professionalProfileId is provided
+        let finalServices = servicesWithRatings;
+        if (professionalProfileId) {
+          finalServices = servicesWithRatings.filter(svc => svc.id === professionalProfileId);
+        }
+
+        setServices(finalServices);
         setGeneralAverage(totalCount > 0 ? totalSum / totalCount : 0);
       } else {
         setServices([]);
@@ -80,7 +86,7 @@ export function usePublicProfileController(professionalId: string) {
     } finally {
       setLoading(false);
     }
-  }, [professionalId]);
+  }, [professionalId, professionalProfileId]);
 
   useEffect(() => {
     fetchData();
@@ -128,6 +134,52 @@ export function usePublicProfileController(professionalId: string) {
 
         if (createError) throw createError;
         chatId = newChat.id;
+      }
+
+      // Automatically create a job request if one does not exist for this professionalProfileId
+      let profileIdToUse = professionalProfileId;
+      if (!profileIdToUse && services.length > 0) {
+        profileIdToUse = services[0].id;
+      }
+
+      if (profileIdToUse) {
+        const { data: existingJobs } = await supabase
+          .from('trabajos')
+          .select('*')
+          .eq('chat_id', chatId)
+          .in('estado', ['pending', 'accepted'])
+          .order('fecha_creacion', { ascending: false })
+          .limit(1);
+
+        const hasActiveJob = existingJobs && existingJobs.length > 0;
+
+        if (!hasActiveJob) {
+          await supabase.from('trabajos').insert({
+            chat_id: chatId,
+            cliente_id: currentUser.id,
+            perfil_profesional_id: profileIdToUse,
+            estado: 'pending'
+          });
+        }
+
+        // Send a notification to the professional
+        const selectedSvc = services.find(s => s.id === profileIdToUse);
+        const professionName = selectedSvc ? selectedSvc.profesion : 'tu servicio';
+        
+        const { data: clientProfile } = await supabase
+          .from('usuarios')
+          .select('nombre, apellidos')
+          .eq('id', currentUser.id)
+          .single();
+        
+        const clientFullName = clientProfile ? `${clientProfile.nombre} ${clientProfile.apellidos}`.trim() : 'Un cliente';
+
+        await supabase.from('notificaciones').insert({
+          usuario_id: professionalId,
+          titulo: 'Nueva solicitud de chat 💬',
+          cuerpo: `${clientFullName} quiere chatear contigo para el servicio de ${professionName}.`,
+          leido: false
+        });
       }
 
       // Navigate to chat

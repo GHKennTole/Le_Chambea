@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Especificación de Diseño Arquitectónico y Requisitos Técnicos - Chamby</title>
+    <style>
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #333333;
+            margin: 3cm 2.5cm 3cm 2.5cm; /* Márgenes estándar APA / Tesis */
+        }
+        h1 {
+            font-family: 'Garamond', 'Georgia', serif;
+            font-size: 22pt;
+            font-weight: bold;
+            color: #5A2D82; /* Morado Le Chambea */
+            text-align: center;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            page-break-after: avoid;
+        }
+        h2 {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            font-size: 16pt;
+            font-weight: bold;
+            color: #5A2D82;
+            border-bottom: 1.5px solid #5A2D82;
+            padding-bottom: 5px;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            page-break-after: avoid;
+        }
+        h3 {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            font-size: 13pt;
+            font-weight: bold;
+            color: #333333;
+            margin-top: 30px;
+            margin-bottom: 10px;
+            page-break-after: avoid;
+        }
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        .cover-page {
+            text-align: center;
+            height: 100vh;
+            page-break-after: always;
+        }
+        .cover-title {
+            font-size: 26pt;
+            font-weight: bold;
+            margin-top: 150px;
+            color: #5A2D82;
+        }
+        .cover-subtitle {
+            font-size: 16pt;
+            margin-top: 20px;
+            color: #666666;
+            margin-bottom: 100px;
+        }
+        .cover-details {
+            font-size: 12pt;
+            margin-top: 200px;
+            line-height: 2;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 10pt;
+        }
+        th, td {
+            border: 1px solid #CCCCCC;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #F3ECFA;
+            color: #5A2D82;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #F9F9F9;
+        }
+        .diagram-container {
+            text-align: center;
+            margin-top: 25px;
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .diagram-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ECECF1;
+            padding: 5px;
+            background-color: #FFFFFF;
+        }
+        .diagram-caption {
+            font-size: 9.5pt;
+            font-style: italic;
+            color: #666666;
+            margin-top: 8px;
+        }
+        .code-block {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #F6F6F8;
+            border: 1px solid #ECECF1;
+            padding: 10px;
+            font-size: 9.5pt;
+            white-space: pre-wrap;
+            margin-bottom: 15px;
+        }
+        .bullet-list {
+            margin-bottom: 15px;
+            padding-left: 20px;
+        }
+        .bullet-list li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PORTADA ACADÉMICA -->
+    <div class="cover-page">
+        <div class="cover-title">PROYECTO "LE CHAMBEA"</div>
+        <div class="cover-subtitle">ESPECIFICACIÓN DE DISEÑO ARQUITECTÓNICO Y REQUISITOS TÉCNICOS: MÓDULO DE INTELIGENCIA ARTIFICIAL ("CHAMBY")</div>
+        
+        <div class="cover-details">
+            <strong>DOCUMENTO DE RESPALDO ACADÉMICO PARA TESIS</strong><br>
+            Carrera: Ingeniería en Sistemas de Información<br>
+            Fecha: Mayo de 2026<br>
+            Desarrollado para: Handoff de Proyecto e Integración de IA Generativa
+        </div>
+    </div>
+
+    <!-- CONTENIDO DEL DOCUMENTO -->
+    
+    <h2>1. INTRODUCCIÓN Y CONTEXTO DEL SISTEMA</h2>
+    <p>El presente documento describe las especificaciones arquitectónicas, diagramas de flujo, diseño de bases de datos relacionales y especificaciones técnicas detalladas correspondientes al módulo de Asistente de Inteligencia Artificial (comercialmente denominado <strong>"Chamby"</strong>) que se integra en el proyecto <strong>"Le Chambea"</strong>.</p>
+    <p>"Le Chambea" es una plataforma digital responsiva (móvil y web) orientada a conectar clientes que necesitan servicios de mantenimiento casero u oficios técnicos con profesionales especializados calificados. El módulo de IA, Chamby, opera como un canal conversacional interactivo de primera línea con un doble propósito arquitectónico:</p>
+    <ul class="bullet-list">
+        <li><strong>Filtro de Autoservicio (Hazlo tú mismo / DIY):</strong> Detecta de forma inteligente fallas o requerimientos menores (ej. grifo que gotea, cortinas caídas) y proporciona guías de mantenimiento paso a paso con las herramientas requeridas para que el usuario pueda solventarlo por cuenta propia de forma segura y económica.</li>
+        <li><strong>Recomendación e Integración de Profesionales:</strong> En casos de alta complejidad técnica o cuando el usuario solicita expresamente ayuda experta, el asistente se conecta mediante <em>Function Calling</em> a la base de datos de Supabase en tiempo real, filtra y analiza a los profesionales disponibles en la zona basándose en sus profesiones, descripciones y promedio de calificaciones de clientes, presentando al usuario recomendaciones directas con enlaces interactivos.</li>
+    </ul>
+
+    <h2>2. ARQUITECTURA GENERAL E INTERACCIÓN DE COMPONENTES</h2>
+    <p>El módulo adopta una arquitectura orientada a servicios (SOA) acoplada a un enrutamiento dinámico en el frontend. La inferencia cognitiva es procesada a través del modelo fundacional <strong>Gemini 1.5 Flash</strong> de Google, enlazando directamente al cliente móvil/web con la base de datos relacional de <strong>Supabase</strong> mediante consultas seguras.</p>
+    
+    <div class="diagram-container">
+        <!-- El archivo debe estar en el mismo directorio para que Word lo cargue localmente -->
+        <img class="diagram-image" src="Diagrama_Secuencia_Chamby.png" alt="Diagrama de Secuencia Chamby">
+        <div class="diagram-caption">Figura 1. Diagrama de Secuencia UML de interacción de servicios para el asistente virtual "Chamby".</div>
+    </div>
+
+    <h3>Descripción del Flujo de Secuencia:</h3>
+    <p>1. El usuario interactúa en lenguaje natural a través de la pantalla de chat (`AiScreen`).</p>
+    <p>2. El controlador del chat (`useAiController`) empaqueta el mensaje del usuario junto con el historial conversacional y un conjunto de directrices base (System Instruction).</p>
+    <p>3. El cliente transmite estos parámetros al modelo Gemini de Google. Si el modelo detecta que el usuario necesita contratar a un profesional, detiene la inferencia conversacional y genera una llamada de función (`functionCall`) estructurada solicitando la herramienta `search_professionals`.</p>
+    <p>4. El controlador de la aplicación intercepta la llamada, ejecuta una consulta SQL a través de Supabase en las tablas `perfiles_profesionales` y `usuarios`, y extrae los registros de candidatos idóneos.</p>
+    <p>5. Los candidatos encontrados se reenvían al modelo Gemini mediante un mensaje de tipo `functionResponse`. El modelo procesa la información y devuelve una redacción amigable, mientras que la interfaz del chat renderiza tarjetas clicables horizontales que facilitan la navegación directa hacia el perfil del profesional.</p>
+
+    <h2>3. ESPECIFICACIÓN DE LA BASE DE DATOS (MODELO ENTIDAD-RELACIÓN)</h2>
+    <p>A continuación se detallan las especificaciones técnicas de las tablas de Supabase en español que estructuran y alimentan el motor de búsqueda cognitiva de la IA.</p>
+
+    <h3>3.1. Tabla: usuarios</h3>
+    <p>Almacena la información de identidad e información general de los clientes y profesionales registrados en la plataforma.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Columna</th>
+                <th>Tipo de Datos</th>
+                <th>Restricciones</th>
+                <th>Descripción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>id</strong></td>
+                <td>uuid</td>
+                <td>PRIMARY KEY, REFERENCES auth.users</td>
+                <td>Identificador único global del usuario (UUID)</td>
+            </tr>
+            <tr>
+                <td><strong>nombre</strong></td>
+                <td>varchar</td>
+                <td>NOT NULL</td>
+                <td>Nombre de pila del usuario</td>
+            </tr>
+            <tr>
+                <td><strong>apellidos</strong></td>
+                <td>varchar</td>
+                <td>NOT NULL</td>
+                <td>Apellidos del usuario</td>
+            </tr>
+            <tr>
+                <td><strong>correo</strong></td>
+                <td>varchar</td>
+                <td>UNIQUE, NOT NULL</td>
+                <td>Correo electrónico de contacto</td>
+            </tr>
+            <tr>
+                <td><strong>genero</strong></td>
+                <td>varchar</td>
+                <td>-</td>
+                <td>Identidad de género del usuario</td>
+            </tr>
+            <tr>
+                <td><strong>fecha_nacimiento</strong></td>
+                <td>date</td>
+                <td>-</td>
+                <td>Fecha de nacimiento del usuario</td>
+            </tr>
+            <tr>
+                <td><strong>foto_perfil</strong></td>
+                <td>text</td>
+                <td>-</td>
+                <td>URL pública del bucket de almacenamiento para el avatar</td>
+            </tr>
+            <tr>
+                <td><strong>onboarding_completado</strong></td>
+                <td>boolean</td>
+                <td>DEFAULT false</td>
+                <td>Bandera indicadora del tutorial completado</td>
+            </tr>
+            <tr>
+                <td><strong>fecha_creacion</strong></td>
+                <td>timestamp</td>
+                <td>DEFAULT now()</td>
+                <td>Fecha de registro en la plataforma</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>3.2. Tabla: perfiles_profesionales</h3>
+    <p>Registra las ofertas técnicas y descripción del servicio que ofrecen los profesionales que se auto-describen dentro del sistema.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Columna</th>
+                <th>Tipo de Datos</th>
+                <th>Restricciones</th>
+                <th>Descripción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>id</strong></td>
+                <td>uuid</td>
+                <td>PRIMARY KEY, DEFAULT gen_random_uuid()</td>
+                <td>Identificador único del servicio/perfil profesional</td>
+            </tr>
+            <tr>
+                <td><strong>usuario_id</strong></td>
+                <td>uuid</td>
+                <td>REFERENCES usuarios(id) ON DELETE CASCADE</td>
+                <td>Relación al usuario propietario del servicio</td>
+            </tr>
+            <tr>
+                <td><strong>profesion</strong></td>
+                <td>varchar</td>
+                <td>NOT NULL</td>
+                <td>Nombre comercial del servicio (ej: Plomero Residencial)</td>
+            </tr>
+            <tr>
+                <td><strong>categoria</strong></td>
+                <td>varchar</td>
+                <td>NOT NULL</td>
+                <td>Categoría general (ej: Plomería, Electricidad)</td>
+            </tr>
+            <tr>
+                <td><strong>descripcion</strong></td>
+                <td>text</td>
+                <td>NOT NULL</td>
+                <td>Texto descriptivo de las habilidades y tarifas</td>
+            </tr>
+            <tr>
+                <td><strong>esta_activo</strong></td>
+                <td>boolean</td>
+                <td>DEFAULT true</td>
+                <td>Disponibilidad del profesional en el catálogo</td>
+            </tr>
+            <tr>
+                <td><strong>indice_servicio</strong></td>
+                <td>integer</td>
+                <td>DEFAULT 0</td>
+                <td>Orden o peso del servicio en los resultados</td>
+            </tr>
+            <tr>
+                <td><strong>fecha_creacion</strong></td>
+                <td>timestamp</td>
+                <td>DEFAULT now()</td>
+                <td>Fecha de creación del perfil profesional</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>3.3. Tabla: resenas</h3>
+    <p>Registra el feedback, opiniones y valoraciones numéricas que realizan los clientes una vez completado un trabajo.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Columna</th>
+                <th>Tipo de Datos</th>
+                <th>Restricciones</th>
+                <th>Descripción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>id</strong></td>
+                <td>uuid</td>
+                <td>PRIMARY KEY, DEFAULT gen_random_uuid()</td>
+                <td>Identificador único de la reseña</td>
+            </tr>
+            <tr>
+                <td><strong>perfil_profesional_id</strong></td>
+                <td>uuid</td>
+                <td>REFERENCES perfiles_profesionales(id) ON DELETE CASCADE</td>
+                <td>Perfil calificado por el cliente</td>
+            </tr>
+            <tr>
+                <td><strong>cliente_id</strong></td>
+                <td>uuid</td>
+                <td>REFERENCES usuarios(id)</td>
+                <td>Cliente evaluador</td>
+            </tr>
+            <tr>
+                <td><strong>calificacion</strong></td>
+                <td>integer</td>
+                <td>CHECK (calificacion >= 1 AND calificacion <= 5)</td>
+                <td>Estrellas otorgadas (escala del 1 al 5)</td>
+            </tr>
+            <tr>
+                <td><strong>comentario</strong></td>
+                <td>text</td>
+                <td>-</td>
+                <td>Opinión textual del servicio recibido</td>
+            </tr>
+            <tr>
+                <td><strong>fecha_creacion</strong></td>
+                <td>timestamp</td>
+                <td>DEFAULT now()</td>
+                <td>Fecha de registro de la calificación</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>4. ESQUEMA DE DECLARACIÓN DE HERRAMIENTAS (FUNCTION CALLING)</h2>
+    <p>La IA fundacional utiliza la funcionalidad de Function Calling para interactuar con la base de datos relacional de Supabase. A continuación se anexa la especificación del esquema JSON de entrada que define la firma de la función `search_professionals` para el modelo.</p>
+    <div class="code-block">{
+  "name": "search_professionals",
+  "description": "Busca profesionales técnicos activos y calificados en la base de datos de Le Chambea basándose en una categoría de oficio, especialidad o descripción del problema.",
+  "parameters": {
+    "type": "OBJECT",
+    "properties": {
+      "searchQuery": {
+        "type": "STRING",
+        "description": "Palabra clave en español representativa de la profesión (p. ej., plomero, cerrajero, jardinero, electricista, carpintero, pintor)."
+      },
+      "category": {
+        "type": "STRING",
+        "description": "La categoría general a la que pertenece el problema detectado, si es identificable por el contexto."
+      }
+    },
+    "required": []
+  }
+}</div>
+
+    <h2>5. DIRECTRICES DEL AGENTE Y PUNTUACIÓN (SYSTEM INSTRUCTION)</h2>
+    <p>Para asegurar una interacción estructurada acorde a un software comercial y rigurosa en su marco teórico, el modelo es inicializado con el siguiente bloque de instrucciones cognitivas que regulan sus capacidades:</p>
+    <div class="code-block">Eres "Chamby", el Asistente de Inteligencia Artificial inteligente, empático y profesional de la plataforma "Le Chambea". Tu propósito es ayudar a los usuarios con problemas y fallas del hogar u oficios técnicos en general.
+
+Sigue rigurosamente estas reglas de comportamiento:
+1. Empatía y Diagnóstico: Escucha atentamente la descripción del problema del usuario. Haz preguntas de aclaración si el problema es muy vago.
+2. Enfoque Bricolaje (Hazlo tú mismo / DIY): Si detectas que el problema descrito es fácil y seguro de resolver por el propio usuario (por ejemplo: un grifo que gotea debido a un empaque flojo, cambiar una bombilla, purgar un radiador), indícale amablemente que es algo que probablemente puede solucionar él mismo de forma rápida. Proporciona:
+   - Una explicación didáctica de la posible falla.
+   - Pasos claros, enumerados y seguros para solucionarlo.
+   - Herramientas y materiales recomendados que comúnmente se tienen en casa.
+3. Transición a Profesionales: Deja en claro que si el usuario no se siente seguro, prefiere ahorrar tiempo o si el problema resulta ser complejo (p. ej. fugas internas de gas, cortocircuitos severos, filtraciones estructurales), debe dejarlo en manos de un experto.
+4. Búsqueda y Recomendación en Supabase: Si el usuario solicita explícitamente contratar a un experto, indica que el problema requiere atención profesional o acepta tu propuesta de contratar a alguien, debes llamar de inmediato a la herramienta 'search_professionals' pasándole el término de búsqueda deducido (p. ej. 'plomero', 'electricista').
+5. Presentación de Resultados: Cuando recibas los datos de los profesionales recomendados de la base de datos, presenta una respuesta amable. Explica brevemente por qué son excelentes candidatos basándote en sus descripciones o calificaciones promedio reales (provistas en el JSON de respuesta) e invita al usuario a dar clic en sus tarjetas interactivas integradas en el chat para ver sus perfiles públicos detallados.</div>
+
+    <h2>6. CONCLUSIÓN Y MARCO TEÓRICO ACADÉMICO</h2>
+    <p>La implementación de Chamby representa una arquitectura moderna de <strong>Sistemas de Información Inteligentes</strong>. Mediante la orquestación de llamadas a funciones en caliente, se solventa una de las principales limitaciones de los Grandes Modelos de Lenguaje (LLMs): la obsolescencia de información o alucinación sobre datos dinámicos. Chamby no inventa los datos de los profesionales ni sus calificaciones, sino que sirve de puente cognitivo en lenguaje natural para la consulta de información viva estructurada en un motor relacional SQL, logrando un equilibrio robusto entre asistencia guiada, seguridad de datos y conversión comercial de servicios técnicos.</p>
+
+</body>
+</html>

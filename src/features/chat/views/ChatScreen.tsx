@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -19,7 +19,7 @@ export default function ChatScreen({ route }: Props) {
   const [text, setText] = useState("");
   const flatListRef = useRef<FlatList>(null);
 
-  const canChat = vm.activeJob?.estado === 'accepted';
+  const canChat = true;
 
   useEffect(() => {
     if (vm.messages.length > 0) {
@@ -140,10 +140,16 @@ export default function ChatScreen({ route }: Props) {
                 <Text style={styles.serviceTagText}>{vm.activeJob.perfiles_profesionales.profesion}</Text>
               </View>
             )}
-            <TouchableOpacity style={[styles.proButton, styles.btnFinish]} onPress={() => vm.updateJobStatus(vm.activeJob!.id, 'completed')}>
-              <MaterialCommunityIcons name="check-all" size={18} color="white" />
-              <Text style={styles.btnAcceptText}>Marcar como Terminado</Text>
-            </TouchableOpacity>
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={[styles.proButton, styles.btnReject]} onPress={() => vm.updateJobStatus(vm.activeJob!.id, 'rejected')}>
+                <MaterialCommunityIcons name="close-circle-outline" size={18} color="#dc3545" />
+                <Text style={styles.btnRejectText}>Abortar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.proButton, styles.btnFinish]} onPress={() => vm.updateJobStatus(vm.activeJob!.id, 'completed')}>
+                <MaterialCommunityIcons name="check-all" size={18} color="white" />
+                <Text style={styles.btnAcceptText}>Terminado</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         );
       }
@@ -173,14 +179,42 @@ export default function ChatScreen({ route }: Props) {
     );
   };
 
+  const handleReportPress = () => {
+    const title = "Reportar Incongruencia";
+    const msg = "¿Deseas notificar a los administradores sobre una incongruencia en este chat?";
+    if (Platform.OS === 'web') {
+      if (window.confirm(msg)) {
+        vm.reportIncongruency("El usuario ha detectado una incongruencia o error en esta conversación.");
+      }
+    } else {
+      Alert.alert(
+        title,
+        msg,
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Reportar", style: "destructive", onPress: () => {
+            vm.reportIncongruency("El usuario ha detectado una incongruencia o error en esta conversación.");
+          }}
+        ]
+      );
+    }
+  };
+
   return (
     <KeyboardAvoidingView 
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 90}
     >
-      <View style={[styles.header, { paddingTop: insets.top, height: 60 + insets.top }]}>
-        <Text style={styles.headerTitle}>Chat</Text>
+      <View style={[styles.header, { paddingTop: insets.top + 5, paddingBottom: 5, height: 60 + insets.top }]}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Chat con {vm.otherUser ? `${vm.otherUser.nombre} ${vm.otherUser.apellidos}`.trim() : 'Usuario'}
+          </Text>
+          <TouchableOpacity onPress={handleReportPress} style={styles.reportHeaderBtn} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="alert-octagon-outline" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {renderJobBanner()}
@@ -268,9 +302,11 @@ export default function ChatScreen({ route }: Props) {
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F6F6F8" },
   container: { flex: 1, backgroundColor: "#F6F6F8" },
-  header: { backgroundColor: PURPLE, justifyContent: 'center', alignItems: 'center' },
+  header: { backgroundColor: PURPLE, paddingHorizontal: 16, justifyContent: 'center' },
+  headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
   listContainer: { flex: 1, backgroundColor: "#F6F6F8" },
-  headerTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { color: 'white', fontSize: 16, fontWeight: 'bold', flex: 1, marginRight: 10, textAlign: 'center' },
+  reportHeaderBtn: { padding: 4 },
 
   bannerContainer: { backgroundColor: 'white', padding: 16, borderBottomWidth: 1, borderBottomColor: '#ECECF1' },
   bannerPending: { backgroundColor: '#fff3cd', flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -1,0 +1,146 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' 
+      xmlns:w='urn:schemas-microsoft-com:office:word' 
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset="utf-8">
+  <title>Plan de Implementación: Rediseño de Flujo de Perfiles, Chat Inmediato y Notificaciones</title>
+  <!--[if gte mso 9]>
+  <xml>
+    <w:WordDocument>
+      <w:View>Print</w:View>
+      <w:Zoom>100</w:Zoom>
+    </w:WordDocument>
+  </xml>
+  <![endif]-->
+  <style>
+    body {
+      font-family: 'Calibri', 'Arial', sans-serif;
+      font-size: 11pt;
+      line-height: 1.25;
+      margin: 1in;
+      color: #333333;
+    }
+    h1 {
+      font-size: 20pt;
+      font-family: 'Calibri Light', 'Arial', sans-serif;
+      color: #5A2D82;
+      border-bottom: 2px solid #5A2D82;
+      padding-bottom: 6px;
+      margin-top: 24pt;
+      margin-bottom: 12pt;
+    }
+    h2 {
+      font-size: 14pt;
+      font-family: 'Calibri Light', 'Arial', sans-serif;
+      color: #F59E0B;
+      margin-top: 18pt;
+      margin-bottom: 8pt;
+    }
+    h3 {
+      font-size: 12pt;
+      font-weight: bold;
+      color: #333;
+      margin-top: 14pt;
+      margin-bottom: 6pt;
+    }
+    p {
+      margin-top: 0;
+      margin-bottom: 8pt;
+      text-align: justify;
+    }
+    ul, ol {
+      margin-top: 0;
+      margin-bottom: 8pt;
+      padding-left: 20pt;
+    }
+    li {
+      margin-bottom: 4pt;
+    }
+    code {
+      font-family: 'Consolas', 'Courier New', monospace;
+      background-color: #F4F4F6;
+      color: #c7254e;
+      padding: 2pt 4pt;
+      font-size: 9.5pt;
+      border-radius: 4px;
+    }
+    pre {
+      font-family: 'Consolas', 'Courier New', monospace;
+      background-color: #F4F4F6;
+      border: 1px solid #ddd;
+      padding: 10pt;
+      margin-top: 6pt;
+      margin-bottom: 12pt;
+      font-size: 9.5pt;
+      white-space: pre-wrap;
+    }
+    hr {
+      border: 0;
+      border-top: 1px solid #ECECF1;
+      margin: 18pt 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Plan de Implementación: Rediseño de Flujo de Perfiles, Chat Inmediato y Notificaciones</h1>
+  <p>Este plan detalla la reestructuración del flujo de contratación y chat en la aplicación <strong>Le Chambea</strong> para simplificar la experiencia de usuario, permitir el chat inmediato, implementar notificaciones funcionales con base de datos y añadir contadores de notificaciones/mensajes no leídos (badges) en la navegación móvil y de escritorio.</p>
+
+  <hr />
+
+  <h2>Cambios Propuestos</h2>
+
+  <h3>1. Base de Datos: Notificaciones Reales [Componente Crítico]</h3>
+  <p>Anteriormente, el dropdown de notificaciones mostraba datos completamente dummy. Hemos creado una tabla real llamada <code>notificaciones</code> en Supabase y configurado políticas RLS (Row Level Security) que restringen la lectura al dueño pero permiten inserción libre para enviar alertas a profesionales.</p>
+  <ul>
+    <li><strong>create_notificaciones.js:</strong> Script Node.js de migración encargado de crear la tabla y las políticas RLS.</li>
+    <li><strong>Tabla:</strong> <code>public.notificaciones</code> (campos: <code>id</code>, <code>usuario_id</code>, <code>titulo</code>, <code>cuerpo</code>, <code>leido</code>, <code>fecha_creacion</code>).</li>
+    <li><strong>Políticas RLS:</strong>
+      <ul>
+        <li>Lectura/Escritura/Eliminación: Solo el dueño de la alerta (<code>auth.uid() = usuario_id</code>).</li>
+        <li>Inserción: Permitido para cualquier usuario (para notificar a otros prestadores de servicios).</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h3>2. Flujo de Perfiles Profesionales por Tarjeta [Home y Perfil Público]</h3>
+  <p>Queremos que cada tarjeta en el Home (que representa una profesión específica de un usuario) dirija a una pantalla de perfil que <strong>únicamente</strong> detalle esa profesión, manteniendo el promedio general y el conteo total de trabajos completados de ese profesional.</p>
+  <ul>
+    <li><strong>SectionList.tsx:</strong> Modificamos la acción al pulsar las tarjetas en el Home para pasar el parámetro del perfil profesional específico junto al identificador del usuario:
+      <pre>onPress={() => navigation.navigate("PublicProfile", { id: p.usuario_id, professionalProfileId: p.id })}</pre>
+    </li>
+    <li><strong>types.ts:</strong> Añadimos la definición de la ruta de navegación:
+      <pre>PublicProfile: { id: string; professionalProfileId?: string; fromChat?: boolean };</pre>
+    </li>
+    <li><strong>usePublicProfileController.ts:</strong> Adaptamos la carga de datos para leer <code>professionalProfileId</code>. Si está presente, filtramos la lista de especialidades de manera que solo se renderice en el perfil público el oficio exacto que el cliente seleccionó en el Home.</li>
+    <li><strong>Creación de Chat Automático (initiateChat):</strong> Al tocar "Chatear con Carlos", se crea/recupera la conversación. Si no hay un trabajo activo o pendiente vinculado a ese oficio, se inicializa automáticamente una propuesta en estado <code>pending</code> vinculada a esa profesión específica, eliminando el pop-up de selección e inyectando una alerta inicial al profesional.</li>
+  </ul>
+
+  <h3>3. Habilitación de Chat Inmediato sin Bloqueos</h3>
+  <p>Eliminamos la restricción que mantenía el campo de texto y botón de enviar bloqueados hasta que el profesional aceptara la solicitud. El chat de texto está disponible desde el primer instante en que se pulsa el botón en el perfil detallado.</p>
+  <ul>
+    <li><strong>ChatScreen.tsx:</strong> Modificamos la condición para activar la barra de envío (<code>canChat = true</code> permanente).</li>
+    <li><strong>Controlador (useChatController.ts):</strong> El envío y lectura de mensajes funciona directamente sin depender del estado del oficio contratado.</li>
+  </ul>
+
+  <h3>4. Notificaciones y Badges Coincidentes (Contadores en Tiempo Real)</h3>
+  <p>Añadimos círculos de color rojo (badges) indicadores de estados pendientes tanto para notificaciones como para nuevos mensajes sin leer.</p>
+  <ul>
+    <li><strong>useAppBadges.ts:</strong> Hook personalizado que gestiona reactivamente mediante Supabase WebSockets los canales <code>unreadChatsCount</code> y <code>unreadNotificationsCount</code>. Se generan nombres de canal dinámicos por instancia del hook para evitar errores por suscripciones duplicadas.</li>
+    <li><strong>BottomNav.tsx / MainLayout.tsx:</strong> Integrado para mostrar el contador de chats pendientes sobre el botón de mensajes.</li>
+    <li><strong>HeaderHome.tsx:</strong> Renderiza el contador sobre la campana de notificaciones y marca todas las alertas como leídas al abrir el dropdown.</li>
+    <li><strong>Bandeja de Entrada en Tiempo Real (useChatListController.ts):</strong> Sincronización instantánea de la bandeja de entrada al recibir mensajes o cambios de trabajos.</li>
+  </ul>
+
+  <hr />
+
+  <h2>Plan de Verificación</h2>
+
+  <h3>Pruebas y Diagnóstico</h3>
+  <ul>
+    <li><strong>Base de Datos:</strong> Ejecución del script <code>database/create_notificaciones.js</code> conectando directamente con el cliente PG.</li>
+    <li><strong>Compilación:</strong> Ejecutar <code>npx tsc --noEmit</code> para validar la integridad del tipado.</li>
+  </ul>
+
+</body>
+</html>

@@ -14,8 +14,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "PublicProfile">;
 
 export default function PublicProfileScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { id, fromChat } = route.params;
-  const vm = usePublicProfileController(id);
+  const { id, professionalProfileId, fromChat } = route.params;
+  const vm = usePublicProfileController(id, professionalProfileId);
 
   if (vm.loading) {
     return (

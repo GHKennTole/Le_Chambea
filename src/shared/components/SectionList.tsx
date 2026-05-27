@@ -35,7 +35,7 @@ export default function SectionList({ title, data, loading }: { title: string; d
             key={p.id} 
             style={styles.card}
             activeOpacity={0.8}
-            onPress={() => navigation.navigate("PublicProfile", { id: p.usuario_id })}
+            onPress={() => navigation.navigate("PublicProfile", { id: p.usuario_id, professionalProfileId: p.id })}
           >
             <Image source={{ uri: p.foto }} style={styles.image} />
             

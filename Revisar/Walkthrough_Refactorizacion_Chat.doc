@@ -1,0 +1,140 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' 
+      xmlns:w='urn:schemas-microsoft-com:office:word' 
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset="utf-8">
+  <title>Walkthrough de Cambios - Refactorización de Chat y Notificaciones</title>
+  <!--[if gte mso 9]>
+  <xml>
+    <w:WordDocument>
+      <w:View>Print</w:View>
+      <w:Zoom>100</w:Zoom>
+    </w:WordDocument>
+  </xml>
+  <![endif]-->
+  <style>
+    body {
+      font-family: 'Calibri', 'Arial', sans-serif;
+      font-size: 11pt;
+      line-height: 1.25;
+      margin: 1in;
+      color: #333333;
+    }
+    h1 {
+      font-size: 20pt;
+      font-family: 'Calibri Light', 'Arial', sans-serif;
+      color: #5A2D82;
+      border-bottom: 2px solid #5A2D82;
+      padding-bottom: 6px;
+      margin-top: 24pt;
+      margin-bottom: 12pt;
+    }
+    h2 {
+      font-size: 14pt;
+      font-family: 'Calibri Light', 'Arial', sans-serif;
+      color: #F59E0B;
+      margin-top: 18pt;
+      margin-bottom: 8pt;
+    }
+    h3 {
+      font-size: 12pt;
+      font-weight: bold;
+      color: #333;
+      margin-top: 14pt;
+      margin-bottom: 6pt;
+    }
+    p {
+      margin-top: 0;
+      margin-bottom: 8pt;
+      text-align: justify;
+    }
+    ul, ol {
+      margin-top: 0;
+      margin-bottom: 8pt;
+      padding-left: 20pt;
+    }
+    li {
+      margin-bottom: 4pt;
+    }
+    code {
+      font-family: 'Consolas', 'Courier New', monospace;
+      background-color: #F4F4F6;
+      color: #c7254e;
+      padding: 2pt 4pt;
+      font-size: 9.5pt;
+      border-radius: 4px;
+    }
+    pre {
+      font-family: 'Consolas', 'Courier New', monospace;
+      background-color: #F4F4F6;
+      border: 1px solid #ddd;
+      padding: 10pt;
+      margin-top: 6pt;
+      margin-bottom: 12pt;
+      font-size: 9.5pt;
+      white-space: pre-wrap;
+    }
+    hr {
+      border: 0;
+      border-top: 1px solid #ECECF1;
+      margin: 18pt 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Walkthrough de Cambios: Refactorización de Chat y Notificaciones</h1>
+  <p>Hemos implementado con éxito la refactorización completa del sistema de chat, el filtrado de perfiles específicos y la base de datos de notificaciones con badges en tiempo real en la aplicación <strong>Le Chambea</strong>.</p>
+
+  <hr />
+
+  <h2>🛠 Cambios Realizados</h2>
+
+  <h3>1. Base de Datos (Fase 1)</h3>
+  <ul>
+    <li><strong>Nueva Tabla <code>notificaciones</code>:</strong> Se creó e implementó con éxito en Supabase la tabla <code>public.notificaciones</code> para almacenar las alertas reales (<code>id</code>, <code>usuario_id</code>, <code>titulo</code>, <code>cuerpo</code>, <code>leido</code>, <code>fecha_creacion</code>).</li>
+    <li><strong>Políticas RLS:</strong> Se añadieron políticas de seguridad a nivel de fila (Row Level Security) que garantizan que los usuarios solo puedan ver, actualizar o borrar sus propias notificaciones, mientras que se permite la inserción abierta (inserción anónima o autenticada libre) para que otros usuarios puedan disparar alertas (ej. al enviar una propuesta de servicio).</li>
+    <li><strong>Esquema Local:</strong> Se actualizó el archivo de diseño <code>database/schema.sql</code> reflejando de forma exacta la nueva estructura del proyecto.</li>
+  </ul>
+
+  <h3>2. Vista de Perfiles Profesionales por Tarjeta (Fase 2)</h3>
+  <ul>
+    <li><strong>Enlace de Navegación Específico:</strong> En el componente de tarjetas <code>SectionList.tsx</code>, la pulsación de una tarjeta de profesional ahora propaga de forma explícita tanto el <code>usuario_id</code> del profesional como el <code>professionalProfileId</code> (el ID único del oficio específico).</li>
+    <li><strong>Tipado de Rutas de Navegación:</strong> Se añadió el parámetro opcional <code>professionalProfileId?: string</code> al tipo <code>PublicProfile</code> en <code>types.ts</code> de navegación.</li>
+    <li><strong>Filtro en Detalle de Perfil:</strong> El controlador <code>usePublicProfileController.ts</code> ahora lee este ID opcional. Si está presente, filtra los servicios en la pantalla para mostrar <strong>solamente</strong> la descripción, categoría y tarifas de la profesión que seleccionó el cliente en el Home, ocultando otros oficios secundarios del mismo profesional pero manteniendo visible su calificación y número de trabajos completados generales.</li>
+  </ul>
+
+  <h3>3. Chat Inmediato sin Bloqueos (Fase 3)</h3>
+  <ul>
+    <li><strong>Escritura Libre:</strong> Modificamos la pantalla de chat <code>ChatScreen.tsx</code> para establecer <code>canChat = true</code> permanente. El cliente ahora puede chatear de inmediato y detallar su problema sin tener que esperar una confirmación ni pasar por el pop-up de selección de servicios.</li>
+    <li><strong>Propuesta Automática:</strong> Al presionar "Chatear con...", el controlador de perfil verifica en segundo plano si existe un trabajo pendiente o activo para ese oficio en ese chat. Si no es así, lo inicializa automáticamente en estado <code>pending</code> y crea una notificación real en la base de datos para el profesional.</li>
+    <li><strong>Moderación de Notificaciones:</strong> Las notificaciones en la campana están reservadas exclusivamente para eventos relevantes (ej. cuando se crea la propuesta de contratación por primera vez). Las respuestas regulares en el chat no inundan la campana, sino que se reflejan de forma limpia a través de indicadores numéricos (badges) en la sección de mensajes.</li>
+  </ul>
+
+  <h3>4. Badges e Indicadores Visuales Coincidentes (Fase 4)</h3>
+  <ul>
+    <li><strong>Hook de Contadores en Tiempo Real <code>useAppBadges.ts</code>:</strong> Creamos un hook centralizado que obtiene en tiempo real el conteo de chats no leídos (<code>unreadChatsCount</code>) y notificaciones sin leer (<code>unreadNotificationsCount</code>), suscribiéndose de manera reactiva a canales de Supabase Realtime con identificadores únicos para evitar colisiones.</li>
+    <li><strong>Badge de Mensajes No Leídos:</strong> Integrado en la barra de navegación móvil <code>BottomNav.tsx</code> y en el Sidebar de la interfaz de escritorio <code>MainLayout.tsx</code>. Muestra un punto rojo con el conteo exacto de chats con mensajes pendientes de lectura.</li>
+    <li><strong>Campana de Alertas Reactiva:</strong> Integrado en <code>HeaderHome.tsx</code> para renderizar el badge de notificaciones sin leer sobre la campana y disparar una actualización en Supabase para marcar todas las alertas como leídas al abrir el dropdown.</li>
+    <li><strong>Auto-Actualización de la Bandeja de Entrada:</strong> Añadimos suscripción en tiempo real en la bandeja de entrada (<code>useChatListController.ts</code>) que actualiza la lista de chats instantáneamente al recibir nuevos mensajes de otros usuarios, sin tener que recargar la página.</li>
+  </ul>
+
+  <hr />
+
+  <h2>🧪 Pruebas y Validación Realizadas</h2>
+
+  <h3>Compilación y TypeScript</h3>
+  <p>Ejecutamos el comando de diagnóstico <code>npx tsc --noEmit</code> en el espacio de trabajo.</p>
+  <p><strong>Resultado:</strong> 0 errores. Toda la base de código compila perfectamente con los nuevos tipos, parámetros y hooks reactivos integrados.</p>
+
+  <h3>Flujo de Trabajo Comprobado</h3>
+  <ol>
+    <li>Al pulsar una tarjeta en el Home (ej: Plomero), la pantalla de perfil detalla únicamente ese servicio.</li>
+    <li>Al hacer clic en "Chatear con...", se crea el chat y se inserta automáticamente el trabajo pendiente y la notificación en la base de datos de Supabase.</li>
+    <li>El chat se activa de inmediato para enviar mensajes de forma libre.</li>
+    <li>Los contadores en la barra inferior (BottomNav) y en la campana de notificaciones del Header se actualizan de forma instantánea ante la llegada de nuevos mensajes u oficios a través de Supabase Realtime.</li>
+    <li>La bandeja de entrada refresca y reordena automáticamente los chats en tiempo real sin requerir interacción manual del usuario.</li>
+  </ol>
+
+</body>
+</html>

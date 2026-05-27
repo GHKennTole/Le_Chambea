@@ -91,7 +91,15 @@ export function useChatListController() {
         }
 
         const lastMessageTime = lastMsgData ? lastMsgData.fecha_creacion : chat.fecha_creacion;
-        const isUnread = lastMsgData ? (lastMsgData.remitente_id !== user.id) : false;
+        
+        const { count: unreadCount } = await supabase
+          .from('mensajes')
+          .select('id', { count: 'exact', head: true })
+          .eq('chat_id', chat.id)
+          .neq('remitente_id', user.id)
+          .eq('leido', false);
+
+        const isUnread = unreadCount ? unreadCount > 0 : false;
 
         // Skip empty ghost chats
         if (!lastMsgData && !jobData) {
@@ -124,6 +132,44 @@ export function useChatListController() {
   useEffect(() => {
     fetchChats();
   }, [fetchChats]);
+
+  // Real-time subscription to auto-refresh chat list when messages or jobs change
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const uniqueId = Math.random().toString(36).substring(2, 9);
+    const channelName = `realtime-chat-list-${currentUser.id}-${uniqueId}`;
+
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'mensajes'
+        },
+        () => {
+          fetchChats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'trabajos'
+        },
+        () => {
+          fetchChats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, fetchChats]);
 
   return {
     loading,
