@@ -5,9 +5,11 @@ import SectionList from "../../../shared/components/SectionList";
 import MainLayout from "../../../shared/components/MainLayout";
 
 import { useHomeController } from '../controllers/useHomeController';
+import { useAppBadges } from '../../../shared/hooks/useAppBadges';
 
 export default function HomeScreen() {
   const vm = useHomeController();
+  const badges = useAppBadges();
 
   return (
     <MainLayout active="Home">
@@ -16,7 +18,12 @@ export default function HomeScreen() {
         <View style={styles.headerSection}>
           <HeaderHome 
             searchQuery={vm.searchQuery} 
-            onSearchChange={vm.setSearchQuery} 
+            onSearchChange={vm.setSearchQuery}
+            unreadNotificationsCount={badges.unreadNotificationsCount}
+            notifications={badges.notifications}
+            markAllNotificationsAsRead={badges.markAllNotificationsAsRead}
+            deleteNotification={badges.deleteNotification}
+            deleteAllNotifications={badges.deleteAllNotifications}
           />
           <CategoryScroll 
             selectedCategory={vm.selectedCategory} 

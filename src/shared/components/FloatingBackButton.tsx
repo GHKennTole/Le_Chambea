@@ -10,6 +10,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, type NavigationProp, type ParamListBase } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { COLORS } from "../../core/theme/colors";
+
 interface FloatingBackButtonProps {
   onPress?: (event: GestureResponderEvent) => void;
   style?: ViewStyle;
@@ -23,7 +25,7 @@ export default function FloatingBackButton({
   onPress,
   style,
   position = "top-right",
-  backgroundColor = "#6200ee",
+  backgroundColor = COLORS.purple,
   iconColor = "white",
   iconSize = 24,
 }: FloatingBackButtonProps) {

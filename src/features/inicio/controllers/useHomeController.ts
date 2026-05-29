@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../services/supabase';
 
 export type HomeProCard = {
@@ -27,43 +27,52 @@ export function useHomeController() {
     try {
       setLoading(true);
       
-      // Obtener ID del usuario actual
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
-      }
-
-      // Fetch professional profiles with user data
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('perfiles_profesionales')
-        .select(`
-          id, 
-          usuario_id,
-          profesion, 
-          categoria,
-          fecha_creacion,
-          usuarios:usuario_id(nombre, apellidos, foto_perfil)
-        `)
-        .eq('esta_activo', true)
-        .order('fecha_creacion', { ascending: false });
+      // Obtener ID del usuario actual y perfiles en paralelo
+      const [{ data: { user } }, { data: profilesData, error: profilesError }] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase
+          .from('perfiles_profesionales')
+          .select(`
+            id, 
+            usuario_id,
+            profesion, 
+            categoria,
+            fecha_creacion,
+            usuarios:usuario_id(nombre, apellidos, foto_perfil)
+          `)
+          .eq('esta_activo', true)
+          .order('fecha_creacion', { ascending: false })
+          .limit(20)
+      ]);
 
       if (profilesError) throw profilesError;
 
       if (!profilesData || profilesData.length === 0) {
+        setCurrentUserId(user?.id ?? null);
         setMasSolicitados([]);
         setNovedades([]);
         return;
       }
 
-      // Fetch reviews to calculate ratings
+      // Fetch reviews to calculate ratings — filtered by fetched profile IDs
+      const profileIds = profilesData.map((p: any) => p.id);
       const { data: reviewsData } = await supabase
         .from('resenas')
-        .select('perfil_profesional_id, calificacion');
+        .select('perfil_profesional_id, calificacion')
+        .in('perfil_profesional_id', profileIds);
+
+      // Pre-build a Map for O(1) rating lookups instead of O(n²) filtering
+      const reviewsByProfile = new Map<string, number[]>();
+      (reviewsData || []).forEach((r: any) => {
+        const arr = reviewsByProfile.get(r.perfil_profesional_id) || [];
+        arr.push(r.calificacion);
+        reviewsByProfile.set(r.perfil_profesional_id, arr);
+      });
 
       // Map data
       const mappedProfiles: HomeProCard[] = profilesData.map((p: any) => {
-        const profileReviews = reviewsData?.filter((r: any) => r.perfil_profesional_id === p.id) || [];
-        const sum = profileReviews.reduce((acc: number, curr: any) => acc + curr.calificacion, 0);
+        const profileReviews = reviewsByProfile.get(p.id) || [];
+        const sum = profileReviews.reduce((acc: number, curr: number) => acc + curr, 0);
         const avgRating = profileReviews.length > 0 ? sum / profileReviews.length : 0;
 
         return {
@@ -72,22 +81,20 @@ export function useHomeController() {
           nombre: `${p.usuarios?.nombre || 'Usuario'} ${p.usuarios?.apellidos || ''}`.trim(),
           profesion: p.profesion || p.categoria,
           categoria: p.categoria || '',
-          foto: p.usuarios?.foto_perfil || 'https://via.placeholder.com/150',
+          foto: p.usuarios?.foto_perfil || '',
           calificacion: avgRating
         };
       });
 
       // Split into lists (for now, we'll just sort differently)
-      // Novedades = newest
-      const nuevas = [...mappedProfiles].sort((a, b) => {
-        const dateA = new Date(profilesData.find(p => p.id === a.id)?.fecha_creacion || 0).getTime();
-        const dateB = new Date(profilesData.find(p => p.id === b.id)?.fecha_creacion || 0).getTime();
-        return dateB - dateA;
-      });
+      // Novedades = newest — mappedProfiles already preserves the query's fecha_creacion desc order
+      const nuevas = mappedProfiles;
 
       // Más solicitados = highest rated or most reviews (we'll just sort by rating)
       const top = [...mappedProfiles].sort((a, b) => b.calificacion - a.calificacion);
 
+      // Batch state updates together to minimize re-renders
+      setCurrentUserId(user?.id ?? null);
       setNovedades(nuevas.slice(0, 10));
       setMasSolicitados(top.slice(0, 10));
 
@@ -103,7 +110,7 @@ export function useHomeController() {
   }, [fetchHomeData]);
 
   // Aplicar filtros locales
-  const applyFilters = (data: HomeProCard[]) => {
+  const applyFilters = useCallback((data: HomeProCard[]) => {
     let filtered = data;
 
     // Excluir al propio usuario
@@ -128,12 +135,15 @@ export function useHomeController() {
     }
 
     return filtered;
-  };
+  }, [currentUserId, selectedCategory, searchQuery]);
+
+  const filteredMasSolicitados = useMemo(() => applyFilters(masSolicitados), [masSolicitados, applyFilters]);
+  const filteredNovedades = useMemo(() => applyFilters(novedades), [novedades, applyFilters]);
 
   return {
     loading,
-    masSolicitados: applyFilters(masSolicitados),
-    novedades: applyFilters(novedades),
+    masSolicitados: filteredMasSolicitados,
+    novedades: filteredNovedades,
     searchQuery,
     setSearchQuery,
     selectedCategory,

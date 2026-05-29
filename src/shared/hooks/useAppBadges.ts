@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../services/supabase';
 
 export interface NotificationItem {
@@ -14,6 +14,7 @@ export function useAppBadges() {
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [unreadChatsCount, setUnreadChatsCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchCountsAndNotifications = useCallback(async (currentUserId?: string) => {
     try {
@@ -28,9 +29,10 @@ export function useAppBadges() {
       // 1. Fetch unread notifications count and list
       const { data: notisData, error: notisError } = await supabase
         .from('notificaciones')
-        .select('*')
+        .select('id, titulo, cuerpo, leido, fecha_creacion')
         .eq('usuario_id', activeUid)
-        .order('fecha_creacion', { ascending: false });
+        .order('fecha_creacion', { ascending: false })
+        .limit(50);
 
       if (notisError) throw notisError;
 
@@ -59,23 +61,21 @@ export function useAppBadges() {
         return;
       }
 
-      let unreadChats = 0;
+      const chatIds = chatsData.map(c => c.id);
+      const { data: unreadData, error: unreadError } = await supabase
+        .from('mensajes')
+        .select('chat_id')
+        .in('chat_id', chatIds)
+        .neq('remitente_id', activeUid)
+        .eq('leido', false);
 
-      // Check if there are any unread messages from the other user in each chat
-      for (const chat of chatsData) {
-        const { count, error: countError } = await supabase
-          .from('mensajes')
-          .select('id', { count: 'exact', head: true })
-          .eq('chat_id', chat.id)
-          .neq('remitente_id', activeUid)
-          .eq('leido', false);
-
-        if (!countError && count && count > 0) {
-          unreadChats += 1;
-        }
+      if (!unreadError && unreadData) {
+        // Count unique chat_ids that have unread messages
+        const unreadChatIds = new Set(unreadData.map(m => m.chat_id));
+        setUnreadChatsCount(unreadChatIds.size);
+      } else {
+        setUnreadChatsCount(0);
       }
-
-      setUnreadChatsCount(unreadChats);
 
     } catch (error) {
       console.error('Error fetching badges and notifications:', error);
@@ -137,7 +137,14 @@ export function useAppBadges() {
       )
       .subscribe();
 
-    // Subscription to messages
+    // Subscription to messages (debounced to avoid excessive refetches)
+    const debouncedFetch = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        fetchCountsAndNotifications(userId);
+      }, 500);
+    };
+
     const messagesChannel = supabase
       .channel(messagesChannelName)
       .on(
@@ -148,12 +155,13 @@ export function useAppBadges() {
           table: 'mensajes'
         },
         () => {
-          fetchCountsAndNotifications(userId);
+          debouncedFetch();
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(messagesChannel);
     };
@@ -178,11 +186,55 @@ export function useAppBadges() {
     }
   };
 
+  const deleteNotification = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notificaciones')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update state locally
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      // Re-calculate unread count if the deleted one was unread
+      setUnreadNotificationsCount(prev => {
+        const deletedNoti = notifications.find(n => n.id === id);
+        if (deletedNoti && !deletedNoti.leido) {
+          return Math.max(0, prev - 1);
+        }
+        return prev;
+      });
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    if (!userId) return;
+    try {
+      const { error } = await supabase
+        .from('notificaciones')
+        .delete()
+        .eq('usuario_id', userId);
+
+      if (error) throw error;
+
+      // Update state locally
+      setNotifications([]);
+      setUnreadNotificationsCount(0);
+    } catch (error) {
+      console.error('Error deleting all notifications:', error);
+    }
+  };
+
   return {
     unreadNotificationsCount,
     unreadChatsCount,
     notifications,
     markAllNotificationsAsRead,
+    deleteNotification,
+    deleteAllNotifications,
     refetch: () => userId && fetchCountsAndNotifications(userId)
   };
 }

@@ -24,6 +24,7 @@ export function useChatController(chatId: string, otherUserId: string) {
   const navigation = useNavigation<any>();
   const subscriptionRef = useRef<any>(null);
   const [otherUser, setOtherUser] = useState<any>(null);
+  const currentUserRef = useRef<any>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -31,22 +32,36 @@ export function useChatController(chatId: string, otherUserId: string) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setCurrentUser(user);
+      currentUserRef.current = user;
 
-      // Fetch other user profile
-      const { data: otherData } = await supabase
-        .from('usuarios')
-        .select('nombre, apellidos, foto_perfil')
-        .eq('id', otherUserId)
-        .single();
-      if (otherData) setOtherUser(otherData);
+      // Parallelize independent queries: otherUser, chat, and messages
+      const [otherResult, chatResult, msgResult] = await Promise.all([
+        // Fetch other user profile
+        supabase
+          .from('usuarios')
+          .select('nombre, apellidos, foto_perfil')
+          .eq('id', otherUserId)
+          .single(),
+        // Fetch chat data
+        supabase
+          .from('chats')
+          .select('*')
+          .eq('id', chatId)
+          .limit(1)
+          .maybeSingle(),
+        // Fetch messages with pagination
+        supabase
+          .from('mensajes')
+          .select('*')
+          .eq('chat_id', chatId)
+          .order('fecha_creacion', { ascending: true })
+          .limit(50),
+      ]);
 
-      const { data: chatData, error: chatError } = await supabase
-        .from('chats')
-        .select('*')
-        .eq('id', chatId)
-        .limit(1)
-        .maybeSingle();
-      
+      if (otherResult.data) setOtherUser(otherResult.data);
+
+      const chatData = chatResult.data;
+      const chatError = chatResult.error;
       if (chatError) throw chatError;
       if (!chatData) {
         setLoading(false);
@@ -56,13 +71,25 @@ export function useChatController(chatId: string, otherUserId: string) {
 
       const isClient = chatData.cliente_id === user.id;
 
-      const { data: jobData, error: jobError } = await supabase
-        .from('trabajos')
-        .select('*, perfiles_profesionales(profesion, categoria)')
-        .eq('chat_id', chatId)
-        .order('fecha_creacion', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Parallelize jobData and proServices (both depend on chatData)
+      const [jobResult, proServicesResult] = await Promise.all([
+        supabase
+          .from('trabajos')
+          .select('*, perfiles_profesionales(profesion, categoria)')
+          .eq('chat_id', chatId)
+          .order('fecha_creacion', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        isClient
+          ? supabase
+              .from('perfiles_profesionales')
+              .select('*')
+              .eq('usuario_id', chatData.profesional_id)
+              .eq('esta_activo', true)
+          : Promise.resolve({ data: null }),
+      ]);
+
+      const jobData = jobResult.data;
 
       if (jobData) {
         setActiveJob(jobData);
@@ -81,23 +108,12 @@ export function useChatController(chatId: string, otherUserId: string) {
         setIsReviewed(false);
       }
 
-      if (isClient) {
-        const { data: proServices } = await supabase
-          .from('perfiles_profesionales')
-          .select('*')
-          .eq('usuario_id', chatData.profesional_id)
-          .eq('esta_activo', true);
-        if (proServices) setProfessionalServices(proServices);
+      if (isClient && proServicesResult.data) {
+        setProfessionalServices(proServicesResult.data);
       }
 
-      const { data: msgData } = await supabase
-        .from('mensajes')
-        .select('*')
-        .eq('chat_id', chatId)
-        .order('fecha_creacion', { ascending: true });
-
-      if (msgData) {
-        setMessages(msgData);
+      if (msgResult.data) {
+        setMessages(msgResult.data);
 
         // Mark all messages from the other user as read
         await supabase
@@ -139,7 +155,8 @@ export function useChatController(chatId: string, otherUserId: string) {
           const newMsg = payload.new as Message;
           if (newMsg && newMsg.chat_id === chatId) {
             // Since we are looking at this chat right now, mark this message as read in the DB
-            if (currentUser && newMsg.remitente_id !== currentUser.id) {
+            const user = currentUserRef.current;
+            if (user && newMsg.remitente_id !== user.id) {
               supabase
                 .from('mensajes')
                 .update({ leido: true })
@@ -148,9 +165,8 @@ export function useChatController(chatId: string, otherUserId: string) {
             }
 
             setMessages((prev) => {
-              if (prev.find(m => m.id === newMsg.id)) return prev;
-              const next = [...prev, newMsg];
-              return next.sort((a, b) => new Date(a.fecha_creacion).getTime() - new Date(b.fecha_creacion).getTime());
+              if (prev.some(m => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
             });
           }
         }
@@ -174,7 +190,7 @@ export function useChatController(chatId: string, otherUserId: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chatId, currentUser, fetchData]);
+  }, [chatId, fetchData]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || !currentUser || sending) return;
@@ -186,14 +202,7 @@ export function useChatController(chatId: string, otherUserId: string) {
         contenido: text.trim(),
       });
       if (error) throw error;
-      
-      // Fallback: fetch immediately so the sender sees the message
-      const { data: latestMsgs } = await supabase
-        .from('mensajes')
-        .select('*')
-        .eq('chat_id', chatId)
-        .order('fecha_creacion', { ascending: true });
-      if (latestMsgs) setMessages(latestMsgs);
+      // Real-time subscription handles adding the new message
     } catch (e) {
       console.error('Error sending message:', e);
       const msg = 'No se pudo enviar el mensaje.';
@@ -279,7 +288,7 @@ export function useChatController(chatId: string, otherUserId: string) {
       if (Platform.OS === 'web') window.alert(successMsg);
       else Alert.alert("Reporte Enviado", successMsg);
     } catch (e) {
-      console.error(notiError => console.error(notiError));
+      console.error('Error reporting incongruency:', e);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Pressable, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import CircularDeleteButton from "./CircularDeleteButton";
 
 type NotificationItem = {
   id: string;
@@ -12,10 +14,16 @@ export default function NotificationsDropdown({
   visible,
   onClose,
   notifications,
+  onDelete,
+  onDeleteAll,
+  onPressItem,
 }: {
   visible: boolean;
   onClose: () => void;
   notifications?: NotificationItem[];
+  onDelete?: (id: string) => void;
+  onDeleteAll?: () => void;
+  onPressItem?: (item: NotificationItem) => void;
 }) {
   const insets = useSafeAreaInsets();
 
@@ -70,16 +78,32 @@ export default function NotificationsDropdown({
               style={styles.emptyImg}
               resizeMode="contain"
             />
-            <Text style={styles.emptyText}>Aun no hay notificaciones</Text>
+            <Text style={styles.emptyText}>Aún no hay notificaciones</Text>
           </View>
         ) : (
           <View style={{ gap: 10 }}>
             {list.map((n) => (
               <View key={n.id} style={styles.item}>
-                <Text style={styles.itemTitle}>{n.title}</Text>
-                {!!n.body && <Text style={styles.itemBody}>{n.body}</Text>}
+                <TouchableOpacity 
+                  style={styles.itemContent}
+                  activeOpacity={0.6}
+                  onPress={() => onPressItem && onPressItem(n)}
+                >
+                  <Text style={styles.itemTitle}>{n.title}</Text>
+                  {!!n.body && <Text style={styles.itemBody}>{n.body}</Text>}
+                </TouchableOpacity>
+                {onDelete && (
+                  <CircularDeleteButton onPress={() => onDelete(n.id)} style={styles.deleteBtn} />
+                )}
               </View>
             ))}
+
+            {onDeleteAll && (
+              <TouchableOpacity onPress={onDeleteAll} style={styles.deleteAllBtn} activeOpacity={0.8}>
+                <MaterialCommunityIcons name="trash-can-outline" size={16} color="#C53030" style={{ marginRight: 6 }} />
+                <Text style={styles.deleteAllText}>Limpiar bandeja</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </Animated.View>
@@ -135,7 +159,39 @@ const styles = StyleSheet.create({
     backgroundColor: "#f7f7f7",
     borderWidth: 1,
     borderColor: "#eee",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  itemContent: {
+    flex: 1,
+    marginRight: 8,
+  },
+  deleteBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#FEE2E2",
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 4,
   },
   itemTitle: { fontWeight: "900", color: "#222" },
   itemBody: { marginTop: 2, color: "#666", fontWeight: "600" },
+  deleteAllBtn: {
+    flexDirection: "row",
+    backgroundColor: "#FEE2E2",
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  deleteAllText: {
+    color: "#C53030",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
 });
