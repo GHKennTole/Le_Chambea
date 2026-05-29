@@ -32,4 +32,5 @@ export type RootStackParamList = {
   Privacy: undefined;
   Support: undefined;
   Terms: undefined;
+  HomeAdmin: undefined;
 };

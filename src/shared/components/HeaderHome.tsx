@@ -3,22 +3,30 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-nativ
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NotificationsDropdown from "./NotificationsDropdown";
-import { useFonts, Sansita_700Bold_Italic } from "@expo-google-fonts/sansita";
-import { useAppBadges } from "../hooks/useAppBadges";
+import { useNavigation } from "@react-navigation/native";
 
 interface HeaderHomeProps {
   searchQuery: string;
   onSearchChange: (text: string) => void;
+  unreadNotificationsCount: number;
+  notifications: any[];
+  markAllNotificationsAsRead: () => void;
+  deleteNotification: (id: string) => void;
+  deleteAllNotifications: () => void;
 }
 
-export default function HeaderHome({ searchQuery, onSearchChange }: HeaderHomeProps) {
+export default function HeaderHome({ 
+  searchQuery, 
+  onSearchChange,
+  unreadNotificationsCount,
+  notifications,
+  markAllNotificationsAsRead,
+  deleteNotification,
+  deleteAllNotifications
+}: HeaderHomeProps) {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const [openNoti, setOpenNoti] = useState(false);
-  const { unreadNotificationsCount, notifications, markAllNotificationsAsRead } = useAppBadges();
-
-  const [fontsLoaded] = useFonts({
-    SansitaBoldItalic: Sansita_700Bold_Italic,
-  });
 
   const handlePressNoti = () => {
     const nextVal = !openNoti;
@@ -28,10 +36,20 @@ export default function HeaderHome({ searchQuery, onSearchChange }: HeaderHomePr
     }
   };
 
+  const handleNotificationPress = (item: any) => {
+    setOpenNoti(false);
+    const titleLower = item.title.toLowerCase();
+    const bodyLower = (item.body || '').toLowerCase();
+
+    if (titleLower.includes("chat") || titleLower.includes("mensaje") || bodyLower.includes("chatear")) {
+      navigation.navigate("ChatList");
+    }
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
       <View style={styles.topRow}>
-        <Text style={[styles.title, fontsLoaded && { fontFamily: "SansitaBoldItalic" }]}>
+        <Text style={[styles.title, { fontFamily: "SansitaBoldItalic" }]}>
           LE CHAMBEA
         </Text>
 
@@ -59,6 +77,9 @@ export default function HeaderHome({ searchQuery, onSearchChange }: HeaderHomePr
         visible={openNoti}
         onClose={() => setOpenNoti(false)}
         notifications={notifications}
+        onDelete={deleteNotification}
+        onDeleteAll={deleteAllNotifications}
+        onPressItem={handleNotificationPress}
       />
     </View>
   );
@@ -68,6 +89,8 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",
     paddingHorizontal: 10,
+    zIndex: 10,
+    elevation: 10,
   },
   topRow: {
     flexDirection: "row",

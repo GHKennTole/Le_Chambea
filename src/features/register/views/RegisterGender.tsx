@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 import { RegisterStackParamList } from "../../../core/navigation/types";
 import { RegisterSharedProps } from "../models/register.types";
-import { useFonts, Sansita_700Bold_Italic } from "@expo-google-fonts/sansita";
+
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../../core/navigation/types";
 
@@ -39,17 +39,7 @@ const OPTIONS: GenderOption[] = [
 export default function RegisterGender({ navigation, formData, setFormData }: Props) {
   const insets = useSafeAreaInsets();
 
-  const [fontsLoaded] = useFonts({
-    SansitaBoldItalic: Sansita_700Bold_Italic,
-  });
 
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#816ab4" />
-      </View>
-    );
-  }
 
   const selected = String(formData?.genero || "");
   const canContinue = selected.length > 0;

@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { RootStackParamList } from "../../../core/navigation/types";
 import { usePublicProfileController } from "../controllers/usePublicProfileController";
+import { useFavoriteToggle } from "../../favoritos/controllers/useFavoriteToggle";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 
 const PURPLE = "#5A2D82";
@@ -16,6 +17,7 @@ export default function PublicProfileScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { id, professionalProfileId, fromChat } = route.params;
   const vm = usePublicProfileController(id, professionalProfileId);
+  const fav = useFavoriteToggle(id);
 
   if (vm.loading) {
     return (
@@ -74,25 +76,38 @@ export default function PublicProfileScreen({ route, navigation }: Props) {
               {renderStars(vm.generalAverage)}
               <Text style={styles.statLabel}>Promedio General</Text>
             </View>
+            
             <View style={styles.statDivider} />
+            
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{vm.user.total_trabajos_completados || 0}</Text>
               <MaterialCommunityIcons name="briefcase-check" size={16} color={PURPLE} />
               <Text style={styles.statLabel}>Trabajos Realizados</Text>
             </View>
+
+            <View style={styles.statDivider} />
+
+            <TouchableOpacity 
+              style={styles.statItem} 
+              onPress={fav.toggleFavorite}
+              activeOpacity={0.7}
+            >
+              <View style={{ height: 26, justifyContent: 'center', alignItems: 'center', marginBottom: 2 }}>
+                <MaterialCommunityIcons
+                  name={fav.isFavorite ? "star" : "star-outline"}
+                  size={24}
+                  color={fav.isFavorite ? "#FFB800" : "#CCC"}
+                />
+              </View>
+              <View style={{ height: 16, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontSize: 11, color: fav.isFavorite ? "#FFB800" : "#999", fontWeight: "bold", textAlign: 'center' }}>
+                  {fav.isFavorite ? "Quitar de" : "Añadir a"}
+                </Text>
+              </View>
+              <Text style={styles.statLabel}>Favoritos</Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        {!fromChat && (
-          <TouchableOpacity 
-            style={styles.chatButton} 
-            onPress={vm.initiateChat}
-            activeOpacity={0.8}
-          >
-            <MaterialCommunityIcons name="chat" size={20} color="white" />
-            <Text style={styles.chatButtonText}>Chatear con {vm.user?.nombre}</Text>
-          </TouchableOpacity>
-        )}
 
         {/* Services List */}
         <Text style={styles.sectionTitle}>Servicios Profesionales</Text>
@@ -136,10 +151,33 @@ export default function PublicProfileScreen({ route, navigation }: Props) {
           </View>
         )}
 
+        {!fromChat && (
+          <TouchableOpacity 
+            style={styles.chatButton} 
+            onPress={vm.initiateChat}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="chat" size={20} color="white" />
+            <Text style={styles.chatButtonText}>Chatear con {vm.user?.nombre}</Text>
+          </TouchableOpacity>
+        )}
+
         <View style={{ height: 40 }} />
       </ScrollView>
 
       <FloatingBackButton />
+
+      {/* Toast for favorite toggle */}
+      {fav.toastMessage && (
+        <View style={[styles.favToast, { top: insets.top + 16 }]}>
+          <MaterialCommunityIcons
+            name={fav.isFavorite ? "star" : "star-outline"}
+            size={16}
+            color="#FFB800"
+          />
+          <Text style={styles.favToastText}>{fav.toastMessage}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -171,7 +209,7 @@ const styles = StyleSheet.create({
   statItem: { flex: 1, alignItems: 'center' },
   statDivider: { width: 1, backgroundColor: '#ECECF1' },
   statValue: { fontSize: 20, fontWeight: 'bold', color: PURPLE, marginBottom: 2 },
-  statLabel: { fontSize: 11, color: '#888', marginTop: 4, textTransform: 'uppercase' },
+  statLabel: { fontSize: 11, color: '#888', marginTop: 4, textTransform: 'uppercase', textAlign: 'center' },
 
   chatButton: { 
     backgroundColor: PURPLE, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 16, borderRadius: 16, marginTop: 16, marginBottom: 24, gap: 8,
@@ -182,7 +220,7 @@ const styles = StyleSheet.create({
   },
   chatButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
 
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12, marginLeft: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginTop: 24, marginBottom: 12, marginLeft: 4 },
   servicesList: { gap: 12 },
   serviceCard: { backgroundColor: 'white', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#ECECF1' },
   serviceHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
@@ -195,5 +233,27 @@ const styles = StyleSheet.create({
   serviceDescription: { fontSize: 14, color: '#555', lineHeight: 20, marginBottom: 16 },
   serviceFooter: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingTop: 12 },
   footerItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  footerText: { fontSize: 13, color: '#666' }
+  footerText: { fontSize: 13, color: '#666' },
+
+  favToast: {
+    position: 'absolute',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    zIndex: 999,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.2)' } as any,
+      default: { elevation: 6, shadowColor: '#000', shadowOpacity: 0.2, shadowOffset: { width: 0, height: 4 }, shadowRadius: 6 }
+    })
+  },
+  favToastText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });

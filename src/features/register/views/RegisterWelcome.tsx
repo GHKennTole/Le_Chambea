@@ -14,7 +14,7 @@ import { RegisterStackParamList } from "../../../core/navigation/types";
 import { RegisterSharedProps } from "../models/register.types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
-import { useFonts, Sansita_700Bold_Italic } from "@expo-google-fonts/sansita";
+
 
 const { width } = Dimensions.get("window");
 
@@ -24,17 +24,7 @@ type Props = NativeStackScreenProps<RegisterStackParamList, "RegisterWelcome"> &
 export default function RegisterWelcome({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
-  const [fontsLoaded] = useFonts({
-    SansitaBoldItalic: Sansita_700Bold_Italic,
-  });
 
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#816ab4" />
-      </View>
-    );
-  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

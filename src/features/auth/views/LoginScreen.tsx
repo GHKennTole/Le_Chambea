@@ -5,7 +5,7 @@ import {
   Platform,
   Image,
   ScrollView,
-  ActivityIndicator,
+
   Text,
 } from "react-native";
 import { TextInput, Button, Title } from "react-native-paper";
@@ -14,7 +14,6 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../../core/navigation/types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
-import { useFonts, Sansita_700Bold_Italic } from "@expo-google-fonts/sansita";
 import { useLoginController } from "../controllers/useLoginController";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Login">;
@@ -24,25 +23,7 @@ export default function LoginScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
 
-  let [fontsLoaded] = useFonts({
-    SansitaBoldItalic: Sansita_700Bold_Italic,
-  });
 
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <FloatingBackButton
-          position="top-right"
-          onPress={() => navigation.navigate("Welcome")}
-          backgroundColor="#5b5c9c"
-          iconColor="white"
-        />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#816ab4" />
-        </View>
-      </View>
-    );
-  }
 
   const extraBottom = vm.keyboardOpen ? (Platform.OS === "ios" ? 260 : 220) : 40;
 

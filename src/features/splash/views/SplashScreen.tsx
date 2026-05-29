@@ -8,22 +8,12 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFonts, Sansita_700Bold_Italic } from '@expo-google-fonts/sansita';
+
 
 export default function SplashScreen() {
   const insets = useSafeAreaInsets();
   
-  let [fontsLoaded] = useFonts({
-    'SansitaBoldItalic': Sansita_700Bold_Italic,
-  });
 
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#FFD700" />
-      </View>
-    );
-  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

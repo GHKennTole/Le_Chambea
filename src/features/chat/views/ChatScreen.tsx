@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -21,11 +21,19 @@ export default function ChatScreen({ route }: Props) {
 
   const canChat = true;
 
-  useEffect(() => {
-    if (vm.messages.length > 0) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-    }
-  }, [vm.messages.length]);
+  const renderMessage = useCallback(({ item }: { item: Message }) => {
+    const isMe = item.remitente_id === vm.currentUser?.id;
+    return (
+      <View style={[styles.msgRow, isMe && styles.msgRowMe]}>
+        <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleOther]}>
+          <Text style={[styles.msgText, isMe && styles.msgTextMe]}>{item.contenido}</Text>
+          <Text style={[styles.msgTime, isMe && styles.msgTimeMe]}>
+            {new Date(item.fecha_creacion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+        </View>
+      </View>
+    );
+  }, [vm.currentUser?.id]);
 
   if (vm.loading && !vm.chatInfo) {
     return (
@@ -40,20 +48,6 @@ export default function ChatScreen({ route }: Props) {
     const msg = text;
     setText("");
     await vm.sendMessage(msg);
-  };
-
-  const renderMessage = ({ item }: { item: Message }) => {
-    const isMe = item.remitente_id === vm.currentUser?.id;
-    return (
-      <View style={[styles.msgRow, isMe && styles.msgRowMe]}>
-        <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleOther]}>
-          <Text style={[styles.msgText, isMe && styles.msgTextMe]}>{item.contenido}</Text>
-          <Text style={[styles.msgTime, isMe && styles.msgTimeMe]}>
-            {new Date(item.fecha_creacion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </View>
-      </View>
-    );
   };
 
   const renderJobBanner = () => {

@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 import { RegisterStackParamList } from "../../../core/navigation/types";
 import { RegisterSharedProps } from "../models/register.types";
-import { useFonts, Sansita_700Bold_Italic } from "@expo-google-fonts/sansita";
+
 
 type Props = NativeStackScreenProps<RegisterStackParamList, "RegisterName"> & RegisterSharedProps;
 
@@ -48,18 +48,7 @@ export default function RegisterName({ navigation, formData, setFormData }: Prop
   const insets = useSafeAreaInsets();
   const [touched, setTouched] = useState({ name: false, lastName: false });
 
-  const [fontsLoaded] = useFonts({
-    SansitaBoldItalic: Sansita_700Bold_Italic,
-  });
 
-  // ✅ OJO: nada de hooks después de este return (por eso quitamos useMemo)
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#816ab4" />
-      </View>
-    );
-  }
 
   const nameValue = String(formData?.name || "");
   const lastNameValue = String(formData?.lastName || "");
