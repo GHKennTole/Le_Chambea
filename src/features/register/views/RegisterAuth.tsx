@@ -15,7 +15,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { TextInput, Button } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
-import { useFonts, Sansita_700Bold_Italic } from "@expo-google-fonts/sansita";
+
 import type { RootStackParamList, RegisterStackParamList } from "../../../core/navigation/types";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useRegisterController } from "../controllers/useRegisterController";
@@ -30,14 +30,7 @@ export default function RegisterAuth({ navigation, formData, setFormData }: Prop
   const insets = useSafeAreaInsets();
   const vm = useRegisterController();
 
-  // Sync formData with VM
-  React.useEffect(() => {
-    vm.setFormData(formData);
-  }, [formData]);
 
-  const [fontsLoaded] = useFonts({
-    SansitaBoldItalic: Sansita_700Bold_Italic,
-  });
 
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirm, setShowConfirm] = React.useState(false);
@@ -45,13 +38,7 @@ export default function RegisterAuth({ navigation, formData, setFormData }: Prop
 
   const showStrength = passwordFocus && String(vm.formData.password).length > 0;
 
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#816ab4" />
-      </View>
-    );
-  }
+
 
   const alertTranslateY = vm.alertAnim.interpolate({
     inputRange: [0, 1],

@@ -75,7 +75,8 @@ CREATE TABLE usuarios (
   respuesta_seguridad text  ,
   mostrar_telefono boolean  DEFAULT true,
   mostrar_correo boolean  DEFAULT true,
-  perfil_publico boolean  DEFAULT true
+  perfil_publico boolean  DEFAULT true,
+  rol text  DEFAULT 'usuario'::text
 );
 
 CREATE TABLE notificaciones (

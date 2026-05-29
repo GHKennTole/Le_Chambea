@@ -32,6 +32,7 @@ import SearchScreen from "../features/inicio/views/SearchScreen";
 import PublicProfileScreen from "../features/inicio/views/PublicProfileScreen";
 import ChatListScreen from "../features/chat/views/ChatListScreen";
 import ChatScreen from "../features/chat/views/ChatScreen";
+import HomeAdminScreen from "../features/admin/views/HomeAdminScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -72,19 +73,24 @@ export default function AppNavigator() {
     pendingResetRef.current = routeName;
   };
 
-  const checkOnboardingStatus = async (currentUser: User) => {
+  const checkUserStatus = async (currentUser: User) => {
     try {
       const { data, error } = await supabase
         .from('usuarios')
-        .select('onboarding_completado')
+        .select('onboarding_completado, rol')
         .eq('id', currentUser.id)
         .single();
 
-      if (error || !data) return true;
-      return data.onboarding_completado !== true;
+      if (error || !data) {
+        return { mustOnboard: true, rol: 'usuario' };
+      }
+      return {
+        mustOnboard: data.onboarding_completado !== true,
+        rol: data.rol ?? 'usuario'
+      };
     } catch (error) {
       console.error("❌ Error consultando Supabase:", error);
-      return false;
+      return { mustOnboard: false, rol: 'usuario' };
     }
   };
 
@@ -124,9 +130,15 @@ export default function AppNavigator() {
     }
 
     setShowOnboarding(null);
-    const mustOnboard = await checkOnboardingStatus(currentUser);
-    setShowOnboarding(mustOnboard);
-    queueReset(mustOnboard ? "Onboarding" : "Home", currentUser.id);
+    const { mustOnboard, rol } = await checkUserStatus(currentUser);
+
+    if (rol === 'admin') {
+      setShowOnboarding(false);
+      queueReset("HomeAdmin", currentUser.id);
+    } else {
+      setShowOnboarding(mustOnboard);
+      queueReset(mustOnboard ? "Onboarding" : "Home", currentUser.id);
+    }
   };
 
   const handleOnboardingComplete = () => {
@@ -174,6 +186,7 @@ export default function AppNavigator() {
         <Stack.Screen name="PublicProfile" component={PublicProfileScreen} />
         <Stack.Screen name="ChatList" component={ChatListScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Screen name="HomeAdmin" component={HomeAdminScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>

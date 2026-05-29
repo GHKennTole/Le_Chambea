@@ -11,6 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
+import { COLORS } from '../../../core/theme/colors';
+
 interface OnboardingScreenProps {
   title: string;
   description: string;
@@ -163,11 +165,11 @@ const styles = StyleSheet.create({
   },
 
   nextButton: {
-    backgroundColor: '#6200ee',
+    backgroundColor: COLORS.purpleLight,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: '#6200ee',
+    shadowColor: COLORS.purpleLight,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -193,12 +195,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   activeDot: {
-    backgroundColor: '#6200ee',
+    backgroundColor: COLORS.purpleLight,
     width: 14,
     height: 14,
     borderRadius: 7,
   },
   inactiveDot: {
-    backgroundColor: '#c7b3f0',
+    backgroundColor: COLORS.purpleMuted,
   },
 });

@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, Image, TouchableOpacity, ActivityIndicator, Pla
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFonts, Sansita_700Bold_Italic } from "@expo-google-fonts/sansita";
+
 import type { RootStackParamList } from "../../../core/navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Welcome">;
@@ -12,17 +12,7 @@ export default function WelcomeScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
 
-  const [fontsLoaded] = useFonts({
-    SansitaBoldItalic: Sansita_700Bold_Italic,
-  });
 
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#8E44AD" />
-      </View>
-    );
-  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>

@@ -18,6 +18,38 @@ interface MainLayoutProps {
 
 const PURPLE = "#5A2D82";
 
+interface SidebarItemProps {
+  name: keyof RootStackParamList;
+  icon: any;
+  label: string;
+  active: keyof RootStackParamList;
+  unreadChatsCount: number;
+  nav: Nav;
+}
+
+const SidebarItem = React.memo(({ name, icon, label, active, unreadChatsCount, nav }: SidebarItemProps) => {
+  const isActive = active === name;
+  const showChatBadge = name === 'ChatList' && unreadChatsCount > 0;
+
+  return (
+    <TouchableOpacity 
+      style={[
+        { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, gap: 16, position: 'relative' },
+        isActive && { backgroundColor: '#F3ECFA' }
+      ]} 
+      onPress={() => nav.navigate(name as any)}
+    >
+      <MaterialCommunityIcons name={icon} size={24} color={isActive ? PURPLE : '#666'} />
+      <Text style={{ fontSize: 16, color: isActive ? PURPLE : '#666', fontWeight: isActive ? 'bold' : '600', flex: 1 }}>{label}</Text>
+      {showChatBadge && (
+        <View style={{ backgroundColor: '#ff3b30', borderRadius: 9, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+          <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>{unreadChatsCount}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+});
+
 export default function MainLayout({ children, active, hideBottomNav = false }: MainLayoutProps) {
   const { width } = useWindowDimensions();
   const nav = useNavigation<Nav>();
@@ -39,29 +71,6 @@ export default function MainLayout({ children, active, hideBottomNav = false }: 
   }, []);
 
   const isDesktop = Platform.OS === 'web' && width >= 1024;
-
-  const SidebarItem = ({ name, icon, label }: { name: keyof RootStackParamList, icon: any, label: string }) => {
-    const isActive = active === name;
-    const showChatBadge = name === 'ChatList' && unreadChatsCount > 0;
-
-    return (
-      <TouchableOpacity 
-        style={[
-          { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, gap: 16, position: 'relative' },
-          isActive && { backgroundColor: '#F3ECFA' }
-        ]} 
-        onPress={() => nav.navigate(name as any)}
-      >
-        <MaterialCommunityIcons name={icon} size={24} color={isActive ? PURPLE : '#666'} />
-        <Text style={{ fontSize: 16, color: isActive ? PURPLE : '#666', fontWeight: isActive ? 'bold' : '600', flex: 1 }}>{label}</Text>
-        {showChatBadge && (
-          <View style={{ backgroundColor: '#ff3b30', borderRadius: 9, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
-            <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>{unreadChatsCount}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
 
   if (!isDesktop) {
     return (
@@ -94,11 +103,11 @@ export default function MainLayout({ children, active, hideBottomNav = false }: 
         </View>
         
         <View style={{ gap: 8 }}>
-          <SidebarItem name="Home" icon="home" label="Inicio" />
-          <SidebarItem name="Search" icon="magnify" label="Búsqueda" />
-          <SidebarItem name="ChatList" icon="chat" label="Mensajes" />
-          <SidebarItem name="Favorites" icon="star" label="Favoritos" />
-          <SidebarItem name="Menu" icon="menu" label="Menú" />
+          <SidebarItem name="Home" icon="home" label="Inicio" active={active} unreadChatsCount={unreadChatsCount} nav={nav} />
+          <SidebarItem name="Search" icon="magnify" label="Búsqueda" active={active} unreadChatsCount={unreadChatsCount} nav={nav} />
+          <SidebarItem name="ChatList" icon="chat" label="Mensajes" active={active} unreadChatsCount={unreadChatsCount} nav={nav} />
+          <SidebarItem name="Favorites" icon="star" label="Favoritos" active={active} unreadChatsCount={unreadChatsCount} nav={nav} />
+          <SidebarItem name="Menu" icon="menu" label="Menú" active={active} unreadChatsCount={unreadChatsCount} nav={nav} />
         </View>
 
         <View style={{ flex: 1 }} />

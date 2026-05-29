@@ -26,6 +26,40 @@ export type RecommendedProfessional = {
   descripcion: string;
 };
 
+const getFriendlyErrorMessage = (errMessage: string): string => {
+  const msg = (errMessage || '').toLowerCase();
+  
+  // 1. No internet or network failure
+  if (msg.includes("network request failed") || msg.includes("failed to fetch") || msg.includes("network error") || msg.includes("fetch error")) {
+    return "Lo siento mucho, pero parece que no tienes una conexión activa a internet... 🔌\n\nPor favor, revisa tu Wi-Fi o datos móviles e intenta de nuevo en unos momentos.";
+  }
+  
+  // 2. Quota Exceeded (429)
+  if (msg.includes("429") || msg.includes("quota") || msg.includes("resource_exhausted") || msg.includes("resourceexhausted") || msg.includes("rate limit")) {
+    return "Lo siento, pero la bandeja de peticiones está un poco saturada en este momento... ⏳\n\nEstamos procesando muchas consultas simultáneamente. Por favor, regálanos unos segundos e inténtalo nuevamente.";
+  }
+  
+  // 3. Server Busy / Unavailable (503)
+  if (msg.includes("503") || msg.includes("unavailable") || msg.includes("high demand") || msg.includes("service unavailable")) {
+    return "Lo siento, en este momento nuestros servidores de IA están muy congestionados debido a una alta demanda... 🚀\n\nLos servidores están trabajando a tope para procesar todo. Por favor, dale un respiro al bot e intenta de nuevo en un minuto.";
+  }
+  
+  // 4. API / Model Mismatch / Maintenance (400, 404, etc.)
+  if (
+    msg.includes("400") || 
+    msg.includes("404") || 
+    msg.includes("invalid json") || 
+    msg.includes("not found") || 
+    msg.includes("api key") || 
+    msg.includes("badrequest")
+  ) {
+    return "Lo siento, pero las funciones del bot de IA están temporalmente desactivadas o en mantenimiento técnico... 🛠️\n\nEstamos afinando algunos detalles para darte la mejor experiencia posible. ¡Regresaremos muy pronto!";
+  }
+  
+  // 5. Fallback
+  return "Lo siento, ha ocurrido un pequeño inconveniente técnico al intentar procesar tu consulta... 🔧\n\nNo te preocupes, ya estamos trabajando para resolverlo. Por favor, intenta de nuevo en unos momentos.";
+};
+
 export function useAiController() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -218,10 +252,13 @@ export function useAiController() {
     } catch (error: any) {
       console.error('❌ Error enviando mensaje a Sula:', error);
       
+      const errStr = error.message || '';
+      const friendlyText = getFriendlyErrorMessage(errStr);
+      
       const errorMessage: Message = {
         id: `err-${Date.now()}`,
         sender: 'bot',
-        text: `Lo siento, en este momento estoy experimentando dificultades de conexión. 🔌\n\n*(Detalle técnico: ${error.message || 'Error de red'})*\n\nPor favor, verifica que tu conexión de internet esté activa o intenta nuevamente en unos momentos.`,
+        text: friendlyText,
         createdAt: new Date()
       };
 
