@@ -1,0 +1,61 @@
+﻿=== PLANTILLA PRINCIPAL (COMPLETA) ===
+powershell : Excepción al llamar a "OpenRead" con los argumentos "1": "No se pudo encontrar el archivo 
+En línea: 1 Carácter: 1
++ powershell -ExecutionPolicy Bypass -File "C:\Users\GHKennTole\Desktop ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Excepción al ll...rar el archivo :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+'C:\Users\GHKennTole\Desktop\Le_Chambea\Documentcion\Plantilla Documento Proyecto GraduaciÃ³n.docx'."
+En C:\Users\GHKennTole\Desktop\Le_Chambea\Documentcion\read_main.ps1: 6 Carácter: 5
++     $zip = [System.IO.Compression.ZipFile]::OpenRead($FilePath)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : FileNotFoundException
+ 
+No se puede llamar a un método en una expresión con valor NULL.
+En C:\Users\GHKennTole\Desktop\Le_Chambea\Documentcion\read_main.ps1: 7 Carácter: 5
++     $entry = $zip.GetEntry('word/document.xml')
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+No se puede llamar a un método en una expresión con valor NULL.
+En C:\Users\GHKennTole\Desktop\Le_Chambea\Documentcion\read_main.ps1: 8 Carácter: 5
++     $stream = $entry.Open()
++     ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+New-Object : No se encontró un constructor. No se encuentra ningún constructor adecuado para el tipo 
+System.IO.StreamReader.
+En C:\Users\GHKennTole\Desktop\Le_Chambea\Documentcion\read_main.ps1: 9 Carácter: 15
++     $reader = New-Object System.IO.StreamReader($stream)
++               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (:) [New-Object], PSArgumentException
+    + FullyQualifiedErrorId : CannotFindAppropriateCtor,Microsoft.PowerShell.Commands.NewObjectCommand
+ 
+No se puede llamar a un método en una expresión con valor NULL.
+En C:\Users\GHKennTole\Desktop\Le_Chambea\Documentcion\read_main.ps1: 10 Carácter: 5
++     $content = $reader.ReadToEnd()
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+No se puede llamar a un método en una expresión con valor NULL.
+En C:\Users\GHKennTole\Desktop\Le_Chambea\Documentcion\read_main.ps1: 11 Carácter: 5
++     $reader.Close()
++     ~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+No se puede llamar a un método en una expresión con valor NULL.
+En C:\Users\GHKennTole\Desktop\Le_Chambea\Documentcion\read_main.ps1: 12 Carácter: 5
++     $zip.Dispose()
++     ~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+
+
+=== TOTAL PLANTILLA PRINCIPAL: 0 chars ===

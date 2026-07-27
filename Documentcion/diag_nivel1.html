@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: white; font-family: 'Times New Roman', serif; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     DIAGRAMA NIVEL 1 – Sub-componentes
+     ============================================================ -->
+<div id="diag1" style="padding:28px; width:960px;">
+  <div style="font-size:13px; font-weight:bold; font-style:italic; margin-bottom:4px;">Figura 22</div>
+  <div style="font-size:11px; font-style:italic; margin-bottom:20px;">Diagrama nivel 1</div>
+
+  <svg width="900" height="540" style="display:block;">
+    <defs>
+      <marker id="a1" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+        <path d="M0,0.5 L6,3.5 L0,6.5 Z" fill="#444"/>
+      </marker>
+    </defs>
+    <style>
+      .box  { fill:#f0f0f0; stroke:#444; stroke-width:1.4; }
+      .col  { fill:#e8edf5; stroke:#2c4070; stroke-width:1.8; }
+      .hdr  { fill:#2c4070; stroke:#2c4070; stroke-width:0; }
+      .lbl  { font-family:'Times New Roman',serif; font-size:11px; fill:#111; text-anchor:middle; dominant-baseline:middle; }
+      .lbl-w{ font-family:'Times New Roman',serif; font-size:11.5px; fill:white; text-anchor:middle; dominant-baseline:middle; font-weight:bold; }
+      .lbl-s{ font-family:'Times New Roman',serif; font-size:10px; fill:#333; text-anchor:middle; dominant-baseline:middle; }
+      .arr  { stroke:#2c4070; stroke-width:1.8; fill:none; marker-end:url(#a1); }
+      .dash { stroke:#aaa; stroke-width:1; stroke-dasharray:5,3; fill:none; }
+    </style>
+
+    <!-- ─── Column backgrounds ─── -->
+    <rect x="10"  y="40" width="250" height="470" class="col" rx="3"/>
+    <rect x="325" y="40" width="250" height="470" class="col" rx="3"/>
+    <rect x="640" y="40" width="250" height="470" class="col" rx="3"/>
+
+    <!-- ─── Column headers ─── -->
+    <rect x="10"  y="40" width="250" height="32" class="hdr" rx="3"/>
+    <text x="135" y="56" class="lbl-w">Aplicación Móvil</text>
+    <text x="135" y="82" class="lbl-s" font-style="italic">React Native + Expo</text>
+
+    <rect x="325" y="40" width="250" height="32" class="hdr" rx="3"/>
+    <text x="450" y="56" class="lbl-w">Supabase</text>
+    <text x="450" y="82" class="lbl-s" font-style="italic">Backend as a Service</text>
+
+    <rect x="640" y="40" width="250" height="32" class="hdr" rx="3"/>
+    <text x="765" y="56" class="lbl-w">Aplicación Web</text>
+    <text x="765" y="82" class="lbl-s" font-style="italic">React Native Web</text>
+
+    <!-- ─── MODULE BOXES: APP MÓVIL ─── -->
+    <!-- Auth Module -->
+    <rect x="28" y="100" width="214" height="44" class="box" rx="2"/>
+    <text x="135" y="116" class="lbl" font-weight="bold">Auth Module</text>
+    <text x="135" y="133" class="lbl-s">Welcome · Login · Register</text>
+
+    <!-- Home Module -->
+    <rect x="28" y="155" width="214" height="44" class="box" rx="2"/>
+    <text x="135" y="171" class="lbl" font-weight="bold">Home Module</text>
+    <text x="135" y="188" class="lbl-s">Explorar · Búsqueda · Categorías</text>
+
+    <!-- Chat Module -->
+    <rect x="28" y="210" width="214" height="44" class="box" rx="2"/>
+    <text x="135" y="226" class="lbl" font-weight="bold">Chat Module</text>
+    <text x="135" y="243" class="lbl-s">ChatList · ChatScreen · Solicitudes</text>
+
+    <!-- Profile Module -->
+    <rect x="28" y="265" width="214" height="44" class="box" rx="2"/>
+    <text x="135" y="281" class="lbl" font-weight="bold">Profile Module</text>
+    <text x="135" y="298" class="lbl-s">Perfil · Portafolio · Reseñas</text>
+
+    <!-- Favorites Module -->
+    <rect x="28" y="320" width="214" height="36" class="box" rx="2"/>
+    <text x="135" y="338" class="lbl" font-weight="bold">Favorites Module</text>
+
+    <!-- Sula AI Module -->
+    <rect x="28" y="367" width="214" height="36" class="box" rx="2"/>
+    <text x="135" y="385" class="lbl" font-weight="bold">Sula AI Module</text>
+
+    <!-- Settings Module -->
+    <rect x="28" y="414" width="214" height="36" class="box" rx="2"/>
+    <text x="135" y="432" class="lbl" font-weight="bold">Settings Module</text>
+
+    <!-- ─── MODULE BOXES: SUPABASE ─── -->
+    <!-- PostgreSQL -->
+    <rect x="343" y="100" width="214" height="52" class="box" rx="2"/>
+    <text x="450" y="120" class="lbl" font-weight="bold">PostgreSQL Database</text>
+    <text x="450" y="140" class="lbl-s">users · profiles · services</text>
+    <text x="450" y="155" class="lbl-s" visibility="hidden"/><!-- placeholder -->
+
+    <!-- Auth -->
+    <rect x="343" y="165" width="214" height="52" class="box" rx="2"/>
+    <text x="450" y="185" class="lbl" font-weight="bold">Supabase Auth</text>
+    <text x="450" y="203" class="lbl-s">JWT · OAuth Google · Sesiones</text>
+
+    <!-- Storage -->
+    <rect x="343" y="230" width="214" height="52" class="box" rx="2"/>
+    <text x="450" y="250" class="lbl" font-weight="bold">Supabase Storage</text>
+    <text x="450" y="268" class="lbl-s">Fotos · Portafolio · Recursos</text>
+
+    <!-- Realtime -->
+    <rect x="343" y="295" width="214" height="52" class="box" rx="2"/>
+    <text x="450" y="315" class="lbl" font-weight="bold">Realtime Channel</text>
+    <text x="450" y="333" class="lbl-s">WebSocket · Chat en tiempo real</text>
+
+    <!-- API RESTful -->
+    <rect x="343" y="360" width="214" height="44" class="box" rx="2"/>
+    <text x="450" y="376" class="lbl" font-weight="bold">API RESTful</text>
+    <text x="450" y="393" class="lbl-s">Auto-generada por Supabase</text>
+
+    <!-- ─── MODULE BOXES: APP WEB ─── -->
+    <!-- Auth Web -->
+    <rect x="658" y="100" width="214" height="44" class="box" rx="2"/>
+    <text x="765" y="116" class="lbl" font-weight="bold">Auth Web</text>
+    <text x="765" y="133" class="lbl-s">Login · Register (compartido)</text>
+
+    <!-- Listings -->
+    <rect x="658" y="155" width="214" height="44" class="box" rx="2"/>
+    <text x="765" y="171" class="lbl" font-weight="bold">Home (Listado)</text>
+    <text x="765" y="188" class="lbl-s">Profesionales · Búsqueda · Filtros</text>
+
+    <!-- Professional Profile -->
+    <rect x="658" y="210" width="214" height="44" class="box" rx="2"/>
+    <text x="765" y="226" class="lbl" font-weight="bold">Perfil de Profesional</text>
+    <text x="765" y="243" class="lbl-s">Portafolio · Reseñas · Contactar</text>
+
+    <!-- Admin Panel -->
+    <rect x="658" y="265" width="214" height="44" class="box" rx="2"/>
+    <text x="765" y="281" class="lbl" font-weight="bold">Admin Panel</text>
+    <text x="765" y="298" class="lbl-s">Usuarios · Reportes · Moderación</text>
+
+    <!-- Chat Web -->
+    <rect x="658" y="320" width="214" height="36" class="box" rx="2"/>
+    <text x="765" y="338" class="lbl" font-weight="bold">Chat Web</text>
+
+    <!-- ─── Connecting Arrows (App Móvil ↔ Supabase) ─── -->
+    <line x1="242" y1="125" x2="318" y2="125" class="arr"/>
+    <line x1="242" y1="178" x2="318" y2="195" class="arr"/>
+    <line x1="242" y1="232" x2="318" y2="245" class="arr"/>
+    <line x1="242" y1="287" x2="318" y2="310" class="arr"/>
+    <line x1="242" y1="338" x2="318" y2="370" class="arr"/>
+    <line x1="242" y1="385" x2="318" y2="385" class="arr"/>
+
+    <!-- ─── Connecting Arrows (App Web ↔ Supabase) ─── -->
+    <line x1="658" y1="122" x2="582" y2="122" class="arr"/>
+    <line x1="658" y1="178" x2="582" y2="195" class="arr"/>
+    <line x1="658" y1="232" x2="582" y2="252" class="arr"/>
+    <line x1="658" y1="287" x2="582" y2="315" class="arr"/>
+    <line x1="658" y1="338" x2="582" y2="375" class="arr"/>
+
+    <!-- ─── Vertical dashed separators ─── -->
+    <line x1="268" y1="40" x2="268" y2="510" class="dash"/>
+    <line x1="583" y1="40" x2="583" y2="510" class="dash"/>
+
+    <!-- ─── Nota ─── -->
+    <text x="10" y="528" font-family="Times New Roman" font-size="11" font-style="italic" fill="#333">
+      <tspan font-weight="bold">Nota.</tspan>
+      <tspan> Componentes y relaciones de cada módulo del sistema Le Chambea. Fuente propia, elaborado en Lucidchart.</tspan>
+    </text>
+  </svg>
+</div>
+
+</body>
+</html>

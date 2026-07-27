@@ -1,23 +1,48 @@
 import React, { useState, useRef, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform, Alert, Image, Keyboard, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { RootStackParamList } from "../../../core/navigation/types";
 import { useChatController, Message } from "../controllers/useChatController";
-import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 
 const PURPLE = "#5A2D82";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Chat">;
 
-export default function ChatScreen({ route }: Props) {
+export default function ChatScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const ContainerComponent = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
   const { chatId, otherUserId } = route.params;
   const vm = useChatController(chatId, otherUserId);
   const [showServicePicker, setShowServicePicker] = useState(false);
   const [text, setText] = useState("");
   const flatListRef = useRef<FlatList>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  React.useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        setKeyboardVisible(true);
+      }
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const canChat = true;
 
@@ -195,16 +220,42 @@ export default function ChatScreen({ route }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 90}
+    <ContainerComponent 
+      style={[
+        styles.container,
+        Platform.OS === 'android' && {
+          height: keyboardVisible ? windowHeight - keyboardHeight + 22 : '100%',
+          position: keyboardVisible ? 'absolute' : 'relative',
+          top: 0,
+          left: 0,
+          right: 0
+        }
+      ]}
+      behavior="padding"
+      keyboardVerticalOffset={0}
     >
       <View style={[styles.header, { paddingTop: insets.top + 5, paddingBottom: 5, height: 60 + insets.top }]}>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            Chat con {vm.otherUser ? `${vm.otherUser.nombre} ${vm.otherUser.apellidos}`.trim() : 'Usuario'}
-          </Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backHeaderBtn} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="white" />
+          </TouchableOpacity>
+
+          <View style={styles.userInfoContainer}>
+            {vm.otherUser?.foto_perfil ? (
+              <Image
+                source={{ uri: vm.otherUser.foto_perfil }}
+                style={styles.headerAvatar}
+              />
+            ) : (
+              <View style={styles.headerAvatarPlaceholder}>
+                <MaterialCommunityIcons name="account" size={20} color={PURPLE} />
+              </View>
+            )}
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {vm.otherUser ? `${vm.otherUser.nombre} ${vm.otherUser.apellidos}`.trim() : 'Usuario'}
+            </Text>
+          </View>
+
           <TouchableOpacity onPress={handleReportPress} style={styles.reportHeaderBtn} activeOpacity={0.7}>
             <MaterialCommunityIcons name="alert-octagon-outline" size={24} color="white" />
           </TouchableOpacity>
@@ -236,7 +287,7 @@ export default function ChatScreen({ route }: Props) {
       </View>
 
       {canChat ? (
-        <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        <View style={[styles.inputBar, { paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom, 8) }]}>
           <TextInput
             style={styles.textInput}
             placeholder="Escribe un mensaje..."
@@ -264,7 +315,6 @@ export default function ChatScreen({ route }: Props) {
         renderLockedInput()
       )}
 
-      <FloatingBackButton />
 
       <Modal visible={showServicePicker} transparent animationType="slide">
         <View style={styles.modalOverlay}>
@@ -289,18 +339,62 @@ export default function ChatScreen({ route }: Props) {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </ContainerComponent>
   );
 }
 
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F6F6F8" },
   container: { flex: 1, backgroundColor: "#F6F6F8" },
-  header: { backgroundColor: PURPLE, paddingHorizontal: 16, justifyContent: 'center' },
-  headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
+  header: { 
+    backgroundColor: PURPLE, 
+    paddingHorizontal: 8, 
+    justifyContent: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)'
+  },
+  headerContent: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    width: '100%',
+    height: '100%'
+  },
+  backHeaderBtn: { 
+    padding: 8,
+    marginRight: 4
+  },
+  userInfoContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    flex: 1 
+  },
+  headerAvatar: { 
+    width: 38, 
+    height: 38, 
+    borderRadius: 19, 
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)'
+  },
+  headerAvatarPlaceholder: { 
+    width: 38, 
+    height: 38, 
+    borderRadius: 19, 
+    backgroundColor: 'white', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 10 
+  },
+  headerTitle: { 
+    color: 'white', 
+    fontSize: 16, 
+    fontWeight: 'bold', 
+    flex: 1 
+  },
+  reportHeaderBtn: { 
+    padding: 8 
+  },
   listContainer: { flex: 1, backgroundColor: "#F6F6F8" },
-  headerTitle: { color: 'white', fontSize: 16, fontWeight: 'bold', flex: 1, marginRight: 10, textAlign: 'center' },
-  reportHeaderBtn: { padding: 4 },
 
   bannerContainer: { backgroundColor: 'white', padding: 16, borderBottomWidth: 1, borderBottomColor: '#ECECF1' },
   bannerPending: { backgroundColor: '#fff3cd', flexDirection: 'row', alignItems: 'center', gap: 8 },
