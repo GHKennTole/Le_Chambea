@@ -104,7 +104,6 @@ export default function MainLayout({ children, active, hideBottomNav = false }: 
         
         <View style={{ gap: 8 }}>
           <SidebarItem name="Home" icon="home" label="Inicio" active={active} unreadChatsCount={unreadChatsCount} nav={nav} />
-          <SidebarItem name="Search" icon="magnify" label="Búsqueda" active={active} unreadChatsCount={unreadChatsCount} nav={nav} />
           <SidebarItem name="ChatList" icon="chat" label="Mensajes" active={active} unreadChatsCount={unreadChatsCount} nav={nav} />
           <SidebarItem name="Favorites" icon="star" label="Favoritos" active={active} unreadChatsCount={unreadChatsCount} nav={nav} />
           <SidebarItem name="Menu" icon="menu" label="Menú" active={active} unreadChatsCount={unreadChatsCount} nav={nav} />
