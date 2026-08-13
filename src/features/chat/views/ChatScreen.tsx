@@ -112,10 +112,15 @@ export default function ChatScreen({ route, navigation }: Props) {
               <MaterialCommunityIcons name="check-circle" size={20} color="#155724" />
               <Text style={styles.bannerTextSuccess}>¡Trabajo terminado!</Text>
             </View>
-            {!vm.isReviewed && (
+            {!vm.isReviewed ? (
               <TouchableOpacity style={styles.reviewButton} onPress={vm.leaveReview}>
                 <MaterialCommunityIcons name="star" size={16} color="white" />
                 <Text style={styles.reviewButtonText}>Dejar Reseña</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={[styles.reviewButton, { backgroundColor: PURPLE }]} onPress={vm.leaveReview}>
+                <MaterialCommunityIcons name="square-edit-outline" size={16} color="white" />
+                <Text style={styles.reviewButtonText}>Editar Reseña</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={[styles.actionButton, { marginTop: 8 }]} onPress={() => setShowServicePicker(true)}>

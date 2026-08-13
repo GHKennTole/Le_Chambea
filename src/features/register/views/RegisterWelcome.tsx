@@ -8,6 +8,7 @@ import {
   Dimensions,
   ActivityIndicator,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RegisterStackParamList } from "../../../core/navigation/types";
@@ -16,14 +17,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 
 
-const { width } = Dimensions.get("window");
+const { width: winWidth } = Dimensions.get("window");
 
 type Props = NativeStackScreenProps<RegisterStackParamList, "RegisterWelcome"> & RegisterSharedProps;
 
 
 export default function RegisterWelcome({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width > 768;
 
 
   return (
@@ -37,7 +39,7 @@ export default function RegisterWelcome({ navigation }: Props) {
       />
 
       {/* Contenido */}
-      <View style={styles.contenido}>
+      <View style={[styles.contenido, isDesktop && { paddingBottom: 30 }]}>
         <Image
           source={require("../../../assets/images/login.png")}
           style={styles.image}
@@ -79,8 +81,8 @@ const styles = StyleSheet.create({
   },
 
   image: {
-    width: Math.min(width * 2, 300),
-    height: Math.min(width * 2, 300),
+    width: Math.min(winWidth * 2, 300),
+    height: Math.min(winWidth * 2, 300),
     marginBottom: -20,
   },
 

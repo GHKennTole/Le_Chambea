@@ -7,9 +7,11 @@ export function usePrivacyController() {
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  const [mostrarTelefono, setMostrarTelefono] = useState(true);
-  const [mostrarCorreo, setMostrarCorreo] = useState(true);
   const [perfilPublico, setPerfilPublico] = useState(true);
+  const [permitirChat, setPermitirChat] = useState(true);
+  const [mostrarTrabajos, setMostrarTrabajos] = useState(true);
+  const [mostrarResenas, setMostrarResenas] = useState(true);
+  const [permitirFavoritos, setPermitirFavoritos] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
@@ -20,18 +22,19 @@ export function usePrivacyController() {
 
       const { data, error } = await supabase
         .from('usuarios')
-        .select('mostrar_telefono, mostrar_correo, perfil_publico')
+        .select('perfil_publico, permitir_chat, mostrar_trabajos, mostrar_resenas, permitir_favoritos')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
       if (data) {
-        setMostrarTelefono(data.mostrar_telefono ?? true);
-        setMostrarCorreo(data.mostrar_correo ?? true);
         setPerfilPublico(data.perfil_publico ?? true);
+        setPermitirChat(data.permitir_chat ?? true);
+        setMostrarTrabajos(data.mostrar_trabajos ?? true);
+        setMostrarResenas(data.mostrar_resenas ?? true);
+        setPermitirFavoritos((data as any).permitir_favoritos ?? true);
       }
     } catch (error) {
-      console.error('Error fetching privacy:', error);
+      console.error('Error fetching privacy settings:', error);
     } finally {
       setLoading(false);
     }
@@ -41,28 +44,29 @@ export function usePrivacyController() {
     fetchData();
   }, [fetchData]);
 
-  const savePrivacy = async (key: 'mostrar_telefono' | 'mostrar_correo' | 'perfil_publico', value: boolean) => {
+  const savePrivacyKey = async (key: string, value: boolean) => {
     if (!userId) return;
     try {
       setSaving(true);
-      
-      const updateData = { [key]: value };
 
       const { error } = await supabase
         .from('usuarios')
-        .update(updateData)
+        .update({ [key]: value })
         .eq('id', userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error(`Privacy update error for ${key}:`, error);
+      }
 
-      // Update local state
-      if (key === 'mostrar_telefono') setMostrarTelefono(value);
-      if (key === 'mostrar_correo') setMostrarCorreo(value);
       if (key === 'perfil_publico') setPerfilPublico(value);
+      if (key === 'permitir_chat') setPermitirChat(value);
+      if (key === 'mostrar_trabajos') setMostrarTrabajos(value);
+      if (key === 'mostrar_resenas') setMostrarResenas(value);
+      if (key === 'permitir_favoritos') setPermitirFavoritos(value);
 
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'No se pudieron guardar tus preferencias de privacidad.');
+      Alert.alert('Error', 'No se pudieron actualizar tus ajustes de privacidad.');
     } finally {
       setSaving(false);
     }
@@ -71,11 +75,15 @@ export function usePrivacyController() {
   return {
     loading,
     saving,
-    mostrarTelefono,
-    mostrarCorreo,
     perfilPublico,
-    toggleMostrarTelefono: (val: boolean) => savePrivacy('mostrar_telefono', val),
-    toggleMostrarCorreo: (val: boolean) => savePrivacy('mostrar_correo', val),
-    togglePerfilPublico: (val: boolean) => savePrivacy('perfil_publico', val),
+    permitirChat,
+    mostrarTrabajos,
+    mostrarResenas,
+    permitirFavoritos,
+    togglePerfilPublico: (val: boolean) => savePrivacyKey('perfil_publico', val),
+    togglePermitirChat: (val: boolean) => savePrivacyKey('permitir_chat', val),
+    toggleMostrarTrabajos: (val: boolean) => savePrivacyKey('mostrar_trabajos', val),
+    toggleMostrarResenas: (val: boolean) => savePrivacyKey('mostrar_resenas', val),
+    togglePermitirFavoritos: (val: boolean) => savePrivacyKey('permitir_favoritos', val),
   };
 }

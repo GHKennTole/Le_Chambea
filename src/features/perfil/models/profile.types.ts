@@ -9,9 +9,6 @@ export interface UserProfile {
   fecha_nacimiento: string;
   genero: string;
   total_trabajos_completados?: number;
-  pin_seguridad?: string | null;
-  pregunta_seguridad?: string | null;
-  respuesta_seguridad?: string | null;
   mostrar_telefono?: boolean;
   mostrar_correo?: boolean;
   perfil_publico?: boolean;
@@ -27,6 +24,7 @@ export interface ProfessionalProfile {
   rango_precio: string;
   zona: string;
   esta_activo: boolean;
+  portafolio?: string[];
 }
 
 export interface Review {
@@ -38,6 +36,8 @@ export interface Review {
   calificacion: number;
   comentario: string;
   fecha_creacion: string;
+  respuesta_profesional?: string | null;
+  fecha_respuesta?: string | null;
   usuarios?: {
     nombre: string;
     apellidos: string;

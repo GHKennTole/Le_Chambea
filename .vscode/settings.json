@@ -1,2 +1,8 @@
 {
+    "chat.tools.terminal.autoApprove": {
+        "/^git add src/features/inicio/views/SearchScreen\\.tsx src/shared/components/MainLayout\\.tsx; git commit -m \"chore: update search and layout components\"; git push origin main$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }

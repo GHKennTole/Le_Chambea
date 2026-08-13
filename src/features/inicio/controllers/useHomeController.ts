@@ -15,6 +15,7 @@ export function useHomeController() {
   const [loading, setLoading] = useState(true);
   const [masSolicitados, setMasSolicitados] = useState<HomeProCard[]>([]);
   const [novedades, setNovedades] = useState<HomeProCard[]>([]);
+  const [todosLosPerfiles, setTodosLosPerfiles] = useState<HomeProCard[]>([]);
   
   // Estados para filtros
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,7 +43,7 @@ export function useHomeController() {
           `)
           .eq('esta_activo', true)
           .order('fecha_creacion', { ascending: false })
-          .limit(20)
+          .limit(50)
       ]);
 
       if (profilesError) throw profilesError;
@@ -51,6 +52,7 @@ export function useHomeController() {
         setCurrentUserId(user?.id ?? null);
         setMasSolicitados([]);
         setNovedades([]);
+        setTodosLosPerfiles([]);
         return;
       }
 
@@ -95,6 +97,7 @@ export function useHomeController() {
 
       // Batch state updates together to minimize re-renders
       setCurrentUserId(user?.id ?? null);
+      setTodosLosPerfiles(mappedProfiles);
       setNovedades(nuevas.slice(0, 10));
       setMasSolicitados(top.slice(0, 10));
 
@@ -120,9 +123,29 @@ export function useHomeController() {
 
     // Filtrar por categoría
     if (selectedCategory) {
-      filtered = filtered.filter(p => 
-        p.categoria.toLowerCase() === selectedCategory.toLowerCase()
-      );
+      const catLower = selectedCategory.toLowerCase();
+      if (catLower === 'salud') {
+        const healthKeywords = ['salud', 'enfermer', 'doctor', 'médic', 'medic', 'dentista', 'pediatra', 'nutricio', 'terapeuta', 'paramédic', 'paramedic'];
+        filtered = filtered.filter(p => 
+          healthKeywords.some(kw => 
+            p.categoria.toLowerCase().includes(kw) || 
+            p.profesion.toLowerCase().includes(kw)
+          )
+        );
+      } else if (catLower === 'niñera' || catLower === 'cuidado' || catLower === 'cuidado infantil') {
+        const childcareKeywords = ['niñer', 'babysitter', 'nana', 'cuidador', 'infantil', 'tutor', 'guarder', 'nanny', 'bebé', 'bebe'];
+        filtered = filtered.filter(p => 
+          childcareKeywords.some(kw => 
+            p.categoria.toLowerCase().includes(kw) || 
+            p.profesion.toLowerCase().includes(kw)
+          )
+        );
+      } else {
+        filtered = filtered.filter(p => 
+          p.categoria.toLowerCase() === catLower ||
+          p.profesion.toLowerCase().includes(catLower)
+        );
+      }
     }
 
     // Filtrar por búsqueda (nombre o profesión)
@@ -139,11 +162,16 @@ export function useHomeController() {
 
   const filteredMasSolicitados = useMemo(() => applyFilters(masSolicitados), [masSolicitados, applyFilters]);
   const filteredNovedades = useMemo(() => applyFilters(novedades), [novedades, applyFilters]);
+  const searchResults = useMemo(() => applyFilters(todosLosPerfiles), [todosLosPerfiles, applyFilters]);
+
+  const isSearching = searchQuery.trim() !== '' || selectedCategory !== null;
 
   return {
     loading,
     masSolicitados: filteredMasSolicitados,
     novedades: filteredNovedades,
+    searchResults,
+    isSearching,
     searchQuery,
     setSearchQuery,
     selectedCategory,

@@ -5,8 +5,9 @@ import {
   Platform,
   Image,
   ScrollView,
-
   Text,
+  Animated,
+  TouchableOpacity,
 } from "react-native";
 import { TextInput, Button, Title } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
@@ -22,8 +23,7 @@ export default function LoginScreen() {
   const vm = useLoginController();
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
-
-
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const extraBottom = vm.keyboardOpen ? (Platform.OS === "ios" ? 260 : 220) : 40;
 
@@ -71,6 +71,7 @@ export default function LoginScreen() {
             left={<TextInput.Icon icon="email" />}
             outlineColor="#E0E0E0"
             activeOutlineColor="#816ab4"
+            textColor="#1a1a1a"
             returnKeyType="next"
           />
 
@@ -78,12 +79,19 @@ export default function LoginScreen() {
             label="Contraseña"
             value={vm.password}
             onChangeText={vm.setPassword}
-            secureTextEntry
+            secureTextEntry={!showPassword}
             style={styles.input}
             mode="outlined"
             left={<TextInput.Icon icon="lock" />}
+            right={
+              <TextInput.Icon
+                icon={showPassword ? "eye-off" : "eye"}
+                onPress={() => setShowPassword(!showPassword)}
+              />
+            }
             outlineColor="#E0E0E0"
             activeOutlineColor="#816ab4"
+            textColor="#1a1a1a"
             returnKeyType="done"
           />
 
@@ -205,6 +213,8 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     padding: 24,
     width: "90%",
+    maxWidth: 480,
+    alignSelf: "center",
     marginBottom: 20,
   },
   title: {
@@ -238,6 +248,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 20,
     width: "90%",
+    maxWidth: 480,
+    alignSelf: "center",
   },
   separatorLine: {
     flex: 1,
@@ -254,6 +266,8 @@ const styles = StyleSheet.create({
     borderColor: "#B0B0B0",
     borderWidth: 1,
     width: "90%",
+    maxWidth: 480,
+    alignSelf: "center",
   },
   googleButtonContent: {
     paddingVertical: 6,
@@ -285,4 +299,62 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textDecorationLine: "underline",
   },
+  alertWrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    zIndex: 2000,
+    paddingHorizontal: 16,
+  },
+  alertBox: {
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+  },
+  alertHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  alertTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#333",
+  },
+  alertMessage: {
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+    color: "#444",
+  },
+  alertCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  alertCloseText: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#666",
+  },
+  alertSuccess: {
+    backgroundColor: "#d4edda",
+    borderColor: "#c3e6cb",
+  },
+  alertDanger: {
+    backgroundColor: "#f8d7da",
+    borderColor: "#f5c6cb",
+  },
+  alertWarning: {
+    backgroundColor: "#fff3cd",
+    borderColor: "#ffeeba",
+  },
 });
+

@@ -110,6 +110,7 @@ export default function RegisterName({ navigation, formData, setFormData }: Prop
             mode="outlined"
             outlineColor="#E0E0E0"
             activeOutlineColor="#816ab4"
+            textColor="#1a1a1a"
             autoCapitalize="words"
             left={<TextInput.Icon icon="account" />}
           />
@@ -132,6 +133,7 @@ export default function RegisterName({ navigation, formData, setFormData }: Prop
             mode="outlined"
             outlineColor="#E0E0E0"
             activeOutlineColor="#816ab4"
+            textColor="#1a1a1a"
             autoCapitalize="words"
             left={<TextInput.Icon icon="account-outline" />}
           />

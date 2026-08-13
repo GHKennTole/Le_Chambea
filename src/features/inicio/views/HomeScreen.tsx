@@ -4,12 +4,18 @@ import CategoryScroll from "../../../shared/components/CategoryScroll";
 import SectionList from "../../../shared/components/SectionList";
 import MainLayout from "../../../shared/components/MainLayout";
 
+import SearchResultsList from "../../../shared/components/SearchResultsList";
+
 import { useHomeController } from '../controllers/useHomeController';
 import { useAppBadges } from '../../../shared/hooks/useAppBadges';
 
 export default function HomeScreen() {
   const vm = useHomeController();
   const badges = useAppBadges();
+
+  const searchTitle = vm.searchQuery.trim() !== ''
+    ? `Resultados para "${vm.searchQuery.trim()}"`
+    : `Categoría: ${vm.selectedCategory}`;
 
   return (
     <MainLayout active="Home">
@@ -37,9 +43,19 @@ export default function HomeScreen() {
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
           >
-            <SectionList title="Más solicitados" data={vm.masSolicitados} loading={vm.loading} />
-            <SectionList title="Novedades" data={vm.novedades} loading={vm.loading} />
-            <SectionList title="Cerca de ti" data={vm.masSolicitados} loading={vm.loading} />
+            {vm.isSearching ? (
+              <SearchResultsList 
+                title={searchTitle} 
+                data={vm.searchResults} 
+                loading={vm.loading} 
+              />
+            ) : (
+              <>
+                <SectionList title="Más solicitados" data={vm.masSolicitados} loading={vm.loading} />
+                <SectionList title="Novedades" data={vm.novedades} loading={vm.loading} />
+                <SectionList title="Cerca de ti" data={vm.masSolicitados} loading={vm.loading} />
+              </>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -57,13 +73,13 @@ const styles = StyleSheet.create({
     zIndex: 10,
     paddingBottom: 5,
     ...Platform.select({
-      web: { boxShadow: '0px 2px 3px rgba(0,0,0,0.1)' } as any,
+      web: { boxShadow: '0px 2px 3px rgba(0,0,0,0.06)' } as any,
       default: {
-        elevation: 5,
+        elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
+        shadowOpacity: 0.08,
+        shadowRadius: 2,
       }
     }),
   },
@@ -74,8 +90,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 10,
-    paddingBottom: 100, // Espacio para el BottomNav en móvil
-    paddingTop: 1, 
+    paddingHorizontal: Platform.OS === 'web' ? 16 : 10,
+    paddingTop: 4,
+    paddingBottom: 20,
   }
 });

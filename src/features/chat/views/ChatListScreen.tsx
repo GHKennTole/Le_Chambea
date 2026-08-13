@@ -78,8 +78,11 @@ export default function ChatListScreen() {
     <MainLayout active="ChatList">
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mensajes</Text>
-      </View>
+          <View style={styles.headerTitleContainer}>
+            <MaterialCommunityIcons name="forum-outline" size={26} color={PURPLE} />
+            <Text style={styles.headerTitle}>Mensajes</Text>
+          </View>
+        </View>
 
       {vm.loading ? (
         <View style={styles.centerContainer}>
@@ -114,8 +117,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ECECF1"
   },
+  headerTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   headerTitle: { fontSize: 24, fontWeight: "900", color: "#333" },
-  listContent: { paddingBottom: 100 },
+  listContent: { paddingBottom: 20 },
   centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20 },
   emptyText: { marginTop: 12, fontSize: 16, color: "#888", textAlign: "center" },
   

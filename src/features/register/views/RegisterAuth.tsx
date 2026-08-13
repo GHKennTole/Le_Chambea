@@ -146,6 +146,7 @@ export default function RegisterAuth({ navigation, formData, setFormData }: Prop
             autoCapitalize="none"
             left={<TextInput.Icon icon="email" />}
             activeOutlineColor="#816ab4"
+            textColor="#1a1a1a"
           />
 
           <TextInput
@@ -166,6 +167,7 @@ export default function RegisterAuth({ navigation, formData, setFormData }: Prop
               />
             }
             activeOutlineColor="#816ab4"
+            textColor="#1a1a1a"
             onFocus={() => setPasswordFocus(true)}
             onBlur={() => setPasswordFocus(false)}
           />
@@ -222,6 +224,7 @@ export default function RegisterAuth({ navigation, formData, setFormData }: Prop
               />
             }
             activeOutlineColor="#816ab4"
+            textColor="#1a1a1a"
           />
 
           {!!vm.helperText && <Text style={styles.helperText}>{vm.helperText}</Text>}
@@ -248,10 +251,7 @@ export default function RegisterAuth({ navigation, formData, setFormData }: Prop
 
           <Button
             mode="outlined"
-            onPress={() => {
-              vm.setGoogleLoading(true);
-              setTimeout(() => vm.setGoogleLoading(false), 1000);
-            }}
+            onPress={vm.handleGoogleRegister}
             loading={vm.googleLoading}
             style={styles.googleButton}
             textColor="#666"

@@ -1,66 +1,57 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   Modal,
   Pressable,
+  ScrollView,
   Platform,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import type { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 import type { RegisterStackParamList } from "../../../core/navigation/types";
 import { RegisterSharedProps } from "../models/register.types";
-
-import { TextInput } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../../../core/navigation/types";
 
-type Props =
-  NativeStackScreenProps<RegisterStackParamList, "RegisterBirth"> &
+type Props = NativeStackScreenProps<RegisterStackParamList, "RegisterBirth"> &
   RegisterSharedProps;
 
 const TOTAL_STEPS = 4;
 const CURRENT_STEP = 1; // RegisterBirth = paso 2/4
-
-// ✅ Requisito de edad mínima
 const MIN_AGE = 16;
+
+const MONTHS = [
+  { value: 1, label: "Enero" },
+  { value: 2, label: "Febrero" },
+  { value: 3, label: "Marzo" },
+  { value: 4, label: "Abril" },
+  { value: 5, label: "Mayo" },
+  { value: 6, label: "Junio" },
+  { value: 7, label: "Julio" },
+  { value: 8, label: "Agosto" },
+  { value: 9, label: "Septiembre" },
+  { value: 10, label: "Octubre" },
+  { value: 11, label: "Noviembre" },
+  { value: 12, label: "Diciembre" },
+];
+
+function getDaysInMonth(month: number | null, year: number | null) {
+  if (!month) return 31;
+  const y = year || 2024;
+  return new Date(y, month, 0).getDate();
+}
+
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 101 }, (_, i) => currentYear - i);
 
 function toISODateOnly(date: Date) {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
-}
-
-function isoToES(iso: string) {
-  // yyyy-mm-dd -> dd/mm/yyyy
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  if (!m) return "";
-  return `${m[3]}/${m[2]}/${m[1]}`;
-}
-
-function parseESDate(es: string): Date | null {
-  // dd/mm/yyyy
-  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(es);
-  if (!m) return null;
-
-  const d = Number(m[1]);
-  const mo = Number(m[2]) - 1;
-  const y = Number(m[3]);
-
-  const dt = new Date(y, mo, d);
-  // Validación estricta: evita 32/13/2020, etc.
-  if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== d) {
-    return null;
-  }
-  return dt;
 }
 
 function calcAge(birth: Date, now = new Date()) {
@@ -77,40 +68,57 @@ function isReasonableBirthDate(date: Date) {
     today.getMonth(),
     today.getDate()
   );
-  const max = today;
-  return date >= min && date <= max;
-}
-
-function normalizeESInput(text: string) {
-  // Mantiene solo números y coloca / automáticamente: dd/mm/yyyy
-  const digits = text.replace(/[^0-9]/g, "").slice(0, 8); // ddmmyyyy
-  const parts: string[] = [];
-  if (digits.length >= 2) parts.push(digits.slice(0, 2));
-  else parts.push(digits);
-
-  if (digits.length >= 4) parts.push(digits.slice(2, 4));
-  else if (digits.length > 2) parts.push(digits.slice(2));
-
-  if (digits.length > 4) parts.push(digits.slice(4));
-
-  return parts.filter(Boolean).join("/");
+  return date >= min && date <= today;
 }
 
 export default function RegisterBirth({ navigation, formData, setFormData }: Props) {
   const insets = useSafeAreaInsets();
 
-  const [showPicker, setShowPicker] = useState(false);
+  const initialDate = useMemo(() => {
+    const iso = String(formData?.birthDate || "");
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+    if (m) {
+      return {
+        year: Number(m[1]),
+        month: Number(m[2]),
+        day: Number(m[3]),
+      };
+    }
+    return { year: null, month: null, day: null };
+  }, []);
+
+  const [selectedDay, setSelectedDay] = useState<number | null>(initialDate.day);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(initialDate.month);
+  const [selectedYear, setSelectedYear] = useState<number | null>(initialDate.year);
+  const [activeDropdown, setActiveDropdown] = useState<"day" | "month" | "year" | null>(null);
   const [showWhy, setShowWhy] = useState(false);
 
+  useEffect(() => {
+    if (selectedDay && selectedMonth && selectedYear) {
+      const maxDays = getDaysInMonth(selectedMonth, selectedYear);
+      const validDay = Math.min(selectedDay, maxDays);
+      if (validDay !== selectedDay) {
+        setSelectedDay(validDay);
+      }
+      const dt = new Date(selectedYear, selectedMonth - 1, validDay);
+      if (
+        dt.getFullYear() === selectedYear &&
+        dt.getMonth() === selectedMonth - 1 &&
+        dt.getDate() === validDay
+      ) {
+        const iso = toISODateOnly(dt);
+        setFormData((prev: any) => ({ ...prev, birthDate: iso }));
+      }
+    }
+  }, [selectedDay, selectedMonth, selectedYear]);
 
+  const parsedBirth = useMemo(() => {
+    if (!selectedDay || !selectedMonth || !selectedYear) return null;
+    const maxDays = getDaysInMonth(selectedMonth, selectedYear);
+    if (selectedDay > maxDays) return null;
+    return new Date(selectedYear, selectedMonth - 1, selectedDay);
+  }, [selectedDay, selectedMonth, selectedYear]);
 
-  // ✅ Texto editable mostrado en el input (dd/mm/yyyy)
-  const [birthText, setBirthText] = useState<string>(() => {
-    const iso = String(formData?.birthDate || "");
-    return iso ? isoToES(iso) : "";
-  });
-
-  const parsedBirth = useMemo(() => parseESDate(birthText), [birthText]);
   const age = useMemo(() => {
     if (!parsedBirth) return null;
     if (!isReasonableBirthDate(parsedBirth)) return null;
@@ -118,44 +126,11 @@ export default function RegisterBirth({ navigation, formData, setFormData }: Pro
     return a >= 0 ? a : null;
   }, [parsedBirth]);
 
-  // ✅ Ahora también valida edad mínima
   const canContinue =
     !!parsedBirth &&
     isReasonableBirthDate(parsedBirth) &&
     age !== null &&
     age >= MIN_AGE;
-
-  const onOpenPicker = () => setShowPicker(true);
-
-  const onChangeDate = (event: DateTimePickerEvent, selected?: Date) => {
-    // Si cancela en Android, selected viene undefined
-    if (Platform.OS === "android") setShowPicker(false);
-
-    // iOS puede emitir "dismissed" también
-    if (event.type === "dismissed") return;
-
-    if (selected) {
-      // Guardamos en formData como ISO, pero mostramos ES
-      const iso = toISODateOnly(selected);
-      setFormData((prev) => ({ ...prev, birthDate: iso }));
-      setBirthText(isoToES(iso));
-    }
-  };
-
-  const onChangeBirthText = (text: string) => {
-    const normalized = normalizeESInput(text);
-    setBirthText(normalized);
-
-    // Si ya está completa y válida, la guardamos en formData
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(normalized)) {
-      const dt = parseESDate(normalized);
-      if (dt && isReasonableBirthDate(dt)) {
-        setFormData((prev) => ({ ...prev, birthDate: toISODateOnly(dt) }));
-      }
-    }
-  };
-
-
 
   const renderDots = () =>
     Array.from({ length: TOTAL_STEPS }).map((_, index) => {
@@ -174,15 +149,9 @@ export default function RegisterBirth({ navigation, formData, setFormData }: Pro
       );
     });
 
-  // Picker abre en HOY si no hay fecha válida
-  const pickerDate =
-    parsedBirth && isReasonableBirthDate(parsedBirth) ? parsedBirth : new Date();
-
-
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header flotante: bolitas + botón atrás */}
+      {/* Header flotante */}
       <View style={[styles.topOverlay, { paddingTop: insets.top }]}>
         <View style={styles.dotsTop}>{renderDots()}</View>
 
@@ -210,59 +179,104 @@ export default function RegisterBirth({ navigation, formData, setFormData }: Pro
         </Text>
 
         <View style={styles.form}>
-          {/* ✅ MISMO BLOQUE: se escribe + icono calendario */}
-          <View style={styles.birthRow}>
-            <Text style={styles.birthLabel}>
-              Fecha de nacimiento{" "}
-              {age !== null ? (
-                <Text style={styles.ageInline}>({age} años)</Text>
-              ) : null}
-            </Text>
+          <Text style={styles.birthLabel}>
+            Fecha de nacimiento{" "}
+            {age !== null ? (
+              <Text style={styles.ageInline}>({age} años)</Text>
+            ) : null}
+          </Text>
 
-            <View style={styles.birthInputRow}>
-              <TextInput
-                value={birthText}
-                onChangeText={onChangeBirthText}
-                placeholder="dd/mm/aaaa"
-                mode="outlined"
-                style={styles.birthInput}
-                outlineColor="#E0E0E0"
-                activeOutlineColor="#816ab4"
-                keyboardType="number-pad"
-                returnKeyType="done"
-              />
-
-              <TouchableOpacity
-                style={styles.calendarBtn}
-                activeOpacity={0.8}
-                onPress={onOpenPicker}
+          {/* Selector de 3 campos tipo Facebook: [Día v] [Mes v] [Año v] */}
+          <View style={styles.dropdownsRow}>
+            {/* Campo Día */}
+            <TouchableOpacity
+              style={[
+                styles.dropdownBox,
+                activeDropdown === "day" && styles.dropdownBoxActive,
+              ]}
+              activeOpacity={0.75}
+              onPress={() => setActiveDropdown("day")}
+            >
+              <Text
+                style={[
+                  styles.dropdownText,
+                  !selectedDay && styles.dropdownPlaceholder,
+                ]}
               >
-                <MaterialCommunityIcons
-                  name="calendar-month"
-                  size={22}
-                  color="#5b5c9c"
-                />
-              </TouchableOpacity>
-            </View>
+                {selectedDay ? String(selectedDay) : "Día"}
+              </Text>
+              <MaterialCommunityIcons
+                name="chevron-down"
+                size={22}
+                color={activeDropdown === "day" ? "#816ab4" : "#666666"}
+              />
+            </TouchableOpacity>
 
-            {/* Mensajes de error suaves */}
-            {birthText.length > 0 && !parsedBirth && birthText.length === 10 && (
-              <Text style={styles.errorText}>Fecha inválida. Usa dd/mm/aaaa.</Text>
-            )}
-            {parsedBirth && !isReasonableBirthDate(parsedBirth) && (
-              <Text style={styles.errorText}>Elige una fecha válida (no futura).</Text>
-            )}
+            {/* Campo Mes */}
+            <TouchableOpacity
+              style={[
+                styles.dropdownBox,
+                activeDropdown === "month" && styles.dropdownBoxActive,
+              ]}
+              activeOpacity={0.75}
+              onPress={() => setActiveDropdown("month")}
+            >
+              <Text
+                style={[
+                  styles.dropdownText,
+                  !selectedMonth && styles.dropdownPlaceholder,
+                ]}
+                numberOfLines={1}
+              >
+                {selectedMonth
+                  ? MONTHS.find((m) => m.value === selectedMonth)?.label
+                  : "Mes"}
+              </Text>
+              <MaterialCommunityIcons
+                name="chevron-down"
+                size={22}
+                color={activeDropdown === "month" ? "#816ab4" : "#666666"}
+              />
+            </TouchableOpacity>
 
-            {/* ✅ Error por edad mínima */}
-            {parsedBirth &&
-              isReasonableBirthDate(parsedBirth) &&
-              age !== null &&
-              age < MIN_AGE && (
-                <Text style={styles.errorText}>
-                  Debes tener al menos {MIN_AGE} años para unirte.
-                </Text>
-              )}
+            {/* Campo Año */}
+            <TouchableOpacity
+              style={[
+                styles.dropdownBox,
+                activeDropdown === "year" && styles.dropdownBoxActive,
+              ]}
+              activeOpacity={0.75}
+              onPress={() => setActiveDropdown("year")}
+            >
+              <Text
+                style={[
+                  styles.dropdownText,
+                  !selectedYear && styles.dropdownPlaceholder,
+                ]}
+              >
+                {selectedYear ? String(selectedYear) : "Año"}
+              </Text>
+              <MaterialCommunityIcons
+                name="chevron-down"
+                size={22}
+                color={activeDropdown === "year" ? "#816ab4" : "#666666"}
+              />
+            </TouchableOpacity>
           </View>
+
+          {/* Mensajes de error suaves */}
+          {parsedBirth && !isReasonableBirthDate(parsedBirth) && (
+            <Text style={styles.errorText}>Elige una fecha válida (no futura).</Text>
+          )}
+
+          {parsedBirth &&
+            isReasonableBirthDate(parsedBirth) &&
+            age !== null &&
+            age < MIN_AGE && (
+              <Text style={styles.errorText}>
+                Debes tener al menos {MIN_AGE} años para unirte.
+              </Text>
+            )}
 
           <TouchableOpacity
             style={[
@@ -281,16 +295,165 @@ export default function RegisterBirth({ navigation, formData, setFormData }: Pro
         </View>
       </View>
 
+      {/* Modal Desplegable de Selección (Día / Mes / Año) */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={activeDropdown !== null}
+        onRequestClose={() => setActiveDropdown(null)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setActiveDropdown(null)}
+        >
+          <Pressable
+            style={styles.modalCard}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {activeDropdown === "day" && "Selecciona el Día"}
+                {activeDropdown === "month" && "Selecciona el Mes"}
+                {activeDropdown === "year" && "Selecciona el Año"}
+              </Text>
 
+              <TouchableOpacity
+                onPress={() => setActiveDropdown(null)}
+                style={styles.modalCloseBtn}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons name="close" size={20} color="#666666" />
+              </TouchableOpacity>
+            </View>
 
-      {/* Bottom sheet: Por qué */}
+            <ScrollView
+              style={styles.optionsList}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
+              {activeDropdown === "day" &&
+                Array.from(
+                  { length: getDaysInMonth(selectedMonth, selectedYear) },
+                  (_, i) => i + 1
+                ).map((d) => {
+                  const isSelected = selectedDay === d;
+                  return (
+                    <TouchableOpacity
+                      key={d}
+                      style={[
+                        styles.optionItem,
+                        isSelected && styles.optionItemSelected,
+                      ]}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        setSelectedDay(d);
+                        setActiveDropdown(null);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.optionText,
+                          isSelected && styles.optionTextSelected,
+                        ]}
+                      >
+                        {d}
+                      </Text>
+                      {isSelected && (
+                        <MaterialCommunityIcons
+                          name="check"
+                          size={20}
+                          color="#816ab4"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+
+              {activeDropdown === "month" &&
+                MONTHS.map((m) => {
+                  const isSelected = selectedMonth === m.value;
+                  return (
+                    <TouchableOpacity
+                      key={m.value}
+                      style={[
+                        styles.optionItem,
+                        isSelected && styles.optionItemSelected,
+                      ]}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        setSelectedMonth(m.value);
+                        setActiveDropdown(null);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.optionText,
+                          isSelected && styles.optionTextSelected,
+                        ]}
+                      >
+                        {m.label}
+                      </Text>
+                      {isSelected && (
+                        <MaterialCommunityIcons
+                          name="check"
+                          size={20}
+                          color="#816ab4"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+
+              {activeDropdown === "year" &&
+                YEARS.map((y) => {
+                  const isSelected = selectedYear === y;
+                  return (
+                    <TouchableOpacity
+                      key={y}
+                      style={[
+                        styles.optionItem,
+                        isSelected && styles.optionItemSelected,
+                      ]}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        setSelectedYear(y);
+                        setActiveDropdown(null);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.optionText,
+                          isSelected && styles.optionTextSelected,
+                        ]}
+                      >
+                        {y}
+                      </Text>
+                      {isSelected && (
+                        <MaterialCommunityIcons
+                          name="check"
+                          size={20}
+                          color="#816ab4"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal Bottom Sheet: Por qué */}
       <Modal
         transparent
         animationType="slide"
         visible={showWhy}
         onRequestClose={() => setShowWhy(false)}
       >
-        <Pressable style={styles.sheetBackdrop} onPress={() => setShowWhy(false)}>
+        <Pressable
+          style={styles.sheetBackdrop}
+          onPress={() => setShowWhy(false)}
+        >
           <Pressable
             style={[
               styles.sheet,
@@ -327,61 +490,6 @@ export default function RegisterBirth({ navigation, formData, setFormData }: Pro
           </Pressable>
         </Pressable>
       </Modal>
-
-      {/* Picker */}
-      {showPicker && Platform.OS === "android" && (
-        <DateTimePicker
-          value={pickerDate}
-          mode="date"
-          display="calendar"
-          onChange={onChangeDate}
-          maximumDate={new Date()}
-        />
-      )}
-
-      {showPicker && Platform.OS === "ios" && (
-        <Modal transparent animationType="fade" visible={showPicker}>
-          <Pressable
-            style={styles.pickerBackdrop}
-            onPress={() => setShowPicker(false)}
-          >
-            <Pressable
-              style={[
-                styles.pickerCard,
-                { paddingBottom: Math.max(insets.bottom, 14) },
-              ]}
-            >
-              <View style={styles.pickerHeader}>
-                <Text style={styles.pickerTitle}>Selecciona tu fecha</Text>
-
-                <TouchableOpacity
-                  onPress={() => setShowPicker(false)}
-                  activeOpacity={0.8}
-                  style={styles.closeX}
-                >
-                  <Text style={styles.closeXText}>×</Text>
-                </TouchableOpacity>
-              </View>
-
-              <DateTimePicker
-                value={pickerDate}
-                mode="date"
-                display="spinner"
-                onChange={onChangeDate}
-                maximumDate={new Date()}
-              />
-
-              <TouchableOpacity
-                style={[styles.primaryButton, { marginTop: 14 }]}
-                activeOpacity={0.85}
-                onPress={() => setShowPicker(false)}
-              >
-                <Text style={styles.primaryButtonText}>Listo</Text>
-              </TouchableOpacity>
-            </Pressable>
-          </Pressable>
-        </Modal>
-      )}
     </View>
   );
 }
@@ -399,12 +507,14 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 6,
   },
+
   dotsTop: {
     height: 44,
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
   },
+
   dot: {
     width: 10,
     height: 10,
@@ -443,8 +553,8 @@ const styles = StyleSheet.create({
   },
 
   whyLink: {
-    color: "#1D4ED8",
-    fontWeight: "700",
+    color: "#0066cc",
+    fontWeight: "bold",
   },
 
   form: {
@@ -453,48 +563,62 @@ const styles = StyleSheet.create({
     maxWidth: 360,
   },
 
-  birthRow: {
-    marginBottom: 12,
-  },
-
   birthLabel: {
-    fontSize: 12,
-    color: "#666",
-    fontWeight: "800",
-    marginBottom: 6,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#333333",
+    marginBottom: 8,
   },
 
   ageInline: {
-    color: "#333",
-    fontWeight: "900",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#816ab4",
   },
 
-  birthInputRow: {
+  /* Contenedor de los 3 desplegables */
+  dropdownsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+
+  dropdownBox: {
+    flex: 1,
+    height: 50,
+    backgroundColor: "#f4f2f8",
+    borderWidth: 1.5,
+    borderColor: "#e1dcee",
+    borderRadius: 14,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
   },
 
-  birthInput: {
-    flex: 1,
+  dropdownBoxActive: {
+    borderColor: "#816ab4",
     backgroundColor: "#ffffff",
   },
 
-  calendarBtn: {
-    marginLeft: 10,
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
+  dropdownText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1a1a1a",
+  },
+
+  dropdownPlaceholder: {
+    color: "#a89fbf",
+    fontWeight: "500",
   },
 
   errorText: {
     color: "#b00020",
     fontSize: 12,
-    marginTop: 6,
+    marginTop: 2,
+    marginBottom: 10,
     fontWeight: "700",
   },
 
@@ -504,12 +628,17 @@ const styles = StyleSheet.create({
     borderRadius: 300,
     paddingVertical: 12,
     alignItems: "center",
-    shadowColor: "#5b5c9c",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-    marginTop: 6,
+    marginTop: 10,
+    ...Platform.select({
+      web: { boxShadow: "0px 4px 8px rgba(91,92,156,0.3)" } as any,
+      default: {
+        shadowColor: "#5b5c9c",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+      },
+    }),
   },
   primaryButtonDisabled: { opacity: 0.55 },
   primaryButtonText: {
@@ -518,8 +647,79 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
+  /* Styles para el Modal Desplegable (Día / Mes / Año) */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
 
+  modalCard: {
+    width: "100%",
+    maxWidth: 320,
+    maxHeight: 340,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 16,
+    ...Platform.select({
+      web: { boxShadow: "0px 10px 25px rgba(0,0,0,0.2)" } as any,
+      default: {
+        elevation: 10,
+      },
+    }),
+  },
 
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eeeeee",
+    marginBottom: 8,
+  },
+
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333333",
+  },
+
+  modalCloseBtn: {
+    padding: 4,
+  },
+
+  optionsList: {
+    maxHeight: 250,
+  },
+
+  optionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+
+  optionItemSelected: {
+    backgroundColor: "#f2ecfa",
+  },
+
+  optionText: {
+    fontSize: 16,
+    color: "#333333",
+    fontWeight: "500",
+  },
+
+  optionTextSelected: {
+    color: "#816ab4",
+    fontWeight: "700",
+  },
+
+  /* Bottom sheet "Por qué" */
   sheetBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.35)",
@@ -560,36 +760,5 @@ const styles = StyleSheet.create({
     color: "#555",
     fontSize: 14,
     lineHeight: 20,
-  },
-
-  pickerBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    justifyContent: "center",
-    padding: 18,
-  },
-  pickerCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 18,
-    padding: 16,
-  },
-  pickerHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  pickerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#333",
-  },
-  closeX: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#5b5c9c",
-    justifyContent: "center",
-    alignItems: "center",
   },
 });

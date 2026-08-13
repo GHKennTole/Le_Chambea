@@ -1,32 +1,44 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
-type Category = {
-  name: string;
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-};
-
-const categories: Category[] = [
-  { name: "Electricista", icon: "flash" },
-  { name: "Carpintero", icon: "hammer" },
-  { name: "Mecánico", icon: "wrench" },
-  { name: "Mandadito", icon: "motorbike" },
-  { name: "Dentista", icon: "tooth" },
-  { name: "Plomero", icon: "pipe" },
-  { name: "Jardinería", icon: "flower" },
-  { name: "Limpieza", icon: "broom" },
-];
+import { CATEGORIES_WITH_ICONS } from "../constants/categories";
 
 interface CategoryScrollProps {
   selectedCategory: string | null;
   onSelectCategory: (categoria: string | null) => void;
 }
 
+const isWeb = Platform.OS === 'web';
+
 export default function CategoryScroll({ selectedCategory, onSelectCategory }: CategoryScrollProps) {
+  const hasActiveFilter = selectedCategory !== null;
+
   return (
     <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {categories.map((cat, i) => (
+      <ScrollView horizontal showsHorizontalScrollIndicator={isWeb ? true : false}>
+        {/* Botón de Filtros / Eliminar filtros */}
+        <TouchableOpacity
+          style={styles.item}
+          activeOpacity={hasActiveFilter ? 0.8 : 1}
+          onPress={() => {
+            if (hasActiveFilter) {
+              onSelectCategory(null);
+            }
+          }}
+        >
+          <View style={[styles.iconCircle, hasActiveFilter && styles.iconCircleRed]}>
+            <MaterialCommunityIcons
+              name={hasActiveFilter ? "close" : "tune-variant"}
+              size={24}
+              color={hasActiveFilter ? "white" : "#6B35A8"}
+            />
+          </View>
+          <Text style={[styles.text, hasActiveFilter && styles.textRed]}>
+            {hasActiveFilter ? "Quitar categoría" : "Categorías"}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Lista de categorías */}
+        {CATEGORIES_WITH_ICONS.map((cat, i) => (
           <TouchableOpacity 
             key={i} 
             style={styles.item} 
@@ -55,7 +67,7 @@ export default function CategoryScroll({ selectedCategory, onSelectCategory }: C
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",
-    paddingHorizontal: 10,
+    paddingHorizontal: Platform.OS === 'web' ? 16 : 10,
     paddingVertical: 10,
   },
 
@@ -83,6 +95,13 @@ const styles = StyleSheet.create({
   },
   textActive: {
     color: "#6B35A8",
+    fontWeight: "bold",
+  },
+  iconCircleRed: {
+    backgroundColor: "#DC2626",
+  },
+  textRed: {
+    color: "#DC2626",
     fontWeight: "bold",
   }
 });

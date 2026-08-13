@@ -23,7 +23,8 @@ export type RootStackParamList = {
   MyProfile: undefined;
   ProfessionalProfile: undefined;
   Reviews: { userId?: string };
-  WriteReview: { professionalId: string; profileId?: string; jobId: string };
+  WriteReview: { professionalId?: string; profileId?: string; jobId?: string; reviewId?: string };
+  MyReviews: undefined;
   Search: undefined;
   PublicProfile: { id: string; professionalProfileId?: string; fromChat?: boolean };
   ChatList: undefined;

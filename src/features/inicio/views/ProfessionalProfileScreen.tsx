@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,13 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Image,
   ActivityIndicator,
   Platform,
   Switch,
   KeyboardAvoidingView,
+  Modal,
+  Pressable,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,11 +22,31 @@ import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 
 const PURPLE = "#5A2D82";
 
+const PRICE_PRESETS = [
+  { key: "a_cotizar", label: "A cotizar", hasInput: false },
+  { key: "segun_trabajo", label: "Según trabajo", hasInput: false },
+  { key: "por_hora", label: "Por hora", hasInput: false },
+  { key: "precio_fijo", label: "Precio fijo", hasInput: true, placeholder: "Ej: C$ 300" },
+];
+
 export default function ProfessionalProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const vm = useProfessionalProfileController();
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showPricePicker, setShowPricePicker] = useState(false);
+  const [selectedPriceType, setSelectedPriceType] = useState<string>("a_cotizar");
+
+  useEffect(() => {
+    if (showPricePicker && vm.activeService) {
+      const val = vm.activeService.rango_precio || "";
+      if (val === "A cotizar") setSelectedPriceType("a_cotizar");
+      else if (val === "Según trabajo") setSelectedPriceType("segun_trabajo");
+      else if (val === "Por hora") setSelectedPriceType("por_hora");
+      else if (val) setSelectedPriceType("precio_fijo");
+      else setSelectedPriceType("a_cotizar");
+    }
+  }, [showPricePicker, vm.activeService?.rango_precio]);
 
   if (vm.loading) {
     return (
@@ -43,27 +66,28 @@ export default function ProfessionalProfileScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.headerBanner} />
-
+      <View style={styles.container}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
-          <View style={styles.headerSection}>
-            <MaterialCommunityIcons name="briefcase-check" size={40} color="white" />
-            <Text style={styles.headerTitle}>
-              Perfil Profesional
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              Configura tus servicios para que los clientes te encuentren
-            </Text>
+          {/* Header Morado Dinámico */}
+          <View style={[styles.purpleHeaderWrapper, { paddingTop: insets.top + 16 }]}>
+            <View style={styles.headerSection}>
+              <MaterialCommunityIcons name="briefcase-check" size={40} color="white" />
+              <Text style={styles.headerTitle}>
+                Perfil Profesional
+              </Text>
+              <Text style={styles.headerSubtitle}>
+                Configura tus servicios para que los clientes te encuentren
+              </Text>
+            </View>
           </View>
 
-          {/* TABS */}
+          <View style={styles.bodyContent}>
+            {/* TABS */}
           <View style={styles.tabsContainer}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
               {vm.services.map((svc, index) => (
@@ -133,29 +157,33 @@ export default function ProfessionalProfileScreen() {
 
                 {showCategoryPicker && (
                   <View style={styles.categoriaGrid}>
-                    {vm.categories.map((cat) => (
-                      <TouchableOpacity
-                        key={cat}
-                        style={[
-                          styles.categoriaChip,
-                          activeService.categoria === cat && styles.categoriaChipActive,
-                        ]}
-                        onPress={() => {
-                          vm.updateField("categoria", cat);
-                          setShowCategoryPicker(false);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <Text
+                    {vm.categories.map((cat) => {
+                      const isSelected = activeService.categoria === cat;
+
+                      return (
+                        <TouchableOpacity
+                          key={cat}
                           style={[
-                            styles.categoriaChipText,
-                            activeService.categoria === cat && styles.categoriaChipTextActive,
+                            styles.categoriaChip,
+                            isSelected && styles.categoriaChipActive,
                           ]}
+                          onPress={() => {
+                            vm.updateField("categoria", cat);
+                            setShowCategoryPicker(false);
+                          }}
+                          activeOpacity={0.8}
                         >
-                          {cat}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                          <Text
+                            style={[
+                              styles.categoriaChipText,
+                              isSelected && styles.categoriaChipTextActive,
+                            ]}
+                          >
+                            {cat}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 )}
               </View>
@@ -180,83 +208,213 @@ export default function ProfessionalProfileScreen() {
 
                 <View style={styles.divider} />
 
-                <View style={styles.fieldRow}>
-                  <MaterialCommunityIcons name="text-box-outline" size={20} color={PURPLE} style={styles.fieldIcon} />
-                  <View style={styles.fieldInput}>
-                    <Text style={styles.label}>Descripción</Text>
-                    <TextInput
-                      style={[styles.input, styles.inputMultiline]}
-                      placeholder="Describe tu experiencia y servicios..."
-                      placeholderTextColor="#aaa"
-                      multiline
-                      numberOfLines={3}
-                      textAlignVertical="top"
-                      value={activeService.descripcion}
-                      onChangeText={(v) => vm.updateField("descripcion", v)}
-                    />
+                <View style={styles.descriptionContainer}>
+                  <View style={styles.descriptionHeader}>
+                    <MaterialCommunityIcons name="text-box-outline" size={20} color={PURPLE} style={styles.fieldIcon} />
+                    <Text style={styles.label}>Descripción del servicio</Text>
                   </View>
+                  <TextInput
+                    style={styles.descriptionInput}
+                    placeholder="Detallá tu experiencia, especialidades, herramientas y todo lo que incluye tu servicio..."
+                    placeholderTextColor="#aaa"
+                    multiline
+                    scrollEnabled={false}
+                    textAlignVertical="top"
+                    value={activeService.descripcion}
+                    onChangeText={(v) => vm.updateField("descripcion", v)}
+                  />
                 </View>
 
                 <View style={styles.divider} />
 
-                <View style={styles.fieldRow}>
+                <TouchableOpacity
+                  style={styles.fieldRow}
+                  onPress={() => setShowPricePicker(true)}
+                  activeOpacity={0.8}
+                >
                   <MaterialCommunityIcons name="cash" size={20} color={PURPLE} style={styles.fieldIcon} />
                   <View style={styles.fieldInput}>
-                    <Text style={styles.label}>Rango de precios</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Ej: C$ 200 - C$ 500"
-                      placeholderTextColor="#aaa"
-                      value={activeService.rango_precio}
-                      onChangeText={(v) => vm.updateField("rango_precio", v)}
-                    />
+                    <Text style={styles.label}>Tarifa / Modalidad de precio</Text>
+                    <Text style={[styles.input, !activeService.rango_precio && styles.placeholderText]}>
+                      {activeService.rango_precio || "Seleccionar modalidad de tarifa"}
+                    </Text>
                   </View>
-                </View>
+                  <MaterialCommunityIcons name="chevron-down" size={22} color="#888" />
+                </TouchableOpacity>
 
                 <View style={styles.divider} />
 
                 <View style={styles.fieldRow}>
                   <MaterialCommunityIcons name="map-marker-radius" size={20} color={PURPLE} style={styles.fieldIcon} />
                   <View style={styles.fieldInput}>
-                    <Text style={styles.label}>Zona de cobertura</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Ej: Juigalpa y alrededores"
-                      placeholderTextColor="#aaa"
-                      value={activeService.zona}
-                      onChangeText={(v) => vm.updateField("zona", v)}
-                    />
+                    <Text style={styles.label}>Ubicación / Zona de cobertura</Text>
+                    <Text style={styles.readOnlyText}>
+                      {vm.userLocation || activeService.zona || "Definida en Editar Perfil"}
+                    </Text>
                   </View>
                 </View>
               </View>
 
-              {/* Botón guardar */}
-              <TouchableOpacity
-                style={[styles.saveButton, vm.saving && styles.saveButtonDisabled]}
-                onPress={vm.saveProfile}
-                activeOpacity={0.85}
-                disabled={vm.saving}
-              >
-                {vm.saving ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <>
-                    <MaterialCommunityIcons name="content-save" size={20} color="white" />
-                    <Text style={styles.saveButtonText}>
-                      {isNew ? "Crear servicio" : "Guardar cambios"}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
+              {/* Portafolio Digital / Fotos de Trabajos */}
+              <View style={styles.card}>
+                <View style={styles.portfolioHeader}>
+                  <Text style={styles.cardTitle}>Portafolio de Trabajos</Text>
+                  <Text style={styles.portfolioSubtitle}>
+                    Agrega fotos de tus trabajos anteriores para dar mayor confianza a tus clientes.
+                  </Text>
+                </View>
+
+                <View style={styles.portfolioGrid}>
+                  {(activeService.portafolio || []).map((imgUrl, idx) => (
+                    <View key={idx} style={styles.portfolioItem}>
+                      <Image source={{ uri: imgUrl }} style={styles.portfolioImg} />
+                      <TouchableOpacity
+                        style={styles.portfolioDeleteBadge}
+                        onPress={() => vm.removePortfolioImage(imgUrl)}
+                        activeOpacity={0.8}
+                      >
+                        <MaterialCommunityIcons name="close" size={14} color="white" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+
+                  {(activeService.portafolio || []).length < 10 && (
+                    <TouchableOpacity
+                      style={styles.portfolioAddBtn}
+                      onPress={vm.addPortfolioImage}
+                      activeOpacity={0.8}
+                      disabled={vm.uploadingPortafolio}
+                    >
+                      {vm.uploadingPortafolio ? (
+                        <ActivityIndicator color={PURPLE} size="small" />
+                      ) : (
+                        <>
+                          <MaterialCommunityIcons name="camera-plus-outline" size={26} color={PURPLE} />
+                          <Text style={styles.portfolioAddText}>Añadir foto</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+
+              {/* Botón guardar (solo aparece cuando hay cambios o es un nuevo servicio) */}
+              {(vm.hasChanges || isNew) && (
+                <TouchableOpacity
+                  style={[styles.saveButton, vm.saving && styles.saveButtonDisabled]}
+                  onPress={vm.saveProfile}
+                  activeOpacity={0.85}
+                  disabled={vm.saving}
+                >
+                  {vm.saving ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <>
+                      <MaterialCommunityIcons name="content-save" size={20} color="white" />
+                      <Text style={styles.saveButtonText}>
+                        {isNew ? "Crear servicio" : "Guardar cambios"}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+
+              {/* Botón Ver Perfil Profesional */}
+              {activeService?.id ? (
+                <TouchableOpacity
+                  style={styles.viewProfileButton}
+                  onPress={() => {
+                    (navigation as any).navigate("PublicProfile", {
+                      id: activeService.usuario_id,
+                      professionalProfileId: activeService.id,
+                    });
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <MaterialCommunityIcons name="eye-outline" size={20} color={PURPLE} />
+                  <Text style={styles.viewProfileButtonText}>Ver perfil profesional</Text>
+                </TouchableOpacity>
+              ) : null}
             </>
           ) : (
             <Text style={{ textAlign: 'center', marginTop: 20 }}>No hay servicios</Text>
           )}
+          </View>
 
           <View style={{ height: 40 }} />
         </ScrollView>
 
         <FloatingBackButton />
+
+        {/* Modal Selección de Tarifa / Precio */}
+        <Modal
+          visible={showPricePicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowPricePicker(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setShowPricePicker(false)}>
+            <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+              <Text style={styles.modalTitle}>Modalidad de Tarifa</Text>
+              <Text style={styles.modalSubtitle}>Seleccioná cómo querés definir tus precios</Text>
+
+              <View style={{ width: "100%", gap: 10, marginTop: 8, marginBottom: 12 }}>
+                {PRICE_PRESETS.map((opt) => {
+                  const isSelected = selectedPriceType === opt.key;
+
+                  return (
+                    <TouchableOpacity
+                      key={opt.key}
+                      style={[styles.genderModalOption, isSelected && styles.genderModalOptionSelected]}
+                      onPress={() => {
+                        setSelectedPriceType(opt.key);
+                        if (!opt.hasInput) {
+                          vm.updateField("rango_precio", opt.label);
+                          setShowPricePicker(false);
+                        } else {
+                          // Clear or prepare text field
+                          const currentVal = activeService?.rango_precio || "";
+                          if (currentVal === "A cotizar" || currentVal === "Según trabajo") {
+                            vm.updateField("rango_precio", "");
+                          }
+                        }
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                        {isSelected && <View style={styles.radioInner} />}
+                      </View>
+                      <Text style={[styles.genderModalOptionText, isSelected && styles.genderModalOptionTextSelected]}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Input si elige Precio Fijo */}
+              {selectedPriceType === "precio_fijo" && (
+                <View style={{ width: "100%", marginTop: 4 }}>
+                  <Text style={styles.label}>Escribí tu precio fijo</Text>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: "#F6F6F8", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginTop: 4 }]}
+                    placeholder="Ej: C$ 300"
+                    placeholderTextColor="#aaa"
+                    value={activeService?.rango_precio === "Precio fijo" ? "" : activeService?.rango_precio || ""}
+                    onChangeText={(v) => vm.updateField("rango_precio", v)}
+                  />
+                  <TouchableOpacity
+                    style={[styles.modalConfirmBtn, { marginTop: 14 }]}
+                    onPress={() => setShowPricePicker(false)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.modalConfirmText}>Confirmar Tarifa</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
     </KeyboardAvoidingView>
   );
@@ -273,20 +431,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F6F6F8",
   },
-  headerBanner: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 150,
+  purpleHeaderWrapper: {
     backgroundColor: PURPLE,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    paddingBottom: 18,
+    width: "100%",
   },
   scroll: { flex: 1 },
   scrollContent: {
+    alignSelf: 'center',
+    width: '100%',
+  },
+  bodyContent: {
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 16,
     alignSelf: 'center',
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 800 : '100%',
@@ -294,8 +453,6 @@ const styles = StyleSheet.create({
 
   headerSection: {
     alignItems: "center",
-    marginBottom: 16,
-    paddingTop: 10,
   },
   headerTitle: {
     fontSize: 22,
@@ -462,6 +619,14 @@ const styles = StyleSheet.create({
   categoriaChipTextActive: {
     color: "white",
   },
+  customCategoryWrap: {
+    marginTop: 14,
+    backgroundColor: "#F6F6F8",
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#E2D4F0",
+  },
 
   fieldRow: {
     flexDirection: "row",
@@ -488,8 +653,38 @@ const styles = StyleSheet.create({
     color: "#222",
     paddingVertical: 4,
   },
+  inputDisabled: {
+    color: "#888",
+  },
+  readOnlyText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#666",
+    paddingVertical: 4,
+  },
   inputMultiline: {
     minHeight: 60,
+    textAlignVertical: "top",
+  },
+  descriptionContainer: {
+    paddingVertical: 8,
+  },
+  descriptionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  descriptionInput: {
+    backgroundColor: "#F9F9FB",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#ECECF1",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: "#222",
+    lineHeight: 22,
+    minHeight: 120,
     textAlignVertical: "top",
   },
   divider: {
@@ -522,8 +717,165 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
-    color: "white",
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "900",
+  },
+  viewProfileButton: {
+    backgroundColor: "#F3ECFA",
+    borderRadius: 16,
+    paddingVertical: 15,
+    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: "#E2D4F0",
+  },
+  viewProfileButtonText: {
+    color: PURPLE,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  placeholderText: {
+    color: "#aaa",
+  },
+  radioOuter: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: "#A0A0A0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  radioOuterSelected: {
+    borderColor: PURPLE,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: PURPLE,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#111",
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 4,
+    marginBottom: 14,
+  },
+  genderModalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#ECECF1",
+    backgroundColor: "#F9F9FB",
+    gap: 12,
+  },
+  genderModalOptionSelected: {
+    borderColor: PURPLE,
+    backgroundColor: "#F3ECFA",
+  },
+  genderModalOptionText: {
+    fontSize: 14.5,
+    fontWeight: "700",
+    color: "#333",
+  },
+  genderModalOptionTextSelected: {
+    color: PURPLE,
+    fontWeight: "900",
+  },
+  modalConfirmBtn: {
+    width: "100%",
+    backgroundColor: PURPLE,
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+  modalConfirmText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+
+  // Portfolio Styles
+  portfolioHeader: {
+    marginBottom: 12,
+  },
+  portfolioSubtitle: {
+    fontSize: 12.5,
+    color: "#6B6B76",
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  portfolioGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 6,
+  },
+  portfolioItem: {
+    width: 85,
+    height: 85,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: "#EEE",
+    position: "relative",
+  },
+  portfolioImg: {
+    width: "100%",
+    height: "100%",
+  },
+  portfolioDeleteBadge: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  portfolioAddBtn: {
+    width: 85,
+    height: 85,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#E2D4F0",
+    borderStyle: "dashed",
+    backgroundColor: "#F8F5FC",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 4,
+  },
+  portfolioAddText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: PURPLE,
   },
 });

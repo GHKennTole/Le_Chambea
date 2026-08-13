@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Text, Image, TouchableOpacity, ActivityIndicator, Platform } from "react-native";
+import { View, StyleSheet, Text, Image, TouchableOpacity, ActivityIndicator, Platform, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,8 +11,8 @@ type Nav = NativeStackNavigationProp<RootStackParamList, "Welcome">;
 export default function WelcomeScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
-
-
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width > 768;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
@@ -30,7 +30,15 @@ export default function WelcomeScreen() {
         </View>
       </View>
 
-      <View style={[styles.bottomSection, { marginBottom: insets.bottom }]}>
+      <View
+        style={[
+          styles.bottomSection,
+          {
+            paddingBottom: isDesktop ? 35 : 10,
+            marginBottom: isDesktop ? 25 : insets.bottom,
+          },
+        ]}
+      >
         <TouchableOpacity
           style={styles.loginButton}
           onPress={() => navigation.navigate("Login")}

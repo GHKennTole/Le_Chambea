@@ -49,6 +49,19 @@ export function useFavoriteToggle(profesionalId: string) {
         setIsFavorite(false);
         setToastMessage('Quitado de favoritos');
       } else {
+        // Check if professional allows being added to favorites
+        const { data: proUserData } = await supabase
+          .from('usuarios')
+          .select('permitir_favoritos')
+          .eq('id', profesionalId)
+          .maybeSingle();
+
+        if (proUserData && (proUserData as any).permitir_favoritos === false) {
+          setToastMessage('Este profesional ha desactivado ser guardado en favoritos');
+          setTimeout(() => setToastMessage(null), 3500);
+          return;
+        }
+
         // Add favorite
         const { error } = await supabase
           .from('favoritos')

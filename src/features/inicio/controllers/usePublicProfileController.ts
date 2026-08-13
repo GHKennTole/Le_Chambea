@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../services/supabase';
-import type { UserProfile, ProfessionalProfile } from '../../perfil/models/profile.types';
+import type { UserProfile, ProfessionalProfile, Review } from '../../perfil/models/profile.types';
 import { useNavigation } from '@react-navigation/native';
 import { Alert } from 'react-native';
 
 export type ServiceWithRating = ProfessionalProfile & {
   averageRating: number;
   totalReviews: number;
+  reviews: Review[];
 };
 
 export function usePublicProfileController(professionalId: string, professionalProfileId?: string) {
@@ -40,13 +41,14 @@ export function usePublicProfileController(professionalId: string, professionalP
 
       if (profilesError) throw profilesError;
 
-      // 3. Fetch Ratings for these profiles
+      // 3. Fetch Ratings & Reviews for these profiles
       if (profilesData && profilesData.length > 0) {
         const profileIds = profilesData.map(p => p.id);
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('resenas')
-          .select('perfil_profesional_id, calificacion')
-          .in('perfil_profesional_id', profileIds);
+          .select('*, usuarios:cliente_id(nombre, apellidos, foto_perfil)')
+          .in('perfil_profesional_id', profileIds)
+          .order('fecha_creacion', { ascending: false });
 
         if (reviewsError) throw reviewsError;
 
@@ -54,7 +56,7 @@ export function usePublicProfileController(professionalId: string, professionalP
         let totalCount = 0;
 
         const servicesWithRatings = profilesData.map(profile => {
-          const profileReviews = reviewsData?.filter(r => r.perfil_profesional_id === profile.id) || [];
+          const profileReviews = (reviewsData || []).filter(r => r.perfil_profesional_id === profile.id);
           const count = profileReviews.length;
           const sum = profileReviews.reduce((acc, curr) => acc + curr.calificacion, 0);
           
@@ -64,7 +66,8 @@ export function usePublicProfileController(professionalId: string, professionalP
           return {
             ...profile,
             averageRating: count > 0 ? sum / count : 0,
-            totalReviews: count
+            totalReviews: count,
+            reviews: profileReviews as Review[]
           };
         });
 
@@ -104,6 +107,11 @@ export function usePublicProfileController(professionalId: string, professionalP
       
       if (currentUser.id === professionalId) {
         Alert.alert('Aviso', 'No puedes iniciar un chat contigo mismo.');
+        return;
+      }
+
+      if (user && (user as any).permitir_chat === false) {
+        Alert.alert('Chat no disponible', 'Este profesional ha desactivado los mensajes directos en sus ajustes de privacidad.');
         return;
       }
 

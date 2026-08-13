@@ -1,4 +1,4 @@
-import { View, TouchableOpacity, StyleSheet, Image, Text } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Image, Text, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -14,35 +14,95 @@ export default function BottomNav({ active }: { active: keyof RootStackParamList
   const { unreadChatsCount } = useAppBadges();
 
   return (
-    <View style={[styles.wrapper, { marginBottom: insets.bottom > 0 ? insets.bottom : 37 }]}>
+    <View style={[styles.wrapper, { paddingBottom: insets.bottom > 0 ? insets.bottom : 8 }]}>
       <View style={styles.container}>
-        <TouchableOpacity onPress={() => nav.navigate("Home")}>
-          <MaterialCommunityIcons name="home" size={28} color={active === "Home" ? "#5A2D82" : "gray"} />
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => nav.navigate("ChatList")} style={styles.iconContainer}>
-          <MaterialCommunityIcons name="chat" size={28} color={active === "ChatList" ? "#5A2D82" : "gray"} />
-          {unreadChatsCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadChatsCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.centerBtn} onPress={() => nav.navigate("AI")}>
-          <Image
-            source={require("../../assets/images/logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
+        {/* Inicio */}
+        <TouchableOpacity 
+          style={styles.navItem} 
+          activeOpacity={0.7} 
+          onPress={() => nav.navigate("Home")}
+        >
+          <MaterialCommunityIcons 
+            name="home" 
+            size={24} 
+            color={active === "Home" ? "#5A2D82" : "#666666"} 
           />
+          <Text style={[styles.navText, active === "Home" && styles.navTextActive]}>
+            Inicio
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => nav.navigate("Favorites")}>
-          <MaterialCommunityIcons name="star" size={28} color={active === "Favorites" ? "#5A2D82" : "gray"} />
+        {/* Mensajes */}
+        <TouchableOpacity 
+          style={styles.navItem} 
+          activeOpacity={0.7} 
+          onPress={() => nav.navigate("ChatList")}
+        >
+          <View style={styles.iconContainer}>
+            <MaterialCommunityIcons 
+              name="chat" 
+              size={24} 
+              color={active === "ChatList" ? "#5A2D82" : "#666666"} 
+            />
+            {unreadChatsCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadChatsCount}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={[styles.navText, active === "ChatList" && styles.navTextActive]}>
+            Mensajes
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => nav.navigate("Menu")}>
-          <MaterialCommunityIcons name="menu" size={28} color={active === "Menu" ? "#5A2D82" : "gray"} />
+        {/* Asistente AI */}
+        <TouchableOpacity 
+          style={styles.centerNavItem} 
+          activeOpacity={0.85} 
+          onPress={() => nav.navigate("AI")}
+        >
+          <View style={styles.centerBtn}>
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={[styles.navText, active === "AI" && styles.navTextActive, styles.centerNavText]}>
+            Asistente AI
+          </Text>
+        </TouchableOpacity>
+
+        {/* Favoritos */}
+        <TouchableOpacity 
+          style={styles.navItem} 
+          activeOpacity={0.7} 
+          onPress={() => nav.navigate("Favorites")}
+        >
+          <MaterialCommunityIcons 
+            name="star" 
+            size={24} 
+            color={active === "Favorites" ? "#5A2D82" : "#666666"} 
+          />
+          <Text style={[styles.navText, active === "Favorites" && styles.navTextActive]}>
+            Favoritos
+          </Text>
+        </TouchableOpacity>
+
+        {/* Menú */}
+        <TouchableOpacity 
+          style={styles.navItem} 
+          activeOpacity={0.7} 
+          onPress={() => nav.navigate("Menu")}
+        >
+          <MaterialCommunityIcons 
+            name="menu" 
+            size={24} 
+            color={active === "Menu" ? "#5A2D82" : "#666666"} 
+          />
+          <Text style={[styles.navText, active === "Menu" && styles.navTextActive]}>
+            Menú
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -50,37 +110,80 @@ export default function BottomNav({ active }: { active: keyof RootStackParamList
 }
 
 const styles = StyleSheet.create({
-  wrapper: { backgroundColor: "white" },
+  wrapper: {
+    backgroundColor: "white",
+    borderTopWidth: 1,
+    borderColor: "#EAEAEF",
+    ...Platform.select({
+      web: { boxShadow: '0px -2px 10px rgba(0,0,0,0.06)' } as any,
+      default: {
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      }
+    }),
+  },
   container: {
     flexDirection: "row",
     justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 5,
-    borderTopWidth: 1,
-    borderColor: "#ddd",
+    alignItems: "flex-end",
+    paddingTop: 6,
+    paddingBottom: 4,
     backgroundColor: "white",
     alignSelf: 'center',
     width: '100%',
     maxWidth: 800,
   },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerNavItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -16,
+  },
   centerBtn: {
-    backgroundColor: "#eee",
-    padding: 10,
+    backgroundColor: "#F3ECFA",
+    padding: 6,
     borderRadius: 50,
-    marginTop: -20,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 2,
+    borderColor: "white",
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(90, 45, 130, 0.2)' } as any,
+      default: { elevation: 4 }
+    })
   },
-  logo: { width: 50, height: 50 },
+  logo: { width: 36, height: 36 },
+  centerNavText: {
+    marginTop: 1,
+  },
   iconContainer: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  navText: {
+    fontSize: 10,
+    marginTop: 3,
+    fontWeight: "600",
+    color: "#666666",
+    textAlign: "center",
+  },
+  navTextActive: {
+    color: "#5A2D82",
+    fontWeight: "bold",
+  },
   badge: {
     position: 'absolute',
     top: -4,
-    right: -6,
+    right: -8,
     backgroundColor: '#ff3b30',
     borderRadius: 9,
     minWidth: 18,

@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { Animated } from 'react-native';
 import { supabase } from '../../../services/supabase';
 import type { RegisterFormData } from '../models/register.types';
+import { showAlert } from '../../../shared/utils/customAlert';
 
 import { Platform } from 'react-native';
 
@@ -181,6 +182,17 @@ export function useRegisterController() {
     }
   };
 
+  const handleGoogleRegister = async () => {
+    setGoogleLoading(true);
+    try {
+      showAlert("Registro con Google", "La función de registro con Google está en desarrollo.", undefined, "warning");
+    } catch (_error: unknown) {
+      showAlert("Error", "No se pudo registrar con Google.", undefined, "danger");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return {
     formData,
     setFormData,
@@ -194,6 +206,7 @@ export function useRegisterController() {
     canContinue,
     helperText,
     handleCreateAccount,
+    handleGoogleRegister,
     setGoogleLoading,
   };
 }

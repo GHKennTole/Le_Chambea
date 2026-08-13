@@ -1,9 +1,19 @@
 import React from "react";
-import { Provider as PaperProvider } from "react-native-paper";
+import { Provider as PaperProvider, MD3LightTheme } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ActivityIndicator, View } from "react-native";
 import { useFonts, Sansita_700Bold_Italic } from "@expo-google-fonts/sansita";
 import AppNavigator from "./src/navigation/AppNavigator";
+
+const theme = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    onSurface: "#1a1a1a",
+    onSurfaceVariant: "#a89fbf",
+    primary: "#816ab4",
+  },
+};
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -20,7 +30,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <PaperProvider>
+      <PaperProvider theme={theme}>
         <AppNavigator />
       </PaperProvider>
     </SafeAreaProvider>

@@ -117,7 +117,10 @@ export default function FavoritesScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Favoritos</Text>
+          <View style={styles.headerTitleRow}>
+            <MaterialCommunityIcons name="star" size={26} color={STAR_COLOR} />
+            <Text style={styles.headerTitle}>Favoritos</Text>
+          </View>
           <Text style={styles.headerSubtitle}>
             {vm.favorites.length}{" "}
             {vm.favorites.length === 1 ? "profesional" : "profesionales"}
@@ -169,6 +172,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ECECF1",
   },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   headerTitle: { fontSize: 24, fontWeight: "900", color: "#333" },
   headerSubtitle: {
     fontSize: 13,
@@ -176,7 +184,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  listContent: { paddingBottom: 120, paddingTop: 4 },
+  listContent: { paddingBottom: 20, paddingTop: 4 },
   centerContainer: {
     flex: 1,
     justifyContent: "center",

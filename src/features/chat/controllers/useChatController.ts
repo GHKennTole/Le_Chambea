@@ -94,11 +94,12 @@ export function useChatController(chatId: string, otherUserId: string) {
       if (jobData) {
         setActiveJob(jobData);
         
-        // Check if this specific job already has a review
+        // Check if client already reviewed this specific service (perfil_profesional_id)
         const { data: reviewData } = await supabase
           .from('resenas')
           .select('id')
-          .eq('trabajo_id', jobData.id)
+          .eq('cliente_id', user.id)
+          .eq('perfil_profesional_id', jobData.perfil_profesional_id)
           .limit(1)
           .maybeSingle();
         

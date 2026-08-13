@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NotificationsDropdown from "./NotificationsDropdown";
 import { useNavigation } from "@react-navigation/native";
+import { useProfileController } from "../../features/perfil/controllers/useProfileController";
 
 interface HeaderHomeProps {
   searchQuery: string;
@@ -27,6 +28,7 @@ export default function HeaderHome({
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [openNoti, setOpenNoti] = useState(false);
+  const { profile } = useProfileController();
 
   const handlePressNoti = () => {
     const nextVal = !openNoti;
@@ -46,32 +48,86 @@ export default function HeaderHome({
     }
   };
 
+  const isWeb = Platform.OS === 'web';
+  const userName = profile.nombre ? profile.nombre : "Usuario";
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
-      <View style={styles.topRow}>
-        <Text style={[styles.title, { fontFamily: "SansitaBoldItalic" }]}>
-          LE CHAMBEA
-        </Text>
+    <View style={[styles.container, { paddingTop: isWeb ? 15 : insets.top + 10 }]}>
+      {isWeb ? (
+        <View style={styles.webHeaderRow}>
+          {/* Buscador más compacto */}
+          <View style={[styles.searchBox, styles.webSearchBox]}>
+            <TextInput 
+              placeholder="¿Qué servicio buscas hoy?" 
+              placeholderTextColor="#777"
+              style={[styles.input, Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]} 
+              value={searchQuery}
+              onChangeText={onSearchChange}
+            />
+            <MaterialCommunityIcons name="magnify" size={22} color="#5A2D82" />
+          </View>
 
-        <TouchableOpacity onPress={handlePressNoti} activeOpacity={0.8} style={styles.notiIconContainer}>
-          <MaterialCommunityIcons name="bell-outline" size={26} color="#5A2D82" />
-          {unreadNotificationsCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadNotificationsCount}</Text>
+          <View style={{ flex: 1 }} />
+
+          {/* Icono de notificaciones */}
+          <TouchableOpacity onPress={handlePressNoti} activeOpacity={0.8} style={styles.notiIconContainer}>
+            <MaterialCommunityIcons name="bell-outline" size={24} color="#5A2D82" />
+            {unreadNotificationsCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadNotificationsCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Menú de Perfil de Usuario */}
+          <TouchableOpacity 
+            style={styles.userProfileMenu} 
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate("Profile")}
+          >
+            {profile.foto_perfil ? (
+              <Image source={{ uri: profile.foto_perfil }} style={styles.userAvatar} />
+            ) : (
+              <View style={styles.userAvatarPlaceholder}>
+                <MaterialCommunityIcons name="account" size={20} color="#5A2D82" />
+              </View>
+            )}
+            <View style={styles.userInfoText}>
+              <Text style={styles.userGreeting}>Bienvenido,</Text>
+              <Text style={styles.userName} numberOfLines={1}>{userName}</Text>
             </View>
-          )}
-        </TouchableOpacity>
-      </View>
+            <MaterialCommunityIcons name="chevron-down" size={20} color="#666" />
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          <View style={styles.topRow}>
+            <Text style={[styles.title, { fontFamily: "SansitaBoldItalic" }]}>
+              LE CHAMBEA
+            </Text>
 
-      <View style={[styles.searchBox, { marginTop: 15, marginBottom: 8 }]}>
-        <TextInput 
-          placeholder="¿Qué servicio buscas hoy?" 
-          style={styles.input} 
-          value={searchQuery}
-          onChangeText={onSearchChange}
-        />
-        <MaterialCommunityIcons name="magnify" size={22} color="#5A2D82" />
-      </View>
+            <TouchableOpacity onPress={handlePressNoti} activeOpacity={0.8} style={styles.notiIconContainer}>
+              <MaterialCommunityIcons name="bell-outline" size={26} color="#5A2D82" />
+              {unreadNotificationsCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadNotificationsCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.searchBox, { marginTop: 15, marginBottom: 8 }]}>
+            <TextInput 
+              placeholder="¿Qué servicio buscas hoy?" 
+              placeholderTextColor="#777"
+              style={[styles.input, Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]} 
+              value={searchQuery}
+              onChangeText={onSearchChange}
+            />
+            <MaterialCommunityIcons name="magnify" size={22} color="#5A2D82" />
+          </View>
+        </>
+      )}
 
       <NotificationsDropdown
         visible={openNoti}
@@ -88,14 +144,20 @@ export default function HeaderHome({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",
-    paddingHorizontal: 10,
+    paddingHorizontal: Platform.OS === 'web' ? 16 : 10,
     zIndex: 10,
-    elevation: 10,
+    paddingBottom: 0,
   },
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  webHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 4,
   },
   title: {
     fontSize: 26,
@@ -109,13 +171,55 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
   },
+  webSearchBox: {
+    width: 380,
+    marginVertical: 0,
+    backgroundColor: "#F2F2F6",
+  },
   input: {
     flex: 1,
     padding: 8,
   },
   notiIconContainer: {
     position: 'relative',
-    padding: 2,
+    padding: 6,
+    backgroundColor: '#F2F2F6',
+    borderRadius: 20,
+  },
+  userProfileMenu: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F2F2F6',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+  },
+  userAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  userAvatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E5DDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userInfoText: {
+    flexDirection: 'column',
+  },
+  userGreeting: {
+    fontSize: 10,
+    color: '#888',
+    fontWeight: '500',
+  },
+  userName: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#222',
   },
   badge: {
     position: 'absolute',

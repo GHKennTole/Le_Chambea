@@ -1,20 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../../services/supabase';
 import type { ProfessionalProfile } from '../../perfil/models/profile.types';
-
-const CATEGORIES = [
-  'Electricista', 'Carpintero', 'Mecánico', 'Mandadito',
-  'Dentista', 'Plomero', 'Jardinería', 'Limpieza',
-  'Enfermería', 'Soldador', 'Pintor', 'Albañil', 'Otro',
-];
+import { CATEGORIES } from '../../../shared/constants/categories';
 
 const MAX_SERVICES = 3;
 
 export function useProfessionalProfileController() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingPortafolio, setUploadingPortafolio] = useState(false);
   const [services, setServices] = useState<ProfessionalProfile[]>([]);
+  const [initialServices, setInitialServices] = useState<ProfessionalProfile[]>([]);
+  const [userLocation, setUserLocation] = useState('');
   const [activeServiceIndex, setActiveServiceIndex] = useState(0);
 
   const fetchProfile = useCallback(async () => {
@@ -22,6 +21,15 @@ export function useProfessionalProfileController() {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      const { data: userData } = await supabase
+        .from('usuarios')
+        .select('ciudad')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const userCity = userData?.ciudad || '';
+      setUserLocation(userCity);
 
       const { data, error } = await supabase
         .from('perfiles_profesionales')
@@ -34,11 +42,17 @@ export function useProfessionalProfileController() {
         return;
       }
 
+      let parsedData: ProfessionalProfile[] = [];
+
       if (data && data.length > 0) {
-        setServices(data);
+        parsedData = data.map(item => ({
+          ...item,
+          zona: item.zona || userCity,
+          portafolio: Array.isArray(item.portafolio) ? item.portafolio : [],
+        }));
       } else {
         // Init first service
-        setServices([{
+        parsedData = [{
           id: '',
           usuario_id: user.id,
           indice_servicio: 0,
@@ -46,10 +60,14 @@ export function useProfessionalProfileController() {
           profesion: '',
           descripcion: '',
           rango_precio: '',
-          zona: '',
+          zona: userCity,
           esta_activo: true,
-        }]);
+          portafolio: [],
+        }];
       }
+
+      setServices(parsedData);
+      setInitialServices(JSON.parse(JSON.stringify(parsedData)));
       setActiveServiceIndex(0);
     } catch (e) {
       console.error('Error:', e);
@@ -64,7 +82,24 @@ export function useProfessionalProfileController() {
 
   const activeService = services[activeServiceIndex] || null;
 
-  const updateField = (field: keyof ProfessionalProfile, value: string | boolean) => {
+  const hasChanges = useMemo(() => {
+    if (!activeService) return false;
+    if (!activeService.id) return true; // Brand new service
+    const initial = initialServices[activeServiceIndex];
+    if (!initial) return true;
+
+    return (
+      (activeService.categoria || '') !== (initial.categoria || '') ||
+      (activeService.profesion || '') !== (initial.profesion || '') ||
+      (activeService.descripcion || '') !== (initial.descripcion || '') ||
+      (activeService.rango_precio || '') !== (initial.rango_precio || '') ||
+      (activeService.zona || '') !== (initial.zona || '') ||
+      activeService.esta_activo !== initial.esta_activo ||
+      JSON.stringify(activeService.portafolio || []) !== JSON.stringify(initial.portafolio || [])
+    );
+  }, [activeService, initialServices, activeServiceIndex]);
+
+  const updateField = (field: keyof ProfessionalProfile, value: any) => {
     setServices(prev => {
       const newServices = [...prev];
       if (newServices[activeServiceIndex]) {
@@ -74,10 +109,94 @@ export function useProfessionalProfileController() {
     });
   };
 
+  const addPortfolioImage = async () => {
+    try {
+      if (!activeService) return;
+      const currentList = activeService.portafolio || [];
+      const remainingSlots = 10 - currentList.length;
+      if (remainingSlots <= 0) {
+        Alert.alert("Límite alcanzado", "Puedes subir hasta un máximo de 10 fotos a tu portafolio.");
+        return;
+      }
+
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permiso denegado', 'Se necesita acceso a la galería para agregar fotos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        allowsMultipleSelection: true,
+        selectionLimit: remainingSlots,
+        quality: 0.5,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) return;
+
+      setUploadingPortafolio(true);
+      const newUrls: string[] = [];
+
+      for (const asset of result.assets) {
+        const fileExt = asset.uri.split('.').pop() ?? 'jpg';
+        const fileName = `${activeService.usuario_id}/portafolio_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const response = await fetch(asset.uri);
+        const blob = await response.blob();
+        const arrayBuffer = await new Response(blob).arrayBuffer();
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, arrayBuffer, {
+            contentType: asset.mimeType ?? 'image/jpeg',
+            cacheControl: '3600000',
+            upsert: true,
+          });
+
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          newUrls.push(urlData.publicUrl + '?t=' + Date.now());
+        }
+      }
+
+      if (newUrls.length > 0) {
+        updateField('portafolio', [...currentList, ...newUrls]);
+      } else {
+        Alert.alert('Error', 'No se pudieron subir las imágenes seleccionadas.');
+      }
+    } catch (e) {
+      console.error('Portfolio image error:', e);
+      Alert.alert('Error', 'Ocurrió un error al seleccionar las imágenes.');
+    } finally {
+      setUploadingPortafolio(false);
+    }
+  };
+
+  const removePortfolioImage = (urlToRemove: string) => {
+    if (!activeService) return;
+    const currentList = activeService.portafolio || [];
+    const updatedList = currentList.filter(url => url !== urlToRemove);
+    updateField('portafolio', updatedList);
+  };
+
   const saveProfile = async () => {
     if (!activeService) return;
-    if (!activeService.categoria || !activeService.profesion) {
-      Alert.alert('Campos requeridos', 'Selecciona una categoría y escribe tu profesión.');
+    const effectiveZona = userLocation || activeService.zona || '';
+    
+    if (
+      !activeService.categoria?.trim() ||
+      !activeService.profesion?.trim() ||
+      !activeService.descripcion?.trim() ||
+      !activeService.rango_precio?.trim() ||
+      !effectiveZona?.trim()
+    ) {
+      Alert.alert(
+        'Campos incompletos',
+        'Por favor completa todos los campos para guardar tu servicio profesional.'
+      );
       return;
     }
 
@@ -95,8 +214,9 @@ export function useProfessionalProfileController() {
             profesion: activeService.profesion,
             descripcion: activeService.descripcion,
             rango_precio: activeService.rango_precio,
-            zona: activeService.zona,
+            zona: effectiveZona,
             esta_activo: activeService.esta_activo,
+            portafolio: activeService.portafolio || [],
           })
           .select()
           .single();
@@ -110,6 +230,7 @@ export function useProfessionalProfileController() {
         setServices(prev => {
           const newServices = [...prev];
           newServices[activeServiceIndex] = data;
+          setInitialServices(JSON.parse(JSON.stringify(newServices)));
           return newServices;
         });
 
@@ -121,8 +242,9 @@ export function useProfessionalProfileController() {
             profesion: activeService.profesion,
             descripcion: activeService.descripcion,
             rango_precio: activeService.rango_precio,
-            zona: activeService.zona,
+            zona: effectiveZona,
             esta_activo: activeService.esta_activo,
+            portafolio: activeService.portafolio || [],
           })
           .eq('id', activeService.id);
 
@@ -131,6 +253,8 @@ export function useProfessionalProfileController() {
           Alert.alert('Error', 'No se pudo actualizar el perfil profesional.');
           return;
         }
+
+        setInitialServices(JSON.parse(JSON.stringify(services)));
       }
 
       Alert.alert('Éxito', isNew ? 'Perfil profesional creado.' : 'Perfil profesional actualizado.');
@@ -242,8 +366,13 @@ export function useProfessionalProfileController() {
     activeService,
     loading,
     saving,
+    hasChanges,
+    userLocation,
+    uploadingPortafolio,
     categories: CATEGORIES,
     updateField,
+    addPortfolioImage,
+    removePortfolioImage,
     saveProfile,
     toggleActive,
     addService,

@@ -24,6 +24,7 @@ import MyProfileScreen from '../features/perfil/views/MyProfileScreen';
 import ProfessionalProfileScreen from '../features/inicio/views/ProfessionalProfileScreen';
 import ReviewsScreen from '../features/perfil/views/ReviewsScreen';
 import WriteReviewScreen from '../features/perfil/views/WriteReviewScreen';
+import MyReviewsScreen from '../features/perfil/views/MyReviewsScreen';
 import SecurityScreen from '../features/settings/views/SecurityScreen';
 import PrivacyScreen from '../features/settings/views/PrivacyScreen';
 import SupportScreen from '../features/settings/views/SupportScreen';
@@ -33,19 +34,20 @@ import PublicProfileScreen from "../features/inicio/views/PublicProfileScreen";
 import ChatListScreen from "../features/chat/views/ChatListScreen";
 import ChatScreen from "../features/chat/views/ChatScreen";
 import HomeAdminScreen from "../features/admin/views/HomeAdminScreen";
+import GlobalFloatingAlert from "../shared/components/GlobalFloatingAlert";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 function resetTo(routeName: keyof RootStackParamList) {
-  if (!navigationRef.isReady()) return;
-
-  navigationRef.dispatch(
-    CommonActions.reset({
-      index: 0,
-      routes: [{ name: routeName }],
-    })
-  );
+  if (navigationRef.isReady()) {
+    navigationRef.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: routeName }],
+      })
+    );
+  }
 }
 
 function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
@@ -53,100 +55,68 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
 }
 
 export default function AppNavigator() {
-  const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+  const [session, setSession] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const pendingResetRef = useRef<(keyof RootStackParamList) | null>(null);
 
-  const lastResetRef = useRef<string>("");
-  const pendingResetRef = useRef<keyof RootStackParamList | null>(null);
-
-  const queueReset = (routeName: keyof RootStackParamList, uid?: string) => {
-    const key = `${uid ?? "no-user"}:${String(routeName)}`;
-    if (lastResetRef.current === key) return;
-    lastResetRef.current = key;
-
-    if (navigationRef.isReady()) {
-      resetTo(routeName);
-      return;
-    }
-
-    pendingResetRef.current = routeName;
-  };
-
-  const checkUserStatus = async (currentUser: User) => {
+  const getTargetRouteForUser = async (userId: string): Promise<keyof RootStackParamList> => {
     try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('onboarding_completado, rol')
-        .eq('id', currentUser.id)
-        .single();
+      const { data: profile } = await supabase
+        .from("usuarios")
+        .select("rol")
+        .eq("id", userId)
+        .maybeSingle();
 
-      if (error || !data) {
-        return { mustOnboard: true, rol: 'usuario' };
+      const role = profile?.rol?.toLowerCase();
+      if (role === "admin" || role === "administrador") {
+        return "HomeAdmin";
       }
-      return {
-        mustOnboard: data.onboarding_completado !== true,
-        rol: data.rol ?? 'usuario'
-      };
-    } catch (error) {
-      console.error("❌ Error consultando Supabase:", error);
-      return { mustOnboard: false, rol: 'usuario' };
+    } catch (e) {
+      console.error("Error fetching user role:", e);
     }
+    return "Home";
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => setInitializing(false), 2000);
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleAuthChange(session?.user ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const user = session?.user ? session.user : null;
+      setSession(user);
+      if (user) {
+        const targetRoute = await getTargetRouteForUser(user.id);
+        pendingResetRef.current = targetRoute;
+      }
+      setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      handleAuthChange(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user ? session.user : null;
+      setSession(user);
+
+      if (_event === "SIGNED_IN" && user) {
+        const targetRoute = await getTargetRouteForUser(user.id);
+        pendingResetRef.current = targetRoute;
+        if (navigationRef.isReady()) {
+          pendingResetRef.current = null;
+          resetTo(targetRoute);
+        }
+      } else if (_event === "SIGNED_OUT") {
+        pendingResetRef.current = "Welcome";
+        if (navigationRef.isReady()) {
+          pendingResetRef.current = null;
+          resetTo("Welcome");
+        }
+      }
     });
 
-    return () => {
-      clearTimeout(timer);
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleAuthChange = async (currentUser: User | null) => {
-    setUser(currentUser);
-
-    if (!currentUser) {
-      setShowOnboarding(null);
-      queueReset("Welcome");
-      return;
-    }
-
-    const routeName = navigationRef.isReady()
-      ? navigationRef.getCurrentRoute()?.name
-      : undefined;
-
-    if (routeName && String(routeName).startsWith("Register")) {
-      setShowOnboarding(false);
-      return;
-    }
-
-    setShowOnboarding(null);
-    const { mustOnboard, rol } = await checkUserStatus(currentUser);
-
-    if (rol === 'admin') {
-      setShowOnboarding(false);
-      queueReset("HomeAdmin", currentUser.id);
-    } else {
-      setShowOnboarding(mustOnboard);
-      queueReset(mustOnboard ? "Onboarding" : "Home", currentUser.id);
-    }
-  };
-
   const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
-    resetTo("Home");
+    setHasCompletedOnboarding(true);
   };
 
-  if (initializing || (user && showOnboarding === null)) {
+  if (loading) {
     return <SplashScreen />;
   }
 
@@ -161,6 +131,7 @@ export default function AppNavigator() {
         }
       }}
     >
+      <GlobalFloatingAlert />
       <Stack.Navigator id="RootStack" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
@@ -178,6 +149,7 @@ export default function AppNavigator() {
         <Stack.Screen name="ProfessionalProfile" component={ProfessionalProfileScreen} />
         <Stack.Screen name="Reviews" component={ReviewsScreen} />
         <Stack.Screen name="WriteReview" component={WriteReviewScreen} />
+        <Stack.Screen name="MyReviews" component={MyReviewsScreen} />
         <Stack.Screen name="Security" component={SecurityScreen} />
         <Stack.Screen name="Privacy" component={PrivacyScreen} />
         <Stack.Screen name="Support" component={SupportScreen} />
@@ -187,7 +159,6 @@ export default function AppNavigator() {
         <Stack.Screen name="ChatList" component={ChatListScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="HomeAdmin" component={HomeAdminScreen} />
-
       </Stack.Navigator>
     </NavigationContainer>
   );

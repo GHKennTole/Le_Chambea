@@ -19,8 +19,6 @@ export default function TermsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.lastUpdated}>Última actualización: 13 de Mayo de 2026</Text>
-
         <Text style={styles.paragraph}>
           Bienvenido a <Text style={styles.bold}>Le Chambea</Text>. Al acceder y utilizar nuestra plataforma móvil, usted ("Usuario", "Cliente" o "Profesional") acepta someterse a los siguientes Términos de Servicio y Políticas de Privacidad. Si no está de acuerdo con alguna parte de estos términos, no debe utilizar la aplicación.
         </Text>
@@ -105,13 +103,6 @@ const styles = StyleSheet.create({
       },
       android: { elevation: 3 },
     }),
-  },
-  lastUpdated: {
-    fontSize: 12,
-    color: '#888',
-    fontStyle: 'italic',
-    marginBottom: 16,
-    textAlign: 'center',
   },
   section: {
     marginTop: 24,

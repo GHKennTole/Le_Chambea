@@ -26,11 +26,12 @@ type MenuItemProps = {
   title: string;
   subtitle?: string;
   rightText?: string;
+  rightTextColor?: string;
   danger?: boolean;
   onPress: () => void;
 };
 
-function MenuItem({ icon, title, subtitle, rightText, danger, onPress }: MenuItemProps) {
+function MenuItem({ icon, title, subtitle, rightText, rightTextColor, danger, onPress }: MenuItemProps) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.item}>
       <View style={[styles.itemIconWrap, danger && styles.itemIconWrapDanger]}>
@@ -47,7 +48,11 @@ function MenuItem({ icon, title, subtitle, rightText, danger, onPress }: MenuIte
       </View>
 
       <View style={styles.itemRight}>
-        {!!rightText && <Text style={styles.itemRightText}>{rightText}</Text>}
+        {!!rightText && (
+          <Text style={[styles.itemRightText, rightTextColor ? { color: rightTextColor } : null]}>
+            {rightText}
+          </Text>
+        )}
         <MaterialCommunityIcons name="chevron-right" size={24} color="#9A9AA3" />
       </View>
     </TouchableOpacity>
@@ -71,74 +76,93 @@ export default function MenuScreen() {
   return (
     <MainLayout active="Menu">
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        {/* Banner superior */}
-      <View style={styles.topBanner} />
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-        alwaysBounceVertical={false}
-        // Android:
-        overScrollMode="never"
-        // iOS extra:
-        scrollEventThrottle={16}
-      >
-        {/* Header Perfil */}
-        <TouchableOpacity 
-          activeOpacity={0.9} 
-          onPress={() => navigation.navigate("MyProfile")} 
-          style={styles.profileCard}
-        >
-          <View style={styles.avatarShadow}>
-            <View style={styles.avatar}>
-              {vm.user.foto_perfil ? (
-                <Image source={{ uri: vm.user.foto_perfil }} style={styles.avatarImg} />
-              ) : (
-                <View style={[styles.avatarImg, { backgroundColor: '#ECECF1', justifyContent: 'center', alignItems: 'center' }]}>
-                  <MaterialCommunityIcons name="account" size={30} color="#999" />
-                </View>
-              )}
+        {/* Header Perfil estático */}
+        <View style={styles.staticHeaderContainer}>
+          <View style={styles.topBanner} />
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            onPress={() => navigation.navigate("MyProfile")} 
+            style={styles.profileCard}
+          >
+            <View style={styles.avatarShadow}>
+              <View style={styles.avatar}>
+                {vm.user.foto_perfil ? (
+                  <Image source={{ uri: vm.user.foto_perfil }} style={styles.avatarImg} />
+                ) : (
+                  <View style={[styles.avatarImg, { backgroundColor: '#ECECF1', justifyContent: 'center', alignItems: 'center' }]}>
+                    <MaterialCommunityIcons name="account" size={30} color="#999" />
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
 
-          <View style={styles.profileInfo}>
-            <View style={styles.nameRow}>
-              <Text style={styles.profileName} numberOfLines={1}>
-                {vm.user?.nombre ? `${vm.user?.nombre} ${vm.user.apellidos}` : 'Usuario registrado'}
+            <View style={styles.profileInfo}>
+              <View style={styles.nameRow}>
+                <Text style={styles.profileName} numberOfLines={1}>
+                  {vm.user?.nombre ? `${vm.user?.nombre} ${vm.user.apellidos}`.trim() : 'Usuario registrado'}
+                </Text>
+              </View>
+
+              <Text style={styles.profileEmail} numberOfLines={1}>
+                {vm.user.correo || 'Sin correo'}
               </Text>
+
+              <View style={styles.badgeContainer}>
+                <View style={[styles.accountBadge, vm.hasProProfile ? styles.proBadge : styles.noProBadge]}>
+                  <MaterialCommunityIcons 
+                    name="briefcase-check" 
+                    size={14} 
+                    color={PURPLE} 
+                  />
+                  <Text style={[styles.accountBadgeText, vm.hasProProfile ? styles.proBadgeText : styles.noProBadgeText]}>
+                    {vm.hasProProfile ? "Cuenta Profesional Activa" : "Cuenta Profesional Inactiva"}
+                  </Text>
+                </View>
+              </View>
             </View>
 
-            <Text style={styles.profileEmail} numberOfLines={1}>
-              {vm.user.correo}
-            </Text>
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#9A9AA3" />
+          </TouchableOpacity>
+        </View>
 
-            <Text style={styles.profileMeta} numberOfLines={1}>
-              {vm.user.ciudad || 'Sin ciudad'} • {vm.user.telefono || 'Sin teléfono'}
-            </Text>
-          </View>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          alwaysBounceVertical={false}
+          // Android:
+          overScrollMode="never"
+          // iOS extra:
+          scrollEventThrottle={16}
+        >
+          {/* Cuenta */}
+          <Section title="Cuenta">
+            <MenuItem
+              icon="account-edit"
+              title="Editar perfil"
+              subtitle="Nombre, foto, teléfono, ubicación..."
+              onPress={() => navigation.navigate("Profile")}
+            />
 
-          <MaterialCommunityIcons name="chevron-right" size={24} color="#9A9AA3" />
-        </TouchableOpacity>
+            <View style={styles.divider} />
 
-        {/* Cuenta */}
-        <Section title="Cuenta">
-          <MenuItem
-            icon="account-edit"
-            title="Editar perfil"
-            subtitle="Nombre, foto, teléfono, ubicación..."
-            onPress={() => navigation.navigate("Profile")}
-          />
-        </Section>
+            <MenuItem
+              icon="star-outline"
+              title="Reseñas dejadas"
+              subtitle="Administrar reseñas hechas como cliente"
+              onPress={() => navigation.navigate("MyReviews")}
+            />
+          </Section>
 
         {/* Profesional */}
         <Section title="Profesional">
           <MenuItem
             icon={vm.hasProProfile ? "briefcase-edit" : "briefcase-plus"}
-            title={vm.hasProProfile ? "Editar perfil profesional" : "Crear perfil profesional"}
-            subtitle="Profesión, descripción, precios, zona..."
-            rightText={vm.hasProProfile ? "Activo" : "Nuevo"}
+            title="Crear o editar servicios"
+            subtitle="Profesión, descripción, precios, portafolio..."
+            rightText={vm.hasProProfile ? "Activo" : "Inactivo"}
+            rightTextColor={vm.hasProProfile ? "#15803D" : "#DC2626"}
             onPress={() => navigation.navigate("ProfessionalProfile")}
           />
 
@@ -229,15 +253,23 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 120,
+    bottom: 0,
     backgroundColor: PURPLE,
     borderBottomLeftRadius: 26,
     borderBottomRightRadius: 26,
     opacity: 0.95,
   },
 
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 },
+  staticHeaderContainer: {
+    position: "relative",
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+    zIndex: 10,
+  },
+
+  scroll: { flex: 1, backgroundColor: "#F6F6F8" },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 24 },
 
   profileCard: {
     backgroundColor: "#fff",
@@ -288,11 +320,38 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   profileName: { fontSize: 16, fontWeight: "900", color: "#111", flexShrink: 1 },
 
-  profileEmail: { fontSize: 13, color: "#5F5F6B", marginTop: 4 },
-  profileMeta: { fontSize: 12.5, color: "#777", marginTop: 4 },
-
-  profileHintRow: { flexDirection: "row", alignItems: "center", marginTop: 10, gap: 6 },
-  profileHint: { color: PURPLE, fontWeight: "900" },
+  profileEmail: { fontSize: 13, color: "#5F5F6B", marginTop: 2 },
+  
+  badgeContainer: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+  accountBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    gap: 5,
+  },
+  proBadge: {
+    backgroundColor: "#DCFCE7",
+    borderWidth: 1,
+    borderColor: "#86EFAC",
+  },
+  noProBadge: {
+    backgroundColor: "#FEE2E2",
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+  },
+  accountBadgeText: {
+    fontSize: 11.5,
+    fontWeight: "700",
+  },
+  proBadgeText: {
+    color: "#15803D",
+  },
+  noProBadgeText: {
+    color: "#DC2626",
+  },
 
   section: { marginTop: 16 },
   sectionTitle: {

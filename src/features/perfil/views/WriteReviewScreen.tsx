@@ -14,7 +14,18 @@ export default function WriteReviewScreen({ route }: any) {
   const navigation = useNavigation();
   const professionalProfileId = route.params?.profileId;
   const jobId = route.params?.jobId;
-  const vm = useWriteReviewController(professionalProfileId, jobId);
+  const reviewId = route.params?.reviewId;
+  const professionalId = route.params?.professionalId;
+
+  const vm = useWriteReviewController(professionalProfileId, jobId, reviewId, professionalId);
+
+  if (vm.fetching) {
+    return (
+      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+        <ActivityIndicator size="large" color={PURPLE} />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -23,8 +34,10 @@ export default function WriteReviewScreen({ route }: any) {
         
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.headerSection}>
-            <Text style={styles.headerTitle}>Dejar Reseña</Text>
-            <Text style={styles.headerSubtitle}>Califica el servicio recibido</Text>
+            <Text style={styles.headerTitle}>{vm.isEditing ? 'Editar Reseña' : 'Dejar Reseña'}</Text>
+            <Text style={styles.headerSubtitle}>
+              {vm.isEditing ? 'Modifica tu calificación y comentario' : 'Califica el servicio recibido'}
+            </Text>
           </View>
 
           <View style={styles.card}>
@@ -69,7 +82,7 @@ export default function WriteReviewScreen({ route }: any) {
             {vm.loading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.submitButtonText}>Enviar Reseña</Text>
+              <Text style={styles.submitButtonText}>{vm.isEditing ? 'Guardar Cambios' : 'Enviar Reseña'}</Text>
             )}
           </TouchableOpacity>
 
@@ -81,6 +94,7 @@ export default function WriteReviewScreen({ route }: any) {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F6F6F8' },
   container: { flex: 1, backgroundColor: '#F6F6F8' },
   headerBanner: { position: 'absolute', top: 0, left: 0, right: 0, height: 180, backgroundColor: PURPLE, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 20 },

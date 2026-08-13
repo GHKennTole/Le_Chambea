@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Alert, Platform } from 'react-native';
 import { supabase } from '../../../services/supabase';
 import type { Review, ProfessionalProfile } from '../../perfil/models/profile.types';
 
@@ -7,15 +8,18 @@ export function useReviewsController(userId?: string) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [services, setServices] = useState<ProfessionalProfile[]>([]);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [submittingReply, setSubmittingReply] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      let targetUserId = userId;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
 
-      if (!targetUserId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) targetUserId = user.id;
+      let targetUserId = userId;
+      if (!targetUserId && user) {
+        targetUserId = user.id;
       }
 
       if (!targetUserId) return;
@@ -41,7 +45,7 @@ export function useReviewsController(userId?: string) {
           .order('fecha_creacion', { ascending: false });
 
         if (reviewsError) throw reviewsError;
-        setReviews(reviewsData || []);
+        setReviews((reviewsData as Review[]) || []);
       } else {
         setReviews([]);
       }
@@ -55,6 +59,41 @@ export function useReviewsController(userId?: string) {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const saveProfessionalReply = async (reviewId: string, replyText: string) => {
+    if (!replyText.trim()) {
+      Alert.alert('Respuesta vacía', 'Por favor escribe un mensaje de respuesta.');
+      return false;
+    }
+
+    try {
+      setSubmittingReply(true);
+      const { error } = await supabase
+        .from('resenas')
+        .update({
+          respuesta_profesional: replyText.trim(),
+          fecha_respuesta: new Date().toISOString()
+        })
+        .eq('id', reviewId);
+
+      if (error) throw error;
+
+      const msg = 'Tu respuesta ha sido guardada.';
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Éxito', msg);
+
+      await fetchData();
+      return true;
+    } catch (e: any) {
+      console.error('Error saving professional reply:', e);
+      const err = 'No se pudo guardar la respuesta.';
+      if (Platform.OS === 'web') window.alert(err);
+      else Alert.alert('Error', err);
+      return false;
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
 
   // Derived calculations
   const filteredReviews = selectedServiceId 
@@ -72,6 +111,8 @@ export function useReviewsController(userId?: string) {
 
   return {
     loading,
+    submittingReply,
+    currentUserId,
     reviews: filteredReviews,
     allReviews: reviews,
     services,
@@ -79,6 +120,7 @@ export function useReviewsController(userId?: string) {
     setSelectedServiceId,
     generalAverage,
     filteredAverage,
+    saveProfessionalReply,
     refetch: fetchData
   };
 }

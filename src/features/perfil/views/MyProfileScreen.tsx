@@ -6,17 +6,24 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  TouchableOpacity,
   Platform,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../../../core/navigation/types";
 import { useProfileController } from "../controllers/useProfileController";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const PURPLE = "#5A2D82";
 
 export default function MyProfileScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<Nav>();
   const vm = useProfileController();
 
   if (vm.loading) {
@@ -40,35 +47,35 @@ export default function MyProfileScreen() {
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.headerBanner} />
-      
+    <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Avatar */}
-        <View style={styles.avatarSection}>
-          <View style={styles.avatarWrap}>
-            {vm.profile.foto_perfil ? (
-              <Image
-                source={{ uri: vm.profile.foto_perfil }}
-                style={styles.avatarImg}
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <MaterialCommunityIcons name="account" size={60} color="#999" />
-              </View>
-            )}
+        {/* Header Morado Dinámico */}
+        <View style={[styles.purpleHeaderWrapper, { paddingTop: insets.top + 16 }]}>
+          <View style={styles.avatarSection}>
+            <View style={styles.avatarWrap}>
+              {vm.profile.foto_perfil ? (
+                <Image
+                  source={{ uri: vm.profile.foto_perfil }}
+                  style={styles.avatarImg}
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <MaterialCommunityIcons name="account" size={60} color="#999" />
+                </View>
+              )}
+            </View>
+            <Text style={styles.userName}>
+              {vm.profile.nombre} {vm.profile.apellidos}
+            </Text>
           </View>
-          <Text style={styles.userName}>
-            {vm.profile.nombre} {vm.profile.apellidos}
-          </Text>
-          <Text style={styles.userEmail}>{vm.profile.correo}</Text>
         </View>
 
-        {/* Información Card */}
+        <View style={styles.bodyContent}>
+          {/* Información Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Datos del Perfil</Text>
           
@@ -114,11 +121,14 @@ export default function MyProfileScreen() {
           />
         </View>
 
-        <View style={styles.infoBox}>
-          <MaterialCommunityIcons name="information-outline" size={20} color="#666" />
-          <Text style={styles.infoText}>
-            Para modificar estos datos, utiliza el botón "Editar Perfil" en el menú principal.
-          </Text>
+        <TouchableOpacity
+          style={styles.editButton}
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate("Profile")}
+        >
+          <MaterialCommunityIcons name="account-edit-outline" size={22} color="#fff" />
+          <Text style={styles.editButtonText}>Editar Perfil</Text>
+        </TouchableOpacity>
         </View>
 
         <View style={{ height: 40 }} />
@@ -140,27 +150,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F6F6F8",
   },
-  headerBanner: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 200,
+  purpleHeaderWrapper: {
     backgroundColor: PURPLE,
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    paddingBottom: 18,
+    width: "100%",
   },
   scroll: { flex: 1 },
   scrollContent: {
+    alignSelf: 'center',
+    width: '100%',
+  },
+  bodyContent: {
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 20,
     alignSelf: 'center',
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 800 : '100%',
   },
   avatarSection: {
     alignItems: "center",
-    marginBottom: 30,
   },
   avatarWrap: {
     width: 120,
@@ -192,11 +202,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#fff",
     textAlign: "center",
-  },
-  userEmail: {
-    fontSize: 15,
-    color: "rgba(255,255,255,0.8)",
-    marginTop: 4,
   },
   card: {
     backgroundColor: "#fff",
@@ -250,19 +255,30 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F0F5",
     marginLeft: 55,
   },
-  infoBox: {
+  editButton: {
     flexDirection: "row",
-    backgroundColor: "#F0F0F5",
-    padding: 16,
-    borderRadius: 16,
-    marginTop: 20,
+    backgroundColor: PURPLE,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginTop: 24,
     alignItems: "center",
-    gap: 12,
+    justifyContent: "center",
+    gap: 8,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 14px rgba(90,45,130,0.3)' } as any,
+      default: {
+        elevation: 4,
+        shadowColor: PURPLE,
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+      },
+    }),
   },
-  infoText: {
-    flex: 1,
-    fontSize: 13,
-    color: "#666",
-    lineHeight: 18,
-  }
+  editButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "900",
+  },
 });
