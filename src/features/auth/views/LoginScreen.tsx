@@ -119,29 +119,6 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        <View style={styles.separatorContainer}>
-          <View style={styles.separatorLine} />
-          <Text style={styles.separatorText}>o</Text>
-          <View style={styles.separatorLine} />
-        </View>
-
-        <Button
-          mode="outlined"
-          onPress={vm.handleGoogleLogin}
-          loading={vm.googleLoading}
-          style={styles.googleButton}
-          contentStyle={styles.googleButtonContent}
-          textColor="#666"
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={styles.googleText}>Continuar con google</Text>
-            <Image
-              source={require("../../../assets/images/google.png")}
-              style={styles.googleG}
-            />
-          </View>
-        </Button>
-
         <View style={styles.registerContainer}>
           <Text style={styles.registerText}>
             ¿No tienes cuenta?{" "}
@@ -242,48 +219,6 @@ const styles = StyleSheet.create({
   forgotPasswordButton: {
     marginTop: 8,
     fontSize: 14,
-  },
-  separatorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-    width: "90%",
-    maxWidth: 480,
-    alignSelf: "center",
-  },
-  separatorLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#B0B0B0",
-  },
-  separatorText: {
-    marginHorizontal: 15,
-    fontSize: 16,
-    color: "#666",
-  },
-  googleButton: {
-    borderRadius: 300,
-    borderColor: "#B0B0B0",
-    borderWidth: 1,
-    width: "90%",
-    maxWidth: 480,
-    alignSelf: "center",
-  },
-  googleButtonContent: {
-    paddingVertical: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  googleG: {
-    width: 25,
-    height: 25,
-    marginLeft: 6,
-  },
-  googleText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#666",
   },
   registerContainer: {
     marginTop: 24,

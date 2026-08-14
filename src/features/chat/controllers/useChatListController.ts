@@ -10,7 +10,10 @@ export interface ChatPreview {
   lastMessage: string;
   lastMessageTime: string;
   isUnread: boolean;
+  unreadCount: number;
+  isLastMessageFromMe: boolean;
   requestedService: string | null;
+  jobStatus: string | null;
   isClient: boolean;
 }
 
@@ -106,7 +109,10 @@ export function useChatListController() {
 
         const lastMessageTime = lastMsgData ? lastMsgData.fecha_creacion : chat.fecha_creacion;
         
-        const isUnread = unreadCount ? unreadCount > 0 : false;
+        const isLastMessageFromMe = lastMsgData ? lastMsgData.remitente_id === user.id : false;
+        const unreadNum = unreadCount || 0;
+        const isUnread = unreadNum > 0;
+        const jobStatus = jobData?.estado || null;
 
         // Skip empty ghost chats
         if (!lastMsgData && !jobData) {
@@ -121,7 +127,10 @@ export function useChatListController() {
           lastMessage,
           lastMessageTime,
           isUnread,
+          unreadCount: unreadNum,
+          isLastMessageFromMe,
           requestedService,
+          jobStatus,
           isClient
         } as ChatPreview;
       });

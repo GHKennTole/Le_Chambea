@@ -242,28 +242,6 @@ export default function RegisterAuth({ navigation, formData, setFormData }: Prop
               {vm.loading ? "Creando..." : "Crear cuenta"}
             </Text>
           </TouchableOpacity>
-
-          <View style={styles.separatorContainer}>
-            <View style={styles.separatorLine} />
-            <Text style={styles.separatorText}>o</Text>
-            <View style={styles.separatorLine} />
-          </View>
-
-          <Button
-            mode="outlined"
-            onPress={vm.handleGoogleRegister}
-            loading={vm.googleLoading}
-            style={styles.googleButton}
-            textColor="#666"
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={styles.googleText}>Registrate con google</Text>
-              <Image
-                source={require("../../../assets/images/google.png")}
-                style={styles.googleG}
-              />
-            </View>
-          </Button>
         </View>
       </ScrollView>
 
@@ -369,28 +347,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
-  },
-
-  separatorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 18,
-  },
-  separatorLine: { flex: 1, height: 1, backgroundColor: "#ccc" },
-  separatorText: { marginHorizontal: 12, color: "#666" },
-
-  googleButton: {
-    borderRadius: 300,
-    borderColor: "#ccc",
-  },
-  googleText: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  googleG: {
-    width: 24,
-    height: 24,
-    marginLeft: 6,
   },
 
   strengthWrapCompact: {

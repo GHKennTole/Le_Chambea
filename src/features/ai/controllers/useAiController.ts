@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Platform, Alert } from 'react-native';
 import { supabase } from '../../../services/supabase';
 import { 
   sendMessageToGemini, 
@@ -268,11 +269,49 @@ export function useAiController() {
     }
   };
 
+  const reportAiIssue = async (reason: string): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      let senderName = 'Un usuario';
+      if (user) {
+        const { data: profile } = await supabase
+          .from('usuarios')
+          .select('nombre, apellidos')
+          .eq('id', user.id)
+          .single();
+        if (profile) {
+          senderName = `${profile.nombre} ${profile.apellidos}`.trim();
+        }
+      }
+
+      const { error } = await supabase.from('notificaciones').insert({
+        usuario_id: null,
+        titulo: `🚨 REPORTE: Mal funcionamiento de Sula AI`,
+        cuerpo: `El usuario ${senderName} reportó un problema técnico o mal funcionamiento de Sula AI.\n\nDetalle del reporte:\n${reason.trim()}`,
+        leido: false,
+      });
+
+      if (error) throw error;
+
+      const successMsg = "Gracias por tu reporte. Nuestro equipo técnico revisará el funcionamiento de Sula AI.";
+      if (Platform.OS === 'web') window.alert(successMsg);
+      else Alert.alert("🚨 Reporte Enviado", successMsg);
+      return true;
+    } catch (e) {
+      console.error('Error reporting AI issue:', e);
+      const errMsg = "No se pudo enviar el reporte. Por favor inténtalo de nuevo más tarde.";
+      if (Platform.OS === 'web') window.alert(errMsg);
+      else Alert.alert("Error", errMsg);
+      return false;
+    }
+  };
+
   return {
     messages,
     loading,
     input,
     setInput,
-    handleSend
+    handleSend,
+    reportAiIssue
   };
 }

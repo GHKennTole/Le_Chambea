@@ -20,6 +20,8 @@ import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const PURPLE = "#5A2D82";
+const PURPLE_ACCENT = "#5A2D82";
+const PURPLE_LIGHT = "#F3ECFA";
 
 export default function MyProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -257,7 +259,7 @@ const styles = StyleSheet.create({
   },
   editButton: {
     flexDirection: "row",
-    backgroundColor: PURPLE,
+    backgroundColor: PURPLE_ACCENT,
     borderRadius: 18,
     paddingVertical: 14,
     paddingHorizontal: 20,
@@ -266,7 +268,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     ...Platform.select({
-      web: { boxShadow: '0px 4px 14px rgba(90,45,130,0.3)' } as any,
+      web: { boxShadow: '0px 4px 14px rgba(91,92,156,0.3)' } as any,
       default: {
         elevation: 4,
         shadowColor: PURPLE,

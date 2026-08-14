@@ -22,6 +22,7 @@ import ForgotPasswordScreen from "../features/auth/views/ForgotPasswordScreen";
 import ProfileScreen from '../features/perfil/views/ProfileScreen';
 import MyProfileScreen from '../features/perfil/views/MyProfileScreen';
 import ProfessionalProfileScreen from '../features/inicio/views/ProfessionalProfileScreen';
+import JobHistoryScreen from '../features/perfil/views/JobHistoryScreen';
 import ReviewsScreen from '../features/perfil/views/ReviewsScreen';
 import WriteReviewScreen from '../features/perfil/views/WriteReviewScreen';
 import MyReviewsScreen from '../features/perfil/views/MyReviewsScreen';
@@ -34,6 +35,7 @@ import PublicProfileScreen from "../features/inicio/views/PublicProfileScreen";
 import ChatListScreen from "../features/chat/views/ChatListScreen";
 import ChatScreen from "../features/chat/views/ChatScreen";
 import HomeAdminScreen from "../features/admin/views/HomeAdminScreen";
+import AdminAiAuditScreen from "../features/admin/views/AdminAiAuditScreen";
 import GlobalFloatingAlert from "../shared/components/GlobalFloatingAlert";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -57,6 +59,7 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
 export default function AppNavigator() {
   const [session, setSession] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList>("Welcome");
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const pendingResetRef = useRef<(keyof RootStackParamList) | null>(null);
 
@@ -79,28 +82,42 @@ export default function AppNavigator() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const user = session?.user ? session.user : null;
-      setSession(user);
-      if (user) {
-        const targetRoute = await getTargetRouteForUser(user.id);
-        pendingResetRef.current = targetRoute;
+    let isMounted = true;
+
+    async function initSession() {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const user = currentSession?.user ? currentSession.user : null;
+        if (isMounted) setSession(user);
+
+        if (user) {
+          const targetRoute = await getTargetRouteForUser(user.id);
+          if (isMounted) {
+            setInitialRoute(targetRoute);
+            pendingResetRef.current = targetRoute;
+          }
+        }
+      } catch (e) {
+        console.error("Error in initSession:", e);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-      setLoading(false);
-    });
+    }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const user = session?.user ? session.user : null;
+    initSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      const user = currentSession?.user ? currentSession.user : null;
       setSession(user);
 
-      if (_event === "SIGNED_IN" && user) {
+      if (user && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "USER_UPDATED" || event === "TOKEN_REFRESHED")) {
         const targetRoute = await getTargetRouteForUser(user.id);
         pendingResetRef.current = targetRoute;
         if (navigationRef.isReady()) {
           pendingResetRef.current = null;
           resetTo(targetRoute);
         }
-      } else if (_event === "SIGNED_OUT") {
+      } else if (event === "SIGNED_OUT") {
         pendingResetRef.current = "Welcome";
         if (navigationRef.isReady()) {
           pendingResetRef.current = null;
@@ -109,7 +126,10 @@ export default function AppNavigator() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleOnboardingComplete = () => {
@@ -132,7 +152,7 @@ export default function AppNavigator() {
       }}
     >
       <GlobalFloatingAlert />
-      <Stack.Navigator id="RootStack" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator id="RootStack" initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterNavigator} />
@@ -147,6 +167,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="MyProfile" component={MyProfileScreen} />
         <Stack.Screen name="ProfessionalProfile" component={ProfessionalProfileScreen} />
+        <Stack.Screen name="JobHistory" component={JobHistoryScreen} />
         <Stack.Screen name="Reviews" component={ReviewsScreen} />
         <Stack.Screen name="WriteReview" component={WriteReviewScreen} />
         <Stack.Screen name="MyReviews" component={MyReviewsScreen} />
@@ -159,6 +180,7 @@ export default function AppNavigator() {
         <Stack.Screen name="ChatList" component={ChatListScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="HomeAdmin" component={HomeAdminScreen} />
+        <Stack.Screen name="AdminAiAudit" component={AdminAiAuditScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

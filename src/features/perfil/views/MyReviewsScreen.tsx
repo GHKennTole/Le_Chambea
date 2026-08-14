@@ -18,8 +18,11 @@ import FloatingBackButton from '../../../shared/components/FloatingBackButton';
 import { useMyReviewsController, MyReviewItem } from '../controllers/useMyReviewsController';
 import type { RootStackParamList } from '../../../core/navigation/types';
 import ReviewFilterBar, { ReplyFilterOption } from '../components/ReviewFilterBar';
+import ReportReviewModal from '../../../shared/components/ReportReviewModal';
 
 const PURPLE = '#5A2D82';
+const PURPLE_ACCENT = '#5A2D82';
+const PURPLE_LIGHT = '#F3ECFA';
 const STAR_COLOR = '#FFB800';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -30,6 +33,7 @@ export default function MyReviewsScreen() {
   const vm = useMyReviewsController();
 
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
+  const [selectedReviewForReport, setSelectedReviewForReport] = useState<any | null>(null);
   const [selectedStars, setSelectedStars] = useState<number | null>(null);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<ReplyFilterOption>('all');
 
@@ -229,6 +233,15 @@ export default function MyReviewsScreen() {
                         {/* Action buttons */}
                         <View style={styles.actionsRow}>
                           <TouchableOpacity
+                            style={[styles.btnAction, styles.btnReport]}
+                            onPress={() => setSelectedReviewForReport(item)}
+                            activeOpacity={0.8}
+                          >
+                            <MaterialCommunityIcons name="flag-outline" size={16} color="#DC2626" />
+                            <Text style={styles.btnReportText}>Reportar</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
                             style={[styles.btnAction, styles.btnEdit]}
                             onPress={() => handleEdit(item)}
                             activeOpacity={0.8}
@@ -257,6 +270,16 @@ export default function MyReviewsScreen() {
           <View style={{ height: 80 }} />
         </View>
       </ScrollView>
+
+      {/* Modal Reportar Reseña 🚨 */}
+      {selectedReviewForReport && (
+        <ReportReviewModal
+          visible={!!selectedReviewForReport}
+          onClose={() => setSelectedReviewForReport(null)}
+          review={selectedReviewForReport}
+          professionalName={selectedReviewForReport?.usuarios ? `${selectedReviewForReport.usuarios.nombre} ${selectedReviewForReport.usuarios.apellidos}`.trim() : 'Profesional'}
+        />
+      )}
 
       <FloatingBackButton />
     </View>
@@ -400,7 +423,7 @@ const styles = StyleSheet.create({
   serviceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3ECFA',
+    backgroundColor: PURPLE_LIGHT,
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -455,7 +478,7 @@ const styles = StyleSheet.create({
   viewReplyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3ECFA',
+    backgroundColor: PURPLE_LIGHT,
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -510,8 +533,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 6,
   },
+  btnReport: {
+    backgroundColor: '#FEE2E2',
+  },
+  btnReportText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
   btnEdit: {
-    backgroundColor: '#F3ECFA',
+    backgroundColor: PURPLE_LIGHT,
   },
   btnEditText: {
     fontSize: 13,

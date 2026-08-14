@@ -5,6 +5,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import FloatingBackButton from '../../../shared/components/FloatingBackButton';
 
 const PURPLE = '#5A2D82';
+const PURPLE_ACCENT = '#5A2D82';
+const PURPLE_LIGHT = '#F3ECFA';
 
 export default function SupportScreen() {
   const insets = useSafeAreaInsets();
@@ -50,7 +52,7 @@ export default function SupportScreen() {
               activeOpacity={0.8}
               onPress={() => handleOpenURL('mailto:soporte.lechambea@gmail.com')}
             >
-              <View style={[styles.iconWrap, { backgroundColor: '#F3ECFA' }]}>
+              <View style={[styles.iconWrap, { backgroundColor: PURPLE_LIGHT }]}>
                 <MaterialCommunityIcons name="email-outline" size={26} color={PURPLE} />
               </View>
               <View style={styles.cardInfo}>
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#F3ECFA',
+    backgroundColor: PURPLE_LIGHT,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -289,12 +291,12 @@ const styles = StyleSheet.create({
   scheduleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3ECFA',
+    backgroundColor: PURPLE_LIGHT,
     borderRadius: 16,
     padding: 14,
     gap: 12,
     borderWidth: 1,
-    borderColor: '#E7D8F8',
+    borderColor: '#DDD4EE',
   },
   scheduleInfo: {
     flex: 1,

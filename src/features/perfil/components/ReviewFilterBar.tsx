@@ -12,6 +12,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const PURPLE = '#5A2D82';
+const PURPLE_ACCENT = '#5A2D82';
+const PURPLE_LIGHT = '#F3ECFA';
 const STAR_COLOR = '#FFB800';
 
 export type ReplyFilterOption = 'all' | 'with_reply' | 'without_reply';
@@ -272,7 +274,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F3ECFA',
+    backgroundColor: PURPLE_LIGHT,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -305,7 +307,7 @@ const styles = StyleSheet.create({
   resetBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3ECFA',
+    backgroundColor: PURPLE_LIGHT,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,

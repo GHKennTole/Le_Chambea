@@ -63,15 +63,37 @@ export default function RegisterSuccess() {
     setLeaving(true);
 
     try {
-      await supabase.auth.signOut();
-    } catch {}
+      const { data: { session } } = await supabase.auth.getSession();
+      const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
 
-    const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("usuarios")
+          .select("rol")
+          .eq("id", session.user.id)
+          .maybeSingle();
 
-    rootNav?.reset({
-      index: 0,
-      routes: [{ name: "Welcome" }],
-    });
+        const role = profile?.rol?.toLowerCase();
+        const target = (role === "admin" || role === "administrador") ? "HomeAdmin" : "Home";
+
+        rootNav?.reset({
+          index: 0,
+          routes: [{ name: target as any }],
+        });
+        return;
+      }
+
+      rootNav?.reset({
+        index: 0,
+        routes: [{ name: "Welcome" }],
+      });
+    } catch {
+      const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
+      rootNav?.reset({
+        index: 0,
+        routes: [{ name: "Welcome" }],
+      });
+    }
   };
 
   return (

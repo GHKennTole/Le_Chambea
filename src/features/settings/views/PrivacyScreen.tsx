@@ -14,6 +14,8 @@ import FloatingBackButton from '../../../shared/components/FloatingBackButton';
 import { usePrivacyController } from '../controllers/usePrivacyController';
 
 const PURPLE = '#5A2D82';
+const PURPLE_ACCENT = '#5A2D82';
+const PURPLE_LIGHT = '#F3ECFA';
 
 export default function PrivacyScreen() {
   const insets = useSafeAreaInsets();

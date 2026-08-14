@@ -20,6 +20,8 @@ import { useProfileController } from "../controllers/useProfileController";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 
 const PURPLE = "#5A2D82";
+const PURPLE_ACCENT = "#5A2D82";
+const PURPLE_LIGHT = "#F3ECFA";
 
 const GENDER_OPTIONS = [
   { key: "mujer", label: "Mujer" },
@@ -730,7 +732,7 @@ const styles = StyleSheet.create({
   },
 
   saveButton: {
-    backgroundColor: PURPLE,
+    backgroundColor: PURPLE_ACCENT,
     borderRadius: 16,
     paddingVertical: 16,
     marginTop: 24,
@@ -739,7 +741,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     ...Platform.select({
-      web: { boxShadow: '0px 5px 10px rgba(90,45,130,0.3)' } as any,
+      web: { boxShadow: '0px 5px 10px rgba(91,92,156,0.3)' } as any,
       ios: {
         shadowColor: PURPLE,
         shadowOpacity: 0.3,

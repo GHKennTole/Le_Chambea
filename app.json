@@ -33,10 +33,6 @@
       "expo-font",
       "@react-native-community/datetimepicker",
       "expo-web-browser"
-    ],
-    "extra": {
-      "googleWebClientId": "PON_AQUI_TU_WEB_CLIENT_ID",
-      "googleAndroidClientId": "PON_AQUI_TU_ANDROID_CLIENT_ID"
-    }
+    ]
   }
 }

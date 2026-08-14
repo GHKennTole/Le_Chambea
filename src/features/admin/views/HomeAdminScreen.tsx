@@ -7,47 +7,118 @@ import {
   ScrollView,
   SafeAreaView,
   Platform,
-  Dimensions,
   Alert,
   LayoutAnimation,
   UIManager,
+  RefreshControl,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { supabase } from "../../../services/supabase";
+import type { RootStackParamList } from "../../../core/navigation/types";
+import { useAdminController } from "../controllers/useAdminController";
+import { AdminUser, AdminReport, AdminWorkflowModule } from "../models/admin.types";
+
+// Modals
+import AdminUserDirectoryModal from "../components/AdminUserDirectoryModal";
+import AdminReviewsModal from "../components/AdminReviewsModal";
+import AdminPortfoliosModal from "../components/AdminPortfoliosModal";
+import AdminAiMetricsModal from "../components/AdminAiMetricsModal";
+import AdminJobsHistoryModal from "../components/AdminJobsHistoryModal";
+import AdminDbStatusModal from "../components/AdminDbStatusModal";
+import AdminReportsModal from "../components/AdminReportsModal";
+import AdminDirectNoticeModal from "../components/AdminDirectNoticeModal";
+import AdminBroadcastModal from "../components/AdminBroadcastModal";
 
 // Habilitar animaciones en Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const { width } = Dimensions.get("window");
 const PURPLE = "#5A2D82";
 const LIGHT_PURPLE = "#F3ECFA";
 
-interface MetricItem {
-  id: string;
-  value: string;
-  label: string;
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  color: string;
-  bgColor: string;
-}
-
-interface AdminModule {
-  id: string;
-  title: string;
-  description: string;
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  color: string;
-  bgColor: string;
-  badges: string[];
-  subActions: { label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[];
-}
+type ModalType =
+  | "user_directory"
+  | "reviews_moderation"
+  | "portfolios_supervision"
+  | "ai_metrics"
+  | "jobs_history"
+  | "db_status"
+  | "reports_inbox"
+  | "direct_notice"
+  | "broadcast_notice"
+  | null;
 
 export default function HomeAdminScreen() {
   const insets = useSafeAreaInsets();
-  const [expandedModule, setExpandedModule] = useState<string | null>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  // Controller hook
+  const {
+    loading,
+    refreshing,
+    actionLoading,
+    adminProfile,
+    metrics,
+    users,
+    reviews,
+    reports,
+    jobs,
+    services,
+    tableDiagnostics,
+    onRefresh,
+    toggleUserSuspension,
+    deleteUser,
+    deleteReview,
+    toggleServiceActive,
+    deleteService,
+    toggleReportResolved,
+    deleteReport,
+    sendDirectNotice,
+    sendBroadcastNotice,
+  } = useAdminController();
+
+  // Accordion state
+  const [expandedModule, setExpandedModule] = useState<string | null>("gestionar_usuarios");
+
+  // Modal states
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [noticeTargetUser, setNoticeTargetUser] = useState<AdminUser | null>(null);
+  const [noticeReportContext, setNoticeReportContext] = useState<AdminReport | null>(null);
+
+  // Cross-Navigation User States
+  const [selectedUserForDirectory, setSelectedUserForDirectory] = useState<AdminUser | null>(null);
+  const [selectedUserForReviews, setSelectedUserForReviews] = useState<AdminUser | null>(null);
+  const [selectedUserForServices, setSelectedUserForServices] = useState<AdminUser | null>(null);
+
+  const jumpToReviewsFromUser = (user: AdminUser) => {
+    setSelectedUserForReviews(user);
+    setActiveModal("reviews_moderation");
+  };
+
+  const jumpToServicesFromUser = (user: AdminUser) => {
+    setSelectedUserForServices(user);
+    setActiveModal("portfolios_supervision");
+  };
+
+  const jumpToDirectoryFromUser = (user: AdminUser) => {
+    setSelectedUserForDirectory(user);
+    setActiveModal("user_directory");
+  };
+
+  const toggleModule = (id: string) => {
+    // Si es gestionar_usuarios, abrir directamente el directorio como solicitó el usuario
+    if (id === "gestionar_usuarios") {
+      setSelectedUserForDirectory(null);
+      setActiveModal("user_directory");
+      return;
+    }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedModule(expandedModule === id ? null : id);
+  };
 
   const handleLogout = async () => {
     try {
@@ -62,7 +133,7 @@ export default function HomeAdminScreen() {
 
   const confirmLogout = () => {
     if (Platform.OS === "web") {
-      if (confirm("¿Estás seguro de que deseas cerrar la sesión?")) {
+      if (confirm("¿Estás seguro de que deseas cerrar la sesión del administrador?")) {
         handleLogout();
       }
     } else {
@@ -77,174 +148,276 @@ export default function HomeAdminScreen() {
     }
   };
 
-  const toggleModule = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    if (expandedModule === id) {
-      setExpandedModule(null);
-    } else {
-      setExpandedModule(id);
-    }
+  // Abre el modal de aviso directo preseleccionando el usuario
+  const openDirectNoticeWithUser = (user: AdminUser, reportCtx?: AdminReport) => {
+    setNoticeTargetUser(user);
+    setNoticeReportContext(reportCtx || null);
+    setActiveModal("direct_notice");
   };
 
-  // KPIs deslizables horizontalmente
-  const metrics: MetricItem[] = [
+  // KPIs dinámicos reales
+  const dynamicMetrics = [
     {
       id: "users",
-      value: "154",
+      value: metrics.totalUsers.toString(),
       label: "Usuarios Totales",
-      icon: "account-group",
+      icon: "account-group" as const,
       color: PURPLE,
       bgColor: LIGHT_PURPLE,
     },
     {
       id: "professionals",
-      value: "89",
+      value: metrics.totalProfessionals.toString(),
       label: "Profesionales",
-      icon: "card-account-details-outline",
+      icon: "card-account-details-outline" as const,
       color: "#007AFF",
       bgColor: "#EBF3FF",
     },
     {
       id: "jobs",
-      value: "42",
+      value: metrics.totalJobs.toString(),
       label: "Trabajos Activos",
-      icon: "briefcase-check",
+      icon: "briefcase-check" as const,
       color: "#9B51E0",
       bgColor: "#F5EBFF",
     },
     {
-      id: "reports_total",
-      value: "203",
-      label: "Reportes Totales",
-      icon: "alert-decagram",
-      color: "#FF9500",
-      bgColor: "#FFF5E6",
-    },
-    {
-      id: "reports_resolved",
-      value: "195",
-      label: "Reportes Resueltos",
-      icon: "check-decagram-outline",
-      color: "#4CD964",
-      bgColor: "#E6F9EC",
+      id: "reports_pending",
+      value: metrics.pendingReports.toString(),
+      label: "Reportes Pendientes",
+      icon: "alert-decagram" as const,
+      color: "#E74C3C",
+      bgColor: "#FDEDEC",
     },
     {
       id: "reviews",
-      value: "215",
-      label: "Reseñas Totales",
-      icon: "star-circle-outline",
-      color: "#FFCC00",
+      value: `${metrics.totalReviews} (${metrics.averageRating}★)`,
+      label: "Reseñas (Promedio)",
+      icon: "star-circle-outline" as const,
+      color: "#FF9500",
       bgColor: "#FFF9E6",
     },
     {
-      id: "ai_hits",
-      value: "342",
+      id: "ai_queries",
+      value: metrics.aiQueriesCount.toString(),
       label: "Consultas de IA",
-      icon: "robot-outline",
-      color: "#FF3B30",
-      bgColor: "#FFF2F2",
+      icon: "robot-outline" as const,
+      color: "#8E44AD",
+      bgColor: "#F4ECF7",
     },
   ];
 
-  // Módulos basados en el diagrama iconográfico
-  const modules: AdminModule[] = [
+  // Módulos de Flujos de Trabajo
+  const workflowModules: AdminWorkflowModule[] = [
     {
       id: "gestionar_usuarios",
       title: "Gestionar Usuarios",
-      description: "Administración global de las cuentas de clientes y profesionales.",
+      description: "Directorio interactivo de cuentas, perfiles, suspensiones y bajas.",
       icon: "account-cog",
       color: PURPLE,
       bgColor: LIGHT_PURPLE,
-      badges: ["Suspender", "Supervisar", "Eliminar"],
+      badges: [`${users.length} Usuarios Registrados`, "Abrir Directorio"],
       subActions: [
-        { label: "Suspender Usuarios", icon: "account-off-outline" },
-        { label: "Supervisar Perfiles Profesionales", icon: "shield-account-outline" },
-        { label: "Eliminar Usuarios", icon: "account-remove-outline" },
+        {
+          id: "user_directory",
+          label: "Abrir Directorio General de Usuarios",
+          icon: "account-box-multiple-outline",
+          badgeCount: users.length,
+        },
       ],
     },
     {
       id: "gestionar_contenido",
       title: "Gestionar Contenido",
-      description: "Moderar las interacciones, reseñas y comentarios del sistema.",
+      description: "Moderar reseñas (clientes y profesionales) y servicios del catálogo.",
       icon: "comment-text-multiple-outline",
       color: "#FF9500",
       bgColor: "#FFF5E6",
-      badges: ["Reseñas", "Moderar", "Eliminar"],
+      badges: [`${reviews.length} Reseñas`, `${services.length} Servicios`],
       subActions: [
-        { label: "Revisar Reseñas", icon: "star-outline" },
-        { label: "Moderar Comentarios", icon: "comment-remove-outline" },
-        { label: "Eliminar Contenido Inapropiado", icon: "delete-outline" },
+        {
+          id: "reviews_moderation",
+          label: "Moderar Reseñas y Calificaciones",
+          icon: "star-outline",
+          badgeCount: reviews.length,
+        },
+        {
+          id: "portfolios_supervision",
+          label: "Servicios de Profesionales (Suspender o Eliminar)",
+          icon: "briefcase-outline",
+          badgeCount: services.length,
+        },
       ],
     },
     {
       id: "apartado_ia",
       title: "Apartado de IA",
-      description: "Auditar y configurar el asistente cognitivo de IA.",
+      description: "Auditoría conversacional de Sula AI y métricas del modelo.",
       icon: "brain",
       color: "#8E44AD",
       bgColor: "#F4ECF7",
-      badges: ["Recomendaciones", "Resultados"],
+      badges: ["Auditoría Dev", "Métricas"],
       subActions: [
-        { label: "Revisar Recomendaciones de IA", icon: "robot-happy-outline" },
-        { label: "Revisar Resultados de Análisis", icon: "chart-bubble" },
+        {
+          id: "ai_audit",
+          label: "Modo Auditoría / Pruebas Sula AI",
+          icon: "robot-happy-outline",
+        },
+        {
+          id: "ai_metrics",
+          label: "Métricas y Consultas de IA",
+          icon: "chart-bubble",
+          badgeCount: metrics.aiQueriesCount,
+        },
       ],
     },
     {
       id: "actividad_sistema",
       title: "Actividad del Sistema",
-      description: "Monitoreo del tráfico del servidor y exportación de reportes.",
+      description: "Historial de solicitudes de trabajo y diagnóstico de la BD.",
       icon: "chart-timeline-variant",
       color: "#2ECC71",
-      bgColor: "#EAF2F8",
-      badges: ["Actividad", "Informes"],
+      bgColor: "#EAF9EC",
+      badges: [`${jobs.length} Trabajos`, "Salud BD"],
       subActions: [
-        { label: "Revisar Log de Actividad", icon: "history" },
-        { label: "Generar Informes de Rendimiento", icon: "file-chart-outline" },
+        {
+          id: "jobs_history",
+          label: "Historial Global de Trabajos",
+          icon: "briefcase-clock-outline",
+          badgeCount: jobs.length,
+        },
+        {
+          id: "db_status",
+          label: "Diagnóstico y Estado de la BD",
+          icon: "database-check-outline",
+        },
       ],
     },
     {
       id: "notificaciones_admin",
       title: "Notificaciones Administrativas",
-      description: "Gestión de denuncias del sistema y avisos masivos globales.",
+      description: "Bandeja de denuncias de usuarios y comunicados oficiales masivos.",
       icon: "bell-ring-outline",
       color: "#E74C3C",
       bgColor: "#FDEDEC",
-      badges: ["Alertas", "Reportes", "Solución"],
+      badges: [
+        metrics.pendingReports > 0 ? `${metrics.pendingReports} Pendientes` : "Al día",
+        "Comunicado Global",
+      ],
       subActions: [
-        { label: "Recibir Reportes de Usuarios", icon: "alert-octagon-outline" },
-        { label: "Gestionar Alertas de Soporte", icon: "bell-cog-outline" },
-        { label: "Finalizar y Cerrar Soluciones", icon: "check-decagram-outline" },
+        {
+          id: "reports_inbox",
+          label: "Bandeja de Reportes de Usuarios",
+          icon: "alert-octagon-outline",
+          badgeCount: metrics.pendingReports,
+        },
+        {
+          id: "broadcast_notice",
+          label: "Comunicado Global (Broadcast Masivo)",
+          icon: "bullhorn-outline",
+        },
       ],
     },
   ];
 
+  const handleSubActionPress = (actionId: string) => {
+    switch (actionId) {
+      case "user_directory":
+        setActiveModal("user_directory");
+        break;
+      case "reviews_moderation":
+        setActiveModal("reviews_moderation");
+        break;
+      case "portfolios_supervision":
+        setActiveModal("portfolios_supervision");
+        break;
+      case "ai_audit":
+        navigation.navigate("AdminAiAudit");
+        break;
+      case "ai_metrics":
+        setActiveModal("ai_metrics");
+        break;
+      case "jobs_history":
+        setActiveModal("jobs_history");
+        break;
+      case "db_status":
+        setActiveModal("db_status");
+        break;
+      case "reports_inbox":
+        setActiveModal("reports_inbox");
+        break;
+      case "broadcast_notice":
+        setActiveModal("broadcast_notice");
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header - Al estilo del Home de Usuario de Le Chambea */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[PURPLE]}
+            tintColor={PURPLE}
+          />
+        }
+      >
+        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.brandTitle}>LE CHAMBEA</Text>
             <View style={styles.badgeAdminContainer}>
-              <Text style={styles.badgeAdminText}>ADMINISTRADOR</Text>
+              <Text style={styles.badgeAdminText}>PANEL ADMINISTRADOR</Text>
             </View>
           </View>
-          
+
           <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={onRefresh}
+              activeOpacity={0.7}
+              disabled={refreshing}
+            >
+              <MaterialCommunityIcons name="refresh" size={22} color={PURPLE} />
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={confirmLogout}
               activeOpacity={0.7}
             >
-              <MaterialCommunityIcons name="logout" size={22} color="#FF3B30" />
+              <MaterialCommunityIcons name="logout" size={20} color="#FF3B30" />
             </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Welcome Card */}
+        <View style={styles.welcomeCard}>
+          <View style={styles.welcomeLeft}>
+            <Text style={styles.welcomeGreeting}>
+              Bienvenido,{" "}
+              <Text style={styles.adminNameHighlight}>
+                {adminProfile?.nombre || "Administrador"}
+              </Text>
+            </Text>
+            <Text style={styles.welcomeEmail}>{adminProfile?.correo}</Text>
+          </View>
+          <View style={styles.liveIndicator}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>En Tiempo Real</Text>
           </View>
         </View>
 
         {/* Section title for KPIs */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Métricas de Rendimiento</Text>
-          <Text style={styles.sectionSubtitle}>Desliza para ver más indicadores</Text>
+          <Text style={styles.sectionSubtitle}>Indicadores operativos en vivo</Text>
         </View>
 
         {/* Horizontal scroll for KPI cards */}
@@ -254,7 +427,7 @@ export default function HomeAdminScreen() {
           style={styles.metricsScroll}
           contentContainerStyle={styles.metricsScrollContent}
         >
-          {metrics.map((metric) => (
+          {dynamicMetrics.map((metric) => (
             <View key={metric.id} style={styles.statCard}>
               <View style={[styles.statIconContainer, { backgroundColor: metric.bgColor }]}>
                 <MaterialCommunityIcons name={metric.icon} size={24} color={metric.color} />
@@ -266,17 +439,22 @@ export default function HomeAdminScreen() {
         </ScrollView>
 
         {/* Action modules section */}
-        <Text style={[styles.sectionTitle, { marginTop: 10, marginBottom: 15 }]}>
-          Flujos de Trabajo
-        </Text>
+        <View style={[styles.sectionHeader, { marginTop: 16 }]}>
+          <Text style={styles.sectionTitle}>Flujos de Trabajo</Text>
+          <Text style={styles.sectionSubtitle}>
+            Toca un módulo para abrir sus herramientas administrativas
+          </Text>
+        </View>
 
         <View style={styles.modulesContainer}>
-          {modules.map((module) => {
+          {workflowModules.map((module) => {
             const isExpanded = expandedModule === module.id;
+            const isSingleDirectAction = module.id === "gestionar_usuarios";
+
             return (
               <View key={module.id} style={styles.moduleWrapper}>
                 <TouchableOpacity
-                  style={[styles.moduleCard, isExpanded && styles.moduleCardExpanded]}
+                  style={[styles.moduleCard, isExpanded && !isSingleDirectAction && styles.moduleCardExpanded]}
                   onPress={() => toggleModule(module.id)}
                   activeOpacity={0.9}
                 >
@@ -291,9 +469,9 @@ export default function HomeAdminScreen() {
                       </Text>
                     </View>
                     <MaterialCommunityIcons
-                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      name={isSingleDirectAction ? "arrow-right-circle" : isExpanded ? "chevron-up" : "chevron-down"}
                       size={24}
-                      color="#999"
+                      color={isSingleDirectAction ? module.color : "#999"}
                     />
                   </View>
 
@@ -308,26 +486,24 @@ export default function HomeAdminScreen() {
                 </TouchableOpacity>
 
                 {/* Sub-actions collapsible menu */}
-                {isExpanded && (
+                {isExpanded && !isSingleDirectAction && (
                   <View style={styles.subActionsContainer}>
-                    {module.subActions.map((sub, idx) => (
+                    {module.subActions.map((sub) => (
                       <TouchableOpacity
-                        key={idx}
+                        key={sub.id}
                         style={styles.subActionItem}
                         activeOpacity={0.7}
-                        onPress={() =>
-                          Alert.alert(
-                            sub.label,
-                            `Acceso directo del flujo administrativo: "${sub.label}". ¿Deseas iniciar este proceso?`,
-                            [
-                              { text: "Cancelar", style: "cancel" },
-                              { text: "Confirmar", onPress: () => {} },
-                            ]
-                          )
-                        }
+                        onPress={() => handleSubActionPress(sub.id)}
                       >
-                        <MaterialCommunityIcons name={sub.icon} size={20} color={module.color} />
+                        <View style={[styles.subActionIconWrap, { backgroundColor: module.bgColor }]}>
+                          <MaterialCommunityIcons name={sub.icon} size={20} color={module.color} />
+                        </View>
                         <Text style={styles.subActionLabel}>{sub.label}</Text>
+                        {sub.badgeCount !== undefined && sub.badgeCount > 0 && (
+                          <View style={[styles.subActionBadge, { backgroundColor: module.color }]}>
+                            <Text style={styles.subActionBadgeText}>{sub.badgeCount}</Text>
+                          </View>
+                        )}
                         <MaterialCommunityIcons name="arrow-right" size={16} color="#BBB" />
                       </TouchableOpacity>
                     ))}
@@ -338,9 +514,116 @@ export default function HomeAdminScreen() {
           })}
         </View>
 
-        {/* Spacer de fin */}
-        <View style={{ height: 20 }} />
+        {/* Spacer */}
+        <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* ========================================================================= */}
+      {/* MODALS */}
+      {/* ========================================================================= */}
+
+      {/* 1. Directorio de Usuarios (Directo desde Gestionar Usuarios) */}
+      <AdminUserDirectoryModal
+        visible={activeModal === "user_directory"}
+        onClose={() => {
+          setActiveModal(null);
+          setSelectedUserForDirectory(null);
+        }}
+        users={users}
+        initialSelectedUser={selectedUserForDirectory}
+        onToggleSuspend={toggleUserSuspension}
+        onDeleteUser={deleteUser}
+        onDirectNotice={openDirectNoticeWithUser}
+        onGoToReviews={jumpToReviewsFromUser}
+        onGoToServices={jumpToServicesFromUser}
+        actionLoading={actionLoading}
+      />
+
+      {/* 2. Moderar Reseñas y Opiniones */}
+      <AdminReviewsModal
+        visible={activeModal === "reviews_moderation"}
+        onClose={() => {
+          setActiveModal(null);
+          setSelectedUserForReviews(null);
+        }}
+        reviews={reviews}
+        users={users}
+        initialSelectedUser={selectedUserForReviews}
+        onDeleteReview={deleteReview}
+        onGoToUserDirectory={jumpToDirectoryFromUser}
+        onGoToServices={jumpToServicesFromUser}
+      />
+
+      {/* 3. Servicios de Profesionales (Suspender o Eliminar) */}
+      <AdminPortfoliosModal
+        visible={activeModal === "portfolios_supervision"}
+        onClose={() => {
+          setActiveModal(null);
+          setSelectedUserForServices(null);
+        }}
+        services={services}
+        users={users}
+        initialSelectedUser={selectedUserForServices}
+        onToggleActive={toggleServiceActive}
+        onDeleteService={deleteService}
+        onGoToUserDirectory={jumpToDirectoryFromUser}
+        onGoToReviews={jumpToReviewsFromUser}
+      />
+
+      {/* 4. Métricas de Sula AI */}
+      <AdminAiMetricsModal
+        visible={activeModal === "ai_metrics"}
+        onClose={() => setActiveModal(null)}
+        metrics={metrics}
+        onLaunchAuditMode={() => navigation.navigate("AdminAiAudit")}
+      />
+
+      {/* 5. Historial de Trabajos */}
+      <AdminJobsHistoryModal
+        visible={activeModal === "jobs_history"}
+        onClose={() => setActiveModal(null)}
+        jobs={jobs}
+      />
+
+      {/* 6. Diagnóstico de Base de Datos */}
+      <AdminDbStatusModal
+        visible={activeModal === "db_status"}
+        onClose={() => setActiveModal(null)}
+        diagnostics={tableDiagnostics}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+      />
+
+      {/* 7. Bandeja de Reportes */}
+      <AdminReportsModal
+        visible={activeModal === "reports_inbox"}
+        onClose={() => setActiveModal(null)}
+        reports={reports}
+        users={users}
+        onToggleResolved={toggleReportResolved}
+        onDeleteReport={deleteReport}
+        onDirectNotice={openDirectNoticeWithUser}
+      />
+
+      {/* 8. Notificación Directa a Usuario (In-app notification) */}
+      <AdminDirectNoticeModal
+        visible={activeModal === "direct_notice"}
+        onClose={() => setActiveModal(null)}
+        users={users}
+        preselectedUser={noticeTargetUser}
+        reportContext={noticeReportContext}
+        onSendNotice={sendDirectNotice}
+        actionLoading={actionLoading}
+      />
+
+      {/* 9. Comunicado Global Masivo (In-app broadcast) */}
+      <AdminBroadcastModal
+        visible={activeModal === "broadcast_notice"}
+        onClose={() => setActiveModal(null)}
+        usersCount={users.length}
+        onSendBroadcast={sendBroadcastNotice}
+        actionLoading={actionLoading}
+      />
     </SafeAreaView>
   );
 }
@@ -359,7 +642,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F3",
     ...Platform.select({
@@ -378,10 +661,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   brandTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#222",
-    fontFamily: "SansitaBoldItalic",
     letterSpacing: 0.5,
   },
   badgeAdminContainer: {
@@ -395,213 +677,246 @@ const styles = StyleSheet.create({
     color: PURPLE,
     fontSize: 10,
     fontWeight: "bold",
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
-  bellButton: {
-    position: "relative",
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "#F9F9FB",
+  refreshButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: LIGHT_PURPLE,
     justifyContent: "center",
     alignItems: "center",
-  },
-  bellBadge: {
-    position: "absolute",
-    top: 5,
-    right: 5,
-    backgroundColor: "#FF3B30",
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 3,
-  },
-  bellBadgeText: {
-    color: "white",
-    fontSize: 9,
-    fontWeight: "bold",
-    textAlign: "center",
   },
   logoutButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: "#FFF2F2",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#FFE5E5",
   },
-  sectionHeader: {
-    paddingHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 10,
+  welcomeCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "white",
+    marginHorizontal: 16,
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#EAEAEA",
   },
-  sectionTitle: {
-    fontSize: 18,
+  welcomeLeft: {
+    flex: 1,
+  },
+  welcomeGreeting: {
+    fontSize: 14,
+    color: "#444",
+  },
+  adminNameHighlight: {
     fontWeight: "bold",
-    color: "#1A1A1A",
-    paddingHorizontal: 20,
+    color: PURPLE,
   },
-  sectionSubtitle: {
+  welcomeEmail: {
     fontSize: 12,
     color: "#888",
     marginTop: 2,
   },
+  liveIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8F8F0",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 6,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#2ECC71",
+  },
+  liveText: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#27AE60",
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    marginTop: 18,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#1A1A1A",
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: "#777",
+    marginTop: 2,
+  },
   metricsScroll: {
-    marginVertical: 5,
+    marginTop: 6,
   },
   metricsScrollContent: {
-    paddingHorizontal: 20,
-    paddingRight: 30, // Margen extra al final para scroll agradable
+    paddingHorizontal: 16,
+    paddingVertical: 4,
     gap: 12,
   },
   statCard: {
-    width: 145,
     backgroundColor: "white",
-    borderRadius: 18,
-    padding: 16,
-    alignItems: "center",
+    borderRadius: 16,
+    padding: 14,
+    minWidth: 130,
+    borderWidth: 1,
+    borderColor: "#EAEAEA",
+    alignItems: "flex-start",
     ...Platform.select({
-      web: { boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.04)" } as any,
+      web: { boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.03)" } as any,
       default: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 6,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 1,
       },
     }),
   },
   statIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   statNumber: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#222",
-    marginBottom: 2,
   },
   statLabel: {
     fontSize: 11,
     color: "#777",
-    fontWeight: "500",
-    textAlign: "center",
+    marginTop: 2,
   },
   modulesContainer: {
-    paddingHorizontal: 20,
-    gap: 15,
+    paddingHorizontal: 16,
+    gap: 12,
+    marginTop: 6,
   },
   moduleWrapper: {
-    borderRadius: 22,
     backgroundColor: "white",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#EAEAEA",
     overflow: "hidden",
     ...Platform.select({
-      web: { boxShadow: "0px 4px 14px rgba(0, 0, 0, 0.04)" } as any,
+      web: { boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.03)" } as any,
       default: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 3,
+        shadowRadius: 3,
+        elevation: 1,
       },
     }),
   },
   moduleCard: {
-    padding: 18,
-    backgroundColor: "white",
+    padding: 16,
   },
   moduleCardExpanded: {
     borderBottomWidth: 1,
-    borderBottomColor: "#F4F4F6",
+    borderBottomColor: "#F0F0F0",
   },
   moduleHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
   },
   moduleIconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
+    marginRight: 12,
   },
   moduleHeaderText: {
     flex: 1,
+    marginRight: 8,
   },
   moduleTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
-    color: "#1A1A1A",
-    marginBottom: 2,
+    color: "#222",
   },
   moduleDesc: {
-    fontSize: 11,
+    fontSize: 12,
     color: "#777",
-    lineHeight: 15,
+    marginTop: 2,
+    lineHeight: 16,
   },
   badgeRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
     marginTop: 12,
-    paddingLeft: 66, // Alinear con el texto al lado del icono
   },
   badgePill: {
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 3,
+    borderRadius: 6,
   },
   badgeText: {
     fontSize: 10,
     fontWeight: "bold",
-    letterSpacing: 0.2,
   },
   subActionsContainer: {
     backgroundColor: "#FAFBFD",
+    paddingHorizontal: 12,
     paddingVertical: 8,
   },
   subActionItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F2F5",
+    borderBottomColor: "#F0F0F5",
+  },
+  subActionIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
   },
   subActionLabel: {
     flex: 1,
     fontSize: 13,
-    color: "#444",
-    fontWeight: "500",
-  },
-  footer: {
-    marginTop: 40,
-    alignItems: "center",
-    paddingBottom: 20,
-  },
-  footerText: {
-    fontSize: 12,
     fontWeight: "600",
-    color: "#BBB",
+    color: "#333",
   },
-  footerSubtext: {
+  subActionBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginRight: 8,
+  },
+  subActionBadgeText: {
+    color: "white",
     fontSize: 10,
-    color: "#CCC",
-    marginTop: 2,
+    fontWeight: "bold",
   },
 });

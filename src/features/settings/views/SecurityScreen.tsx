@@ -16,6 +16,8 @@ import FloatingBackButton from '../../../shared/components/FloatingBackButton';
 import { useSecurityController } from '../controllers/useSecurityController';
 
 const PURPLE = '#5A2D82';
+const PURPLE_ACCENT = '#5A2D82';
+const PURPLE_LIGHT = '#F3ECFA';
 
 export default function SecurityScreen() {
   const insets = useSafeAreaInsets();
@@ -317,13 +319,13 @@ const styles = StyleSheet.create({
   },
 
   actionButton: {
-    backgroundColor: PURPLE,
+    backgroundColor: PURPLE_ACCENT,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
     ...Platform.select({
-      web: { boxShadow: '0px 4px 10px rgba(90,45,130,0.3)' } as any,
+      web: { boxShadow: '0px 4px 10px rgba(91,92,156,0.3)' } as any,
       ios: { shadowColor: PURPLE, shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 5 },
     }),

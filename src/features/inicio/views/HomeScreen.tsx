@@ -71,17 +71,6 @@ const styles = StyleSheet.create({
   headerSection: {
     backgroundColor: 'white',
     zIndex: 10,
-    paddingBottom: 5,
-    ...Platform.select({
-      web: { boxShadow: '0px 2px 3px rgba(0,0,0,0.06)' } as any,
-      default: {
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 2,
-      }
-    }),
   },
   contentSection: {
     flex: 1,

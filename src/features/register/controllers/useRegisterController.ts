@@ -55,7 +55,6 @@ export function useRegisterController() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   
   const [alertBox, setAlertBox] = useState<{
     visible: boolean;
@@ -182,22 +181,10 @@ export function useRegisterController() {
     }
   };
 
-  const handleGoogleRegister = async () => {
-    setGoogleLoading(true);
-    try {
-      showAlert("Registro con Google", "La función de registro con Google está en desarrollo.", undefined, "warning");
-    } catch (_error: unknown) {
-      showAlert("Error", "No se pudo registrar con Google.", undefined, "danger");
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
   return {
     formData,
     setFormData,
     loading,
-    googleLoading,
     alertBox,
     alertAnim,
     showNiceAlert,
@@ -206,7 +193,5 @@ export function useRegisterController() {
     canContinue,
     helperText,
     handleCreateAccount,
-    handleGoogleRegister,
-    setGoogleLoading,
   };
 }

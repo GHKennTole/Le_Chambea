@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,6 +8,7 @@ import {
   StyleSheet, 
   ActivityIndicator, 
   Image, 
+  Modal,
   KeyboardAvoidingView,
   Platform,
   Dimensions
@@ -23,10 +24,33 @@ const LIGHT_PURPLE = "#F3ECFA";
 const GRAY_BG = "#F6F6F8";
 
 export default function AiScreen() {
-  const { messages, loading, input, setInput, handleSend } = useAiController();
+  const { messages, loading, input, setInput, handleSend, reportAiIssue } = useAiController();
   const navigation = useNavigation<any>();
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
+
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportInputHeight, setReportInputHeight] = useState(100);
+  const [submittingReport, setSubmittingReport] = useState(false);
+
+  const handleOpenReportModal = () => {
+    setReportReason("");
+    setReportInputHeight(100);
+    setShowReportModal(true);
+  };
+
+  const handleConfirmReport = async () => {
+    if (!reportReason.trim() || submittingReport) return;
+    setSubmittingReport(true);
+    const success = await reportAiIssue(reportReason.trim());
+    setSubmittingReport(false);
+    if (success) {
+      setShowReportModal(false);
+      setReportReason("");
+      setReportInputHeight(100);
+    }
+  };
 
   // Auto-scroll al final del chat cuando llega un mensaje nuevo
   useEffect(() => {
@@ -106,8 +130,8 @@ export default function AiScreen() {
         behavior="height"
         keyboardVerticalOffset={0}
       >
-        {/* Cabecera de Chamby - siempre fija arriba */}
-        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        {/* Cabecera Morada Dinámica de Sula AI - fija arriba */}
+        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
           <View style={styles.headerAvatarContainer}>
             <Image 
               source={require('../../../assets/images/logo.png')} 
@@ -116,10 +140,25 @@ export default function AiScreen() {
             />
             <View style={styles.onlineBadge} />
           </View>
-          <View>
-            <Text style={styles.headerTitle}>Sula AI</Text>
-            <Text style={styles.headerSubtitle}>Asistente técnico interactivo</Text>
+          <View style={styles.headerTextContainer}>
+            <View style={styles.headerTitleRow}>
+              <Text style={styles.headerTitle}>Sula AI</Text>
+              <View style={styles.aiPill}>
+                <MaterialCommunityIcons name="creation" size={12} color={PURPLE} />
+                <Text style={styles.aiPillText}>Asistente</Text>
+              </View>
+            </View>
+            <Text style={styles.headerSubtitle}>Asistente técnico interactivo 24/7</Text>
           </View>
+          
+          <TouchableOpacity
+            style={styles.reportHeaderBtn}
+            onPress={handleOpenReportModal}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <MaterialCommunityIcons name="shield-alert-outline" size={20} color="#FFA8A8" />
+          </TouchableOpacity>
         </View>
 
         {/* Zona de Mensajes del Chat */}
@@ -219,6 +258,116 @@ export default function AiScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Modal: Reportar Mal Funcionamiento de Sula AI 🚨 */}
+      <Modal visible={showReportModal} transparent animationType="fade" onRequestClose={() => !submittingReport && setShowReportModal(false)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.reportModalOverlay}
+        >
+          <TouchableOpacity 
+            style={styles.reportModalBackdrop} 
+            activeOpacity={1} 
+            onPress={() => {
+              if (!submittingReport) {
+                setShowReportModal(false);
+                setReportReason("");
+                setReportInputHeight(100);
+              }
+            }} 
+          />
+          <View style={styles.reportModalCard}>
+            {/* Cabecera del modal con insignia 🚨 */}
+            <View style={styles.reportModalHeader}>
+              <View style={styles.reportIconCircle}>
+                <Text style={styles.reportAlertEmoji}>🚨</Text>
+              </View>
+              <Text style={styles.reportModalTitle}>Reportar Sula AI</Text>
+              <Text style={styles.reportModalSubtitle}>
+                Describe el problema técnico o mal funcionamiento que experimentaste con el asistente para que el equipo lo solucione.
+              </Text>
+            </View>
+
+            {/* Motivos sugeridos rápidos */}
+            <Text style={styles.reportQuickLabel}>Problemas frecuentes:</Text>
+            <View style={styles.reportQuickChipsRow}>
+              {[
+                "❌ Respuesta incoherente o errónea",
+                "⏳ Sin respuesta / Congelado",
+                "🛠️ Sugerencia de profesionales incorrecta",
+                "⚠️ Error de conexión recurrente"
+              ].map((chip, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={styles.reportQuickChip}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (!reportReason.includes(chip)) {
+                      setReportReason((prev) => prev ? `${prev}\n• ${chip}` : `• ${chip}: `);
+                    }
+                  }}
+                >
+                  <Text style={styles.reportQuickChipText}>{chip}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Cuadro de texto auto-expandible */}
+            <View style={styles.reportInputWrapper}>
+              <TextInput
+                style={[styles.reportTextInput, { height: reportInputHeight }]}
+                placeholder="Describe con detalle qué falló en la respuesta de la IA..."
+                placeholderTextColor="#999"
+                value={reportReason}
+                onChangeText={setReportReason}
+                multiline
+                numberOfLines={4}
+                maxLength={500}
+                textAlignVertical="top"
+                onContentSizeChange={(e) => {
+                  const h = e.nativeEvent.contentSize.height;
+                  setReportInputHeight(Math.max(100, Math.min(200, h + 24)));
+                }}
+              />
+              <Text style={styles.reportCharCount}>{reportReason.length}/500</Text>
+            </View>
+
+            {/* Botones de acción */}
+            <View style={styles.reportActionsRow}>
+              <TouchableOpacity
+                style={styles.reportCancelBtn}
+                disabled={submittingReport}
+                onPress={() => {
+                  setShowReportModal(false);
+                  setReportReason("");
+                  setReportInputHeight(100);
+                }}
+              >
+                <Text style={styles.reportCancelBtnText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.reportSubmitBtn,
+                  (!reportReason.trim() || submittingReport) && styles.reportSubmitBtnDisabled
+                ]}
+                disabled={!reportReason.trim() || submittingReport}
+                onPress={handleConfirmReport}
+                activeOpacity={0.8}
+              >
+                {submittingReport ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="send" size={16} color="white" />
+                    <Text style={styles.reportSubmitBtnText}>Enviar Reporte</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </MainLayout>
   );
 }
@@ -231,52 +380,77 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ECECF1',
-    backgroundColor: 'white',
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    backgroundColor: PURPLE,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     ...Platform.select({
-      web: { boxShadow: '0px 2px 3px rgba(0,0,0,0.05)' } as any,
+      web: { boxShadow: '0px 4px 12px rgba(90,45,130,0.2)' } as any,
       default: {
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
+        elevation: 4,
+        shadowColor: PURPLE,
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 8,
       }
     }),
   },
   headerAvatarContainer: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: 14,
   },
   headerLogo: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: LIGHT_PURPLE,
-    padding: 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'white',
+    padding: 3,
   },
   onlineBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#04B45F',
-    borderWidth: 1.5,
-    borderColor: 'white',
+    borderWidth: 2,
+    borderColor: PURPLE,
+  },
+  headerTextContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontSize: 20,
+    fontWeight: '900',
+    color: 'white',
+  },
+  aiPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3ECFA',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    gap: 3,
+  },
+  aiPillText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: PURPLE,
   },
   headerSubtitle: {
-    fontSize: 12,
-    color: '#888888',
+    fontSize: 12.5,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 1,
   },
   contentWrapper: {
     flex: 1,
@@ -497,5 +671,159 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 13,
     fontWeight: 'bold',
+  },
+
+  reportHeaderBtn: { 
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+
+  // Modal Reportar Sula AI 🚨
+  reportModalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 16 
+  },
+  reportModalBackdrop: { 
+    ...StyleSheet.absoluteFillObject 
+  },
+  reportModalCard: { 
+    backgroundColor: 'white', 
+    borderRadius: 24, 
+    padding: 22, 
+    width: '100%', 
+    maxWidth: 480, 
+    ...Platform.select({ 
+      web: { boxShadow: '0px 10px 30px rgba(0,0,0,0.2)' } as any, 
+      default: { 
+        elevation: 6, 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 6 }, 
+        shadowOpacity: 0.2, 
+        shadowRadius: 10 
+      } 
+    }) 
+  },
+  reportModalHeader: { 
+    alignItems: 'center', 
+    marginBottom: 14 
+  },
+  reportIconCircle: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 24, 
+    backgroundColor: '#FEE2E2', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginBottom: 8 
+  },
+  reportAlertEmoji: { 
+    fontSize: 22 
+  },
+  reportModalTitle: { 
+    fontSize: 19, 
+    fontWeight: '900', 
+    color: '#1F2937', 
+    marginBottom: 4, 
+    textAlign: 'center' 
+  },
+  reportModalSubtitle: { 
+    fontSize: 12.5, 
+    color: '#6B7280', 
+    textAlign: 'center', 
+    lineHeight: 18, 
+    paddingHorizontal: 6 
+  },
+  reportQuickLabel: { 
+    fontSize: 11, 
+    fontWeight: '700', 
+    color: '#888', 
+    marginBottom: 6, 
+    textTransform: 'uppercase', 
+    letterSpacing: 0.5 
+  },
+  reportQuickChipsRow: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 6, 
+    marginBottom: 12 
+  },
+  reportQuickChip: { 
+    backgroundColor: '#F3F4F6', 
+    paddingHorizontal: 10, 
+    paddingVertical: 5, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB' 
+  },
+  reportQuickChipText: { 
+    fontSize: 11, 
+    color: '#4B5563', 
+    fontWeight: '600' 
+  },
+  reportInputWrapper: { 
+    marginBottom: 14 
+  },
+  reportTextInput: { 
+    backgroundColor: '#F9FAFB', 
+    borderRadius: 14, 
+    borderWidth: 1.5, 
+    borderColor: '#E5E7EB', 
+    padding: 12, 
+    fontSize: 14, 
+    color: '#1F2937' 
+  },
+  reportCharCount: { 
+    alignSelf: 'flex-end', 
+    fontSize: 11, 
+    color: '#9CA3AF', 
+    marginTop: 4, 
+    marginRight: 4 
+  },
+  reportActionsRow: { 
+    flexDirection: 'row', 
+    gap: 10, 
+    marginTop: 4 
+  },
+  reportCancelBtn: { 
+    flex: 1, 
+    paddingVertical: 13, 
+    borderRadius: 12, 
+    backgroundColor: '#F3F4F6', 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  reportCancelBtnText: { 
+    fontSize: 14, 
+    fontWeight: '700', 
+    color: '#4B5563' 
+  },
+  reportSubmitBtn: { 
+    flex: 1.4, 
+    paddingVertical: 13, 
+    borderRadius: 12, 
+    backgroundColor: '#DC2626', 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: 6 
+  },
+  reportSubmitBtnDisabled: { 
+    backgroundColor: '#FCA5A5', 
+    opacity: 0.7 
+  },
+  reportSubmitBtnText: { 
+    fontSize: 14, 
+    fontWeight: 'bold', 
+    color: 'white' 
   }
 });

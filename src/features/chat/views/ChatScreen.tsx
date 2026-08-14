@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { RootStackParamList } from "../../../core/navigation/types";
 import { useChatController, Message } from "../controllers/useChatController";
+import { isSameDay, formatChatDividerDate } from "../../../shared/utils/dateUtils";
 
 const PURPLE = "#5A2D82";
 
@@ -17,6 +18,10 @@ export default function ChatScreen({ route, navigation }: Props) {
   const { chatId, otherUserId } = route.params;
   const vm = useChatController(chatId, otherUserId);
   const [showServicePicker, setShowServicePicker] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportInputHeight, setReportInputHeight] = useState(100);
+  const [submittingReport, setSubmittingReport] = useState(false);
   const [text, setText] = useState("");
   const flatListRef = useRef<FlatList>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -46,19 +51,33 @@ export default function ChatScreen({ route, navigation }: Props) {
 
   const canChat = true;
 
-  const renderMessage = useCallback(({ item }: { item: Message }) => {
+  const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
     const isMe = item.remitente_id === vm.currentUser?.id;
+    const prevMessage = index > 0 ? vm.messages[index - 1] : null;
+    const showDateDivider = !prevMessage || !isSameDay(item.fecha_creacion, prevMessage.fecha_creacion);
+
     return (
-      <View style={[styles.msgRow, isMe && styles.msgRowMe]}>
-        <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleOther]}>
-          <Text style={[styles.msgText, isMe && styles.msgTextMe]}>{item.contenido}</Text>
-          <Text style={[styles.msgTime, isMe && styles.msgTimeMe]}>
-            {new Date(item.fecha_creacion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
+      <View key={item.id}>
+        {showDateDivider && (
+          <View style={styles.dateDividerContainer}>
+            <View style={styles.dateDividerBadge}>
+              <Text style={styles.dateDividerText}>
+                {formatChatDividerDate(item.fecha_creacion)}
+              </Text>
+            </View>
+          </View>
+        )}
+        <View style={[styles.msgRow, isMe && styles.msgRowMe]}>
+          <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleOther]}>
+            <Text style={[styles.msgText, isMe && styles.msgTextMe]}>{item.contenido}</Text>
+            <Text style={[styles.msgTime, isMe && styles.msgTimeMe]}>
+              {new Date(item.fecha_creacion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </View>
         </View>
       </View>
     );
-  }, [vm.currentUser?.id]);
+  }, [vm.currentUser?.id, vm.messages]);
 
   if (vm.loading && !vm.chatInfo) {
     return (
@@ -203,24 +222,21 @@ export default function ChatScreen({ route, navigation }: Props) {
     );
   };
 
-  const handleReportPress = () => {
-    const title = "Reportar Incongruencia";
-    const msg = "¿Deseas notificar a los administradores sobre una incongruencia en este chat?";
-    if (Platform.OS === 'web') {
-      if (window.confirm(msg)) {
-        vm.reportIncongruency("El usuario ha detectado una incongruencia o error en esta conversación.");
-      }
-    } else {
-      Alert.alert(
-        title,
-        msg,
-        [
-          { text: "Cancelar", style: "cancel" },
-          { text: "Reportar", style: "destructive", onPress: () => {
-            vm.reportIncongruency("El usuario ha detectado una incongruencia o error en esta conversación.");
-          }}
-        ]
-      );
+  const handleOpenReportModal = () => {
+    setReportReason("");
+    setReportInputHeight(100);
+    setShowReportModal(true);
+  };
+
+  const handleConfirmReport = async () => {
+    if (!reportReason.trim() || submittingReport) return;
+    setSubmittingReport(true);
+    const success = await vm.reportIncongruency(reportReason.trim());
+    setSubmittingReport(false);
+    if (success) {
+      setShowReportModal(false);
+      setReportReason("");
+      setReportInputHeight(100);
     }
   };
 
@@ -245,7 +261,11 @@ export default function ChatScreen({ route, navigation }: Props) {
             <MaterialCommunityIcons name="arrow-left" size={24} color="white" />
           </TouchableOpacity>
 
-          <View style={styles.userInfoContainer}>
+          <TouchableOpacity 
+            style={styles.userInfoContainer}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate("PublicProfile", { id: otherUserId, fromChat: true })}
+          >
             {vm.otherUser?.foto_perfil ? (
               <Image
                 source={{ uri: vm.otherUser.foto_perfil }}
@@ -253,16 +273,30 @@ export default function ChatScreen({ route, navigation }: Props) {
               />
             ) : (
               <View style={styles.headerAvatarPlaceholder}>
-                <MaterialCommunityIcons name="account" size={20} color={PURPLE} />
+                <Text style={styles.headerAvatarInitials}>
+                  {vm.otherUser ? `${vm.otherUser.nombre?.[0] || ''}${vm.otherUser.apellidos?.[0] || ''}`.toUpperCase() : 'U'}
+                </Text>
               </View>
             )}
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {vm.otherUser ? `${vm.otherUser.nombre} ${vm.otherUser.apellidos}`.trim() : 'Usuario'}
-            </Text>
-          </View>
+            <View style={styles.headerTextCol}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {vm.otherUser ? `${vm.otherUser.nombre} ${vm.otherUser.apellidos}`.trim() : 'Usuario'}
+              </Text>
+              <Text style={styles.headerSubtitleText} numberOfLines={1}>
+                {vm.activeJob?.perfiles_profesionales?.profesion 
+                  ? vm.activeJob.perfiles_profesionales.profesion 
+                  : 'Toca para ver perfil'}
+              </Text>
+            </View>
+          </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleReportPress} style={styles.reportHeaderBtn} activeOpacity={0.7}>
-            <MaterialCommunityIcons name="alert-octagon-outline" size={24} color="white" />
+          <TouchableOpacity 
+            onPress={handleOpenReportModal} 
+            style={styles.reportHeaderBtn} 
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <MaterialCommunityIcons name="shield-alert-outline" size={20} color="#FFA8A8" />
           </TouchableOpacity>
         </View>
       </View>
@@ -344,6 +378,116 @@ export default function ChatScreen({ route, navigation }: Props) {
           </View>
         </View>
       </Modal>
+
+      {/* Modal: 🚨 Reportar Chat */}
+      <Modal visible={showReportModal} transparent animationType="fade" onRequestClose={() => !submittingReport && setShowReportModal(false)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.reportModalOverlay}
+        >
+          <TouchableOpacity 
+            style={styles.reportModalBackdrop} 
+            activeOpacity={1} 
+            onPress={() => {
+              if (!submittingReport) {
+                setShowReportModal(false);
+                setReportReason("");
+                setReportInputHeight(100);
+              }
+            }} 
+          />
+          <View style={styles.reportModalCard}>
+            {/* Cabecera del modal con emoji 🚨 */}
+            <View style={styles.reportModalHeader}>
+              <View style={styles.reportIconCircle}>
+                <Text style={styles.reportAlertEmoji}>🚨</Text>
+              </View>
+              <Text style={styles.reportModalTitle}>Reportar Chat</Text>
+              <Text style={styles.reportModalSubtitle}>
+                Cuéntanos qué sucedió con {vm.otherUser ? `${vm.otherUser.nombre}` : 'este usuario'}. Tu reporte será revisado de forma confidencial por la administración.
+              </Text>
+            </View>
+
+            {/* Motivos sugeridos rápidos */}
+            <Text style={styles.reportQuickLabel}>Motivos sugeridos:</Text>
+            <View style={styles.reportQuickChipsRow}>
+              {[
+                "⚠️ Comportamiento Inapropiado",
+                "🚫 Intento de Fraude",
+                "💬 Lenguaje Ofensivo",
+                "📦 Incongruencia de Trabajo"
+              ].map((chip, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={styles.reportQuickChip}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (!reportReason.includes(chip)) {
+                      setReportReason((prev) => prev ? `${prev}\n• ${chip}` : `• ${chip}: `);
+                    }
+                  }}
+                >
+                  <Text style={styles.reportQuickChipText}>{chip}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Cuadro de texto auto-expandible */}
+            <View style={styles.reportInputWrapper}>
+              <TextInput
+                style={[styles.reportTextInput, { height: reportInputHeight }]}
+                placeholder="Describe detalladamente las razones de tu reporte..."
+                placeholderTextColor="#999"
+                value={reportReason}
+                onChangeText={setReportReason}
+                multiline
+                numberOfLines={4}
+                maxLength={500}
+                textAlignVertical="top"
+                onContentSizeChange={(e) => {
+                  const h = e.nativeEvent.contentSize.height;
+                  setReportInputHeight(Math.max(100, Math.min(200, h + 24)));
+                }}
+              />
+              <Text style={styles.reportCharCount}>{reportReason.length}/500</Text>
+            </View>
+
+            {/* Botones de acción */}
+            <View style={styles.reportActionsRow}>
+              <TouchableOpacity
+                style={styles.reportCancelBtn}
+                disabled={submittingReport}
+                onPress={() => {
+                  setShowReportModal(false);
+                  setReportReason("");
+                  setReportInputHeight(100);
+                }}
+              >
+                <Text style={styles.reportCancelBtnText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.reportSubmitBtn,
+                  (!reportReason.trim() || submittingReport) && styles.reportSubmitBtnDisabled
+                ]}
+                disabled={!reportReason.trim() || submittingReport}
+                onPress={handleConfirmReport}
+                activeOpacity={0.8}
+              >
+                {submittingReport ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="send" size={16} color="white" />
+                    <Text style={styles.reportSubmitBtnText}>Enviar Reporte</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </ContainerComponent>
   );
 }
@@ -385,19 +529,43 @@ const styles = StyleSheet.create({
     width: 38, 
     height: 38, 
     borderRadius: 19, 
-    backgroundColor: 'white', 
+    backgroundColor: '#EDE7F6', 
     justifyContent: 'center', 
     alignItems: 'center', 
-    marginRight: 10 
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)'
+  },
+  headerAvatarInitials: {
+    color: PURPLE,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  headerTextCol: {
+    flex: 1,
+    justifyContent: 'center',
   },
   headerTitle: { 
     color: 'white', 
-    fontSize: 16, 
+    fontSize: 15, 
     fontWeight: 'bold', 
-    flex: 1 
+  },
+  headerSubtitleText: {
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 1,
   },
   reportHeaderBtn: { 
-    padding: 8 
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   listContainer: { flex: 1, backgroundColor: "#F6F6F8" },
 
@@ -430,6 +598,35 @@ const styles = StyleSheet.create({
   emptyChat: { alignItems: 'center', gap: 8 },
   emptyChatText: { color: '#999', fontSize: 14 },
 
+  dateDividerContainer: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  dateDividerBadge: {
+    backgroundColor: '#EAE6F0',
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DFDAE6',
+    ...Platform.select({
+      web: { boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.04)' } as any,
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 2,
+        elevation: 1,
+      },
+    }),
+  },
+  dateDividerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4B3869',
+    letterSpacing: 0.2,
+  },
+
   msgRow: { flexDirection: 'row', marginBottom: 8, justifyContent: 'flex-start' },
   msgRowMe: { justifyContent: 'flex-end' },
   msgBubble: { maxWidth: '75%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18 },
@@ -455,5 +652,147 @@ const styles = StyleSheet.create({
   serviceOptionProfession: { fontSize: 16, fontWeight: 'bold', color: PURPLE },
   serviceOptionCategory: { fontSize: 13, color: '#666', marginTop: 4 },
   cancelModalBtn: { padding: 16, alignItems: 'center', marginTop: 8 },
-  cancelModalText: { color: '#dc3545', fontWeight: 'bold', fontSize: 16 }
+  cancelModalText: { color: '#dc3545', fontWeight: 'bold', fontSize: 16 },
+
+  // Estilos del Modal de Reportar Chat 🚨
+  reportModalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 16 
+  },
+  reportModalBackdrop: { 
+    ...StyleSheet.absoluteFillObject 
+  },
+  reportModalCard: { 
+    backgroundColor: 'white', 
+    borderRadius: 24, 
+    padding: 22, 
+    width: '100%', 
+    maxWidth: 480, 
+    ...Platform.select({ 
+      web: { boxShadow: '0px 10px 30px rgba(0,0,0,0.2)' } as any, 
+      default: { 
+        elevation: 6, 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 6 }, 
+        shadowOpacity: 0.2, 
+        shadowRadius: 10 
+      } 
+    }) 
+  },
+  reportModalHeader: { 
+    alignItems: 'center', 
+    marginBottom: 14 
+  },
+  reportIconCircle: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 24, 
+    backgroundColor: '#FEE2E2', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginBottom: 8 
+  },
+  reportAlertEmoji: { 
+    fontSize: 22 
+  },
+  reportModalTitle: { 
+    fontSize: 19, 
+    fontWeight: '900', 
+    color: '#1F2937', 
+    marginBottom: 4, 
+    textAlign: 'center' 
+  },
+  reportModalSubtitle: { 
+    fontSize: 12.5, 
+    color: '#6B7280', 
+    textAlign: 'center', 
+    lineHeight: 18, 
+    paddingHorizontal: 6 
+  },
+  reportQuickLabel: { 
+    fontSize: 11, 
+    fontWeight: '700', 
+    color: '#888', 
+    marginBottom: 6, 
+    textTransform: 'uppercase', 
+    letterSpacing: 0.5 
+  },
+  reportQuickChipsRow: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 6, 
+    marginBottom: 12 
+  },
+  reportQuickChip: { 
+    backgroundColor: '#F3F4F6', 
+    paddingHorizontal: 10, 
+    paddingVertical: 5, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB' 
+  },
+  reportQuickChipText: { 
+    fontSize: 11, 
+    color: '#4B5563', 
+    fontWeight: '600' 
+  },
+  reportInputWrapper: { 
+    marginBottom: 14 
+  },
+  reportTextInput: { 
+    backgroundColor: '#F9FAFB', 
+    borderRadius: 14, 
+    borderWidth: 1.5, 
+    borderColor: '#E5E7EB', 
+    padding: 12, 
+    fontSize: 14, 
+    color: '#1F2937' 
+  },
+  reportCharCount: { 
+    alignSelf: 'flex-end', 
+    fontSize: 11, 
+    color: '#9CA3AF', 
+    marginTop: 4, 
+    marginRight: 4 
+  },
+  reportActionsRow: { 
+    flexDirection: 'row', 
+    gap: 10, 
+    marginTop: 4 
+  },
+  reportCancelBtn: { 
+    flex: 1, 
+    paddingVertical: 13, 
+    borderRadius: 12, 
+    backgroundColor: '#F3F4F6', 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  reportCancelBtnText: { 
+    fontSize: 14, 
+    fontWeight: '700', 
+    color: '#4B5563' 
+  },
+  reportSubmitBtn: { 
+    flex: 1.4, 
+    paddingVertical: 13, 
+    borderRadius: 12, 
+    backgroundColor: '#DC2626', 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: 6 
+  },
+  reportSubmitBtnDisabled: { 
+    backgroundColor: '#FCA5A5', 
+    opacity: 0.7 
+  },
+  reportSubmitBtnText: { 
+    fontSize: 14, 
+    fontWeight: 'bold', 
+    color: 'white' 
+  }
 });

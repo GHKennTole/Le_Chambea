@@ -17,8 +17,11 @@ import FloatingBackButton from '../../../shared/components/FloatingBackButton';
 import { useReviewsController } from '../controllers/useReviewsController';
 import type { Review } from '../models/profile.types';
 import ReviewFilterBar, { ReplyFilterOption } from '../components/ReviewFilterBar';
+import ReportReviewModal from '../../../shared/components/ReportReviewModal';
 
 const PURPLE = '#5A2D82';
+const PURPLE_ACCENT = '#5A2D82';
+const PURPLE_LIGHT = '#F3ECFA';
 const STAR_COLOR = '#FFB800';
 
 export default function ReviewsScreen({ route }: any) {
@@ -28,6 +31,7 @@ export default function ReviewsScreen({ route }: any) {
 
   const [expandedResponses, setExpandedResponses] = useState<Record<string, boolean>>({});
   const [selectedReviewForReply, setSelectedReviewForReply] = useState<Review | null>(null);
+  const [selectedReviewForReport, setSelectedReviewForReport] = useState<Review | null>(null);
   const [replyInputText, setReplyInputText] = useState('');
 
   const [selectedStars, setSelectedStars] = useState<number | null>(null);
@@ -201,9 +205,9 @@ export default function ReviewsScreen({ route }: any) {
                       <Text style={styles.reviewComment}>{review.comentario}</Text>
                     ) : null}
 
-                    {/* Acciones de respuesta */}
+                    {/* Acciones de respuesta y reporte */}
                     <View style={styles.cardFooterActions}>
-                      {hasResponse && (
+                      {hasResponse ? (
                         <TouchableOpacity
                           style={styles.viewReplyBtn}
                           onPress={() => toggleExpand(review.id)}
@@ -219,20 +223,32 @@ export default function ReviewsScreen({ route }: any) {
                             color={PURPLE}
                           />
                         </TouchableOpacity>
-                      )}
+                      ) : <View />}
 
-                      {isOwnerProfessional && (
+                      <View style={styles.rightFooterActions}>
                         <TouchableOpacity
-                          style={styles.replyActionBtn}
-                          onPress={() => openReplyModal(review)}
+                          style={styles.reportReviewActionBtn}
+                          onPress={() => setSelectedReviewForReport(review)}
                           activeOpacity={0.7}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
-                          <MaterialCommunityIcons name="reply-outline" size={15} color={PURPLE} />
-                          <Text style={styles.replyActionBtnText}>
-                            {hasResponse ? 'Editar respuesta' : 'Responder'}
-                          </Text>
+                          <MaterialCommunityIcons name="flag-outline" size={14} color="#DC2626" />
+                          <Text style={styles.reportReviewActionBtnText}>Reportar</Text>
                         </TouchableOpacity>
-                      )}
+
+                        {isOwnerProfessional && (
+                          <TouchableOpacity
+                            style={styles.replyActionBtn}
+                            onPress={() => openReplyModal(review)}
+                            activeOpacity={0.7}
+                          >
+                            <MaterialCommunityIcons name="reply-outline" size={15} color={PURPLE} />
+                            <Text style={styles.replyActionBtnText}>
+                              {hasResponse ? 'Editar' : 'Responder'}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
 
                     {/* Caja colapsable de respuesta profesional */}
@@ -311,6 +327,15 @@ export default function ReviewsScreen({ route }: any) {
           </View>
         </View>
       </Modal>
+
+      {/* Modal Reportar Reseña 🚨 */}
+      {selectedReviewForReport && (
+        <ReportReviewModal
+          visible={!!selectedReviewForReport}
+          onClose={() => setSelectedReviewForReport(null)}
+          review={selectedReviewForReport}
+        />
+      )}
 
       <FloatingBackButton />
     </View>
@@ -483,7 +508,7 @@ const styles = StyleSheet.create({
   viewReplyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3ECFA',
+    backgroundColor: PURPLE_LIGHT,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -494,6 +519,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: PURPLE,
   },
+  rightFooterActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 'auto',
+  },
+  reportReviewActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  reportReviewActionBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
   replyActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -502,7 +549,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     gap: 6,
-    marginLeft: 'auto',
   },
   replyActionBtnText: {
     fontSize: 12.5,

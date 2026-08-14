@@ -8,6 +8,8 @@ import type { Review } from "../../perfil/models/profile.types";
 import { usePublicProfileController } from "../controllers/usePublicProfileController";
 import { useFavoriteToggle } from "../../favoritos/controllers/useFavoriteToggle";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
+import ReportServiceModal from "../../../shared/components/ReportServiceModal";
+import ReportReviewModal from "../../../shared/components/ReportReviewModal";
 
 const PURPLE = "#5A2D82";
 const STAR_COLOR = "#FFB800";
@@ -78,12 +80,14 @@ function ReviewsCard({
   reviews, 
   averageRating, 
   totalReviews, 
-  renderStars 
+  renderStars,
+  onReportReview,
 }: { 
   reviews: Review[]; 
   averageRating: number; 
   totalReviews: number; 
   renderStars: (calificacion: number) => React.ReactNode; 
+  onReportReview?: (review: Review) => void;
 }) {
   const [selectedStar, setSelectedStar] = useState<number | null>(null);
   const [showFilterPicker, setShowFilterPicker] = useState(false);
@@ -224,6 +228,17 @@ function ReviewsCard({
                       ) : null}
                     </View>
                   </View>
+
+                  {onReportReview && (
+                    <TouchableOpacity
+                      style={styles.reviewReportBtn}
+                      onPress={() => onReportReview(rev)}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <MaterialCommunityIcons name="flag-outline" size={14} color="#DC2626" />
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {rev.comentario ? (
@@ -278,6 +293,8 @@ export default function PublicProfileScreen({ route, navigation }: Props) {
   const fav = useFavoriteToggle(id);
   const [modalPhotos, setModalPhotos] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [reportingService, setReportingService] = useState<any | null>(null);
+  const [reportingReview, setReportingReview] = useState<Review | null>(null);
 
   const handleOpenModal = (photos: string[], index: number) => {
     setModalPhotos(photos);
@@ -404,11 +421,21 @@ export default function PublicProfileScreen({ route, navigation }: Props) {
                 <View style={styles.serviceCard}>
                   <View style={styles.serviceHeaderRow}>
                     <Text style={styles.serviceProfession}>{svc.profesion}</Text>
-                    <View style={styles.serviceRating}>
-                      <MaterialCommunityIcons name="star" size={16} color={STAR_COLOR} />
-                      <Text style={styles.serviceRatingText}>
-                        {svc.averageRating.toFixed(1)} <Text style={styles.reviewsCount}>({svc.totalReviews})</Text>
-                      </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <View style={styles.serviceRating}>
+                        <MaterialCommunityIcons name="star" size={16} color={STAR_COLOR} />
+                        <Text style={styles.serviceRatingText}>
+                          {svc.averageRating.toFixed(1)} <Text style={styles.reviewsCount}>({svc.totalReviews})</Text>
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.serviceReportBtn}
+                        onPress={() => setReportingService(svc)}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <MaterialCommunityIcons name="shield-alert-outline" size={16} color="#DC2626" />
+                      </TouchableOpacity>
                     </View>
                   </View>
                   
@@ -443,6 +470,7 @@ export default function PublicProfileScreen({ route, navigation }: Props) {
                   averageRating={svc.averageRating} 
                   totalReviews={svc.totalReviews} 
                   renderStars={renderStars} 
+                  onReportReview={setReportingReview}
                 />
               </View>
             ))}
@@ -516,6 +544,27 @@ export default function PublicProfileScreen({ route, navigation }: Props) {
           <Text style={styles.favToastText}>{fav.toastMessage}</Text>
         </View>
       )}
+
+      {/* Modal Reportar Servicio 🚨 */}
+      {reportingService && (
+        <ReportServiceModal
+          visible={!!reportingService}
+          onClose={() => setReportingService(null)}
+          serviceId={reportingService.id}
+          serviceName={reportingService.profesion || reportingService.categoria || 'Servicio'}
+          professionalName={`${vm.user.nombre} ${vm.user.apellidos}`.trim()}
+        />
+      )}
+
+      {/* Modal Reportar Reseña 🚨 */}
+      {reportingReview && (
+        <ReportReviewModal
+          visible={!!reportingReview}
+          onClose={() => setReportingReview(null)}
+          review={reportingReview}
+          professionalName={`${vm.user.nombre} ${vm.user.apellidos}`.trim()}
+        />
+      )}
     </View>
   );
 }
@@ -579,7 +628,7 @@ const styles = StyleSheet.create({
   categoryTag: { alignSelf: 'flex-start', backgroundColor: '#F3ECFA', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 12 },
   categoryTagText: { fontSize: 12, color: PURPLE, fontWeight: '600' },
   serviceDescription: { fontSize: 14, color: '#555', lineHeight: 20, marginBottom: 16 },
-  serviceFooter: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingTop: 12 },
+  serviceFooter: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: '#F0F0F4', paddingTop: 12 },
   footerItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   footerText: { fontSize: 13, color: '#666' },
 
@@ -904,5 +953,23 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: '#333',
     lineHeight: 18,
+  },
+  serviceReportBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  reviewReportBtn: {
+    padding: 5,
+    borderRadius: 6,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FECACA',
   },
 });

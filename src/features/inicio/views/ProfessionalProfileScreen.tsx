@@ -21,6 +21,8 @@ import { useProfessionalProfileController } from "../controllers/useProfessional
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 
 const PURPLE = "#5A2D82";
+const PURPLE_ACCENT = "#5A2D82";
+const PURPLE_LIGHT = "#F3ECFA";
 
 const PRICE_PRESETS = [
   { key: "a_cotizar", label: "A cotizar", hasInput: false },
@@ -73,15 +75,15 @@ export default function ProfessionalProfileScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header Morado Dinámico */}
+          {/* Header Morado Dinámico Compacto */}
           <View style={[styles.purpleHeaderWrapper, { paddingTop: insets.top + 16 }]}>
             <View style={styles.headerSection}>
-              <MaterialCommunityIcons name="briefcase-check" size={40} color="white" />
-              <Text style={styles.headerTitle}>
-                Perfil Profesional
-              </Text>
+              <View style={styles.headerTitleRow}>
+                <MaterialCommunityIcons name="briefcase-edit" size={26} color="white" />
+                <Text style={styles.headerTitle}>Crear o Editar Servicios</Text>
+              </View>
               <Text style={styles.headerSubtitle}>
-                Configura tus servicios para que los clientes te encuentren
+                Configura tus oficios, tarifas y portafolio para tus clientes
               </Text>
             </View>
           </View>
@@ -435,8 +437,19 @@ const styles = StyleSheet.create({
     backgroundColor: PURPLE,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
-    paddingBottom: 18,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
     width: "100%",
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(90,45,130,0.2)' } as any,
+      default: {
+        elevation: 4,
+        shadowColor: PURPLE,
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 8,
+      },
+    }),
   },
   scroll: { flex: 1 },
   scrollContent: {
@@ -454,18 +467,25 @@ const styles = StyleSheet.create({
   headerSection: {
     alignItems: "center",
   },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
   headerTitle: {
     fontSize: 22,
     fontWeight: "bold",
     color: "white",
-    marginTop: 10,
     textAlign: "center",
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
-    marginTop: 6,
+    fontSize: 13,
+    color: "rgba(255,255,255,0.9)",
     textAlign: "center",
+    lineHeight: 18,
+    paddingHorizontal: 12,
   },
 
   tabsContainer: {
@@ -722,7 +742,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   viewProfileButton: {
-    backgroundColor: "#F3ECFA",
+    backgroundColor: PURPLE_LIGHT,
     borderRadius: 16,
     paddingVertical: 15,
     marginTop: 10,

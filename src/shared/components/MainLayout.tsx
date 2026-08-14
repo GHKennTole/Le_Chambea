@@ -104,7 +104,20 @@ export default function MainLayout({ children, active, hideBottomNav = false }: 
         })
       }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 40, paddingHorizontal: 8, gap: 12 }}>
-          <Image source={require('../../assets/images/logo.png')} style={{ width: 44, height: 44 }} resizeMode="contain" />
+          <View style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            backgroundColor: '#E0E0E0',
+            justifyContent: 'center',
+            alignItems: 'center',
+            ...Platform.select({
+              web: { boxShadow: '0px 2px 4px rgba(0,0,0,0.08)' } as any,
+              default: { elevation: 2 }
+            })
+          }}>
+            <Image source={require('../../assets/images/logo.png')} style={{ width: 50, height: 50 }} resizeMode="contain" />
+          </View>
           <Text style={{ fontSize: 24, fontFamily: 'SansitaBoldItalic', color: '#222' }}>LE CHAMBEA</Text>
         </View>
         

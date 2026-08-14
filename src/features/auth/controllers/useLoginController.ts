@@ -7,7 +7,6 @@ export function useLoginController() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   const [alertBox, setAlertBox] = useState<{
@@ -125,30 +124,17 @@ export function useLoginController() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    try {
-      showAlert("Inicio con Google", "La función de inicio de sesión con Google está en desarrollo.", undefined, "warning");
-    } catch (_error: unknown) {
-      showAlert("Error", "No se pudo iniciar sesión con Google.", undefined, "danger");
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
   return {
     email,
     setEmail,
     password,
     setPassword,
     loading,
-    googleLoading,
     keyboardOpen,
     alertBox,
     alertAnim,
     closeAlertNow,
     handleLogin,
-    handleGoogleLogin,
   };
 }
 

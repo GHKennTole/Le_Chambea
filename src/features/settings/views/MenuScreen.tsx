@@ -169,6 +169,15 @@ export default function MenuScreen() {
           <View style={styles.divider} />
 
           <MenuItem
+            icon="clipboard-text-clock"
+            title="Historial de trabajos realizados"
+            subtitle="Completados, en curso y solicitudes"
+            onPress={() => navigation.navigate("JobHistory")}
+          />
+
+          <View style={styles.divider} />
+
+          <MenuItem
             icon="star-circle"
             title="Reseñas y calificación"
             subtitle="Estrellas, comentarios y métricas"

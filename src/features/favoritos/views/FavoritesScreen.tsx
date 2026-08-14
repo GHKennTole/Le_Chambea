@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  Animated,
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -114,17 +113,20 @@ export default function FavoritesScreen() {
 
   return (
     <MainLayout active="Favorites">
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTitleRow}>
-            <MaterialCommunityIcons name="star" size={26} color={STAR_COLOR} />
-            <Text style={styles.headerTitle}>Favoritos</Text>
+      <View style={styles.container}>
+        {/* Header Morado Superior Dinámico */}
+        <View style={[styles.purpleHeaderWrapper, { paddingTop: insets.top + 16 }]}>
+          <View style={styles.headerSection}>
+            <View style={styles.headerTitleRow}>
+              <MaterialCommunityIcons name="star-outline" size={26} color="white" />
+              <Text style={styles.headerTitle}>Favoritos</Text>
+            </View>
+            <Text style={styles.headerSubtitle}>
+              {vm.favorites.length === 0
+                ? "Tus profesionales guardados"
+                : `${vm.favorites.length} ${vm.favorites.length === 1 ? "profesional guardado" : "profesionales guardados"}`}
+            </Text>
           </View>
-          <Text style={styles.headerSubtitle}>
-            {vm.favorites.length}{" "}
-            {vm.favorites.length === 1 ? "profesional" : "profesionales"}
-          </Text>
         </View>
 
         {/* Content */}
@@ -164,27 +166,54 @@ export default function FavoritesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F6F6F8" },
-  header: {
-    height: 70,
-    justifyContent: "center",
+  purpleHeaderWrapper: {
+    backgroundColor: PURPLE,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     paddingHorizontal: 20,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ECECF1",
+    paddingBottom: 18,
+    width: "100%",
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(90,45,130,0.2)' } as any,
+      default: {
+        elevation: 4,
+        shadowColor: PURPLE,
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 8,
+      },
+    }),
+  },
+  headerSection: {
+    alignItems: "flex-start",
+    paddingHorizontal: 4,
   },
   headerTitleRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "flex-start",
     gap: 8,
+    marginBottom: 4,
   },
-  headerTitle: { fontSize: 24, fontWeight: "900", color: "#333" },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "white",
+    textAlign: "left",
+  },
   headerSubtitle: {
     fontSize: 13,
-    color: "#888",
-    marginTop: 2,
+    color: "rgba(255,255,255,0.9)",
+    textAlign: "left",
+    lineHeight: 18,
   },
 
-  listContent: { paddingBottom: 20, paddingTop: 4 },
+  listContent: {
+    paddingVertical: 12,
+    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    width: '100%',
+    alignSelf: 'center',
+  },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
@@ -214,19 +243,19 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     backgroundColor: "white",
-    marginHorizontal: 12,
+    marginHorizontal: 16,
     marginTop: 10,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 14,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#F0F0F0",
+    borderColor: "#ECECF1",
     ...Platform.select({
-      web: { boxShadow: "0px 2px 6px rgba(0,0,0,0.06)" } as any,
+      web: { boxShadow: "0px 2px 8px rgba(0,0,0,0.05)" } as any,
       default: {
         elevation: 2,
         shadowColor: "#000",
-        shadowOpacity: 0.06,
+        shadowOpacity: 0.05,
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 6,
       },

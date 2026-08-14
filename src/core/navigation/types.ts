@@ -22,6 +22,7 @@ export type RootStackParamList = {
   Profile: undefined;
   MyProfile: undefined;
   ProfessionalProfile: undefined;
+  JobHistory: undefined;
   Reviews: { userId?: string };
   WriteReview: { professionalId?: string; profileId?: string; jobId?: string; reviewId?: string };
   MyReviews: undefined;
@@ -34,4 +35,5 @@ export type RootStackParamList = {
   Support: undefined;
   Terms: undefined;
   HomeAdmin: undefined;
+  AdminAiAudit: undefined;
 };

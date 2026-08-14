@@ -263,11 +263,11 @@ export function useChatController(chatId: string, otherUserId: string) {
     });
   };
 
-  const reportIncongruency = async (reason: string) => {
+  const reportIncongruency = async (reason: string): Promise<boolean> => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) return false;
 
       const { data: senderProfile } = await supabase
         .from('usuarios')
@@ -276,20 +276,28 @@ export function useChatController(chatId: string, otherUserId: string) {
         .single();
       
       const senderFullName = senderProfile ? `${senderProfile.nombre} ${senderProfile.apellidos}`.trim() : 'Un usuario';
+      const otherUserName = otherUser ? `${otherUser.nombre} ${otherUser.apellidos}`.trim() : 'el otro usuario';
 
       // Insert admin notification (usuario_id = null for system/admin alert)
-      await supabase.from('notificaciones').insert({
+      const { error } = await supabase.from('notificaciones').insert({
         usuario_id: null,
-        titulo: `⚠️ REPORTE: Incongruencia en Chat`,
-        cuerpo: `El usuario ${senderFullName} reportó una incongruencia en el chat ${chatId}. Motivo: ${reason}`,
+        titulo: `🚨 REPORTE: Reportar Chat`,
+        cuerpo: `El usuario ${senderFullName} reportó la conversación con ${otherUserName} (Chat ID: ${chatId}).\n\nMotivo:\n${reason.trim()}`,
         leido: false
       });
 
-      const successMsg = "Gracias por tu reporte. Los administradores han sido notificados.";
+      if (error) throw error;
+
+      const successMsg = "Gracias por tu reporte. El equipo de administración ha recibido los detalles y revisará este caso.";
       if (Platform.OS === 'web') window.alert(successMsg);
-      else Alert.alert("Reporte Enviado", successMsg);
+      else Alert.alert("🚨 Reporte Enviado", successMsg);
+      return true;
     } catch (e) {
-      console.error('Error reporting incongruency:', e);
+      console.error('Error reporting chat:', e);
+      const errorMsg = "No se pudo enviar el reporte. Inténtalo de nuevo más tarde.";
+      if (Platform.OS === 'web') window.alert(errorMsg);
+      else Alert.alert("Error", errorMsg);
+      return false;
     } finally {
       setLoading(false);
     }
