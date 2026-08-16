@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Pressable, P
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import CircularDeleteButton from "./CircularDeleteButton";
+import { useResponsive } from "../hooks/useResponsive";
 
 type NotificationItem = {
   id: string;
@@ -26,6 +27,7 @@ export default function NotificationsDropdown({
   onPressItem?: (item: NotificationItem) => void;
 }) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
 
   const anim = useRef(new Animated.Value(0)).current;
 
@@ -56,8 +58,9 @@ export default function NotificationsDropdown({
       <Animated.View
         style={[
           styles.panel,
+          isLargeScreen && styles.panelLarge,
           {
-            top: insets.top + 10,
+            top: insets.top + (isLargeScreen ? 60 : 10),
             opacity,
             transform: [{ translateY }],
           },
@@ -136,6 +139,12 @@ const styles = StyleSheet.create({
         elevation: 8,
       }
     }),
+  },
+  panelLarge: {
+    left: 'auto' as any,
+    right: 32,
+    width: 380,
+    maxWidth: 420,
   },
   headerRow: {
     flexDirection: "row",

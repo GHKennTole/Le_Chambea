@@ -14,6 +14,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminProfessionalService, AdminUser } from "../models/admin.types";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 const LIGHT_PURPLE = "#F3ECFA";
@@ -42,6 +43,7 @@ export default function AdminPortfoliosModal({
   onGoToReviews,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
   const [viewMode, setViewMode] = useState<"by_pro" | "all">("by_pro");
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState<string | null>(null);

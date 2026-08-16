@@ -15,6 +15,7 @@ import { RegisterSharedProps } from "../models/register.types";
 
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../../core/navigation/types";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 type Props =
   NativeStackScreenProps<RegisterStackParamList, "RegisterGender"> &
@@ -38,6 +39,7 @@ const OPTIONS: GenderOption[] = [
 
 export default function RegisterGender({ navigation, formData, setFormData }: Props) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
 
 
 

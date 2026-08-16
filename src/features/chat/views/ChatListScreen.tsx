@@ -17,6 +17,7 @@ import { useChatListController, ChatPreview } from "../controllers/useChatListCo
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import CircularDeleteButton from "../../../shared/components/CircularDeleteButton";
 import { formatChatListDate } from "../../../shared/utils/dateUtils";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 
@@ -50,6 +51,7 @@ export default function ChatListScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const vm = useChatListController();
+  const { isLargeScreen } = useResponsive();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "active">("all");
 
@@ -367,7 +369,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 4,
     gap: 8,
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
     width: '100%',
     alignSelf: 'center',
   },
@@ -396,7 +398,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
     width: '100%',
     alignSelf: 'center',
     gap: 8,

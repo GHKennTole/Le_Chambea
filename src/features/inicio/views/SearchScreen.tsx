@@ -5,12 +5,14 @@ import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 import MainLayout from "../../../shared/components/MainLayout";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const { isLargeScreen } = useResponsive();
 
   return (
     <MainLayout active="Home" hideBottomNav={false}>

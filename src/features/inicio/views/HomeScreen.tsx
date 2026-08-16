@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View, Platform } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import HeaderHome from "../../../shared/components/HeaderHome";
 import CategoryScroll from "../../../shared/components/CategoryScroll";
 import SectionList from "../../../shared/components/SectionList";
@@ -8,10 +8,12 @@ import SearchResultsList from "../../../shared/components/SearchResultsList";
 
 import { useHomeController } from '../controllers/useHomeController';
 import { useAppBadges } from '../../../shared/hooks/useAppBadges';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 export default function HomeScreen() {
   const vm = useHomeController();
   const badges = useAppBadges();
+  const { isLargeScreen } = useResponsive();
 
   const searchTitle = vm.searchQuery.trim() !== ''
     ? `Resultados para "${vm.searchQuery.trim()}"`
@@ -41,7 +43,7 @@ export default function HomeScreen() {
         <View style={styles.contentSection}>
           <ScrollView 
             style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[styles.scrollContent, { paddingHorizontal: isLargeScreen ? 16 : 10 }]}
           >
             {vm.isSearching ? (
               <SearchResultsList 
@@ -79,7 +81,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Platform.OS === 'web' ? 16 : 10,
     paddingTop: 4,
     paddingBottom: 20,
   }

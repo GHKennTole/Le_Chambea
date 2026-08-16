@@ -2,14 +2,15 @@ import React from "react";
 import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useResponsive } from "../hooks/useResponsive";
 
 export default function SectionList({ title, data, loading }: { title: string; data?: any[]; loading?: boolean }) {
   const navigation = useNavigation<any>();
   const scrollRef = React.useRef<any>(null);
+  const { isLargeScreen } = useResponsive();
 
   const isMasSolicitados = title.toLowerCase().includes("solicit");
   const isNovedades = title.toLowerCase().includes("noved");
-  const isWeb = Platform.OS === 'web';
 
   if (loading) {
     return (
@@ -44,7 +45,7 @@ export default function SectionList({ title, data, loading }: { title: string; d
         {title}
       </Text>
 
-      {isWeb ? (
+      {isLargeScreen ? (
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={true} 

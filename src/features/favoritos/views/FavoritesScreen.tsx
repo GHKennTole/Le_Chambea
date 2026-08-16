@@ -14,6 +14,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import MainLayout from "../../../shared/components/MainLayout";
 import { useFavoritesController, FavoriteItem } from "../controllers/useFavoritesController";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 const STAR_COLOR = "#FFB800";
@@ -24,6 +25,7 @@ export default function FavoritesScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const vm = useFavoritesController();
+  const { isLargeScreen } = useResponsive();
 
   // Refetch when screen comes into focus (e.g., after toggling favorite from PublicProfile)
   useFocusEffect(
@@ -210,7 +212,7 @@ const styles = StyleSheet.create({
 
   listContent: {
     paddingVertical: 12,
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
     width: '100%',
     alignSelf: 'center',
   },

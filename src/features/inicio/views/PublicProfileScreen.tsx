@@ -10,6 +10,7 @@ import { useFavoriteToggle } from "../../favoritos/controllers/useFavoriteToggle
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 import ReportServiceModal from "../../../shared/components/ReportServiceModal";
 import ReportReviewModal from "../../../shared/components/ReportReviewModal";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 const STAR_COLOR = "#FFB800";
@@ -288,6 +289,7 @@ function ReviewsCard({
 
 export default function PublicProfileScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
   const { id, professionalProfileId, fromChat } = route.params;
   const vm = usePublicProfileController(id, professionalProfileId);
   const fav = useFavoriteToggle(id);
@@ -578,7 +580,7 @@ const styles = StyleSheet.create({
     paddingTop: 2,
     alignSelf: 'center',
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
   },
   
   fixedHeaderWrap: { 
@@ -586,7 +588,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     alignSelf: 'center',
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
     zIndex: 10,
   },
 

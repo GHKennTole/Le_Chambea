@@ -2,11 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FloatingBackButton from '../../../shared/components/FloatingBackButton';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 
 export default function TermsScreen() {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
@@ -89,9 +91,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
     backgroundColor: 'white',
-    margin: 16,
-    borderRadius: 16,
+    borderRadius: 20,
+    marginTop: 10,
     borderWidth: 1,
     borderColor: '#ECECF1',
     ...Platform.select({

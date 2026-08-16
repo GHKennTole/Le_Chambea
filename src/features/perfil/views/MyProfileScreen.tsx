@@ -16,6 +16,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../../core/navigation/types";
 import { useProfileController } from "../controllers/useProfileController";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -27,6 +28,7 @@ export default function MyProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const vm = useProfileController();
+  const { isLargeScreen } = useResponsive();
 
   if (vm.loading) {
     return (
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     alignSelf: 'center',
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
   },
   avatarSection: {
     alignItems: "center",

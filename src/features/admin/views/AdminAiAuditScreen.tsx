@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAdminAiAuditController, AuditMessage } from "../controllers/useAdminAiAuditController";
 import { RecommendedProfessional } from "../../ai/controllers/useAiController";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 const LIGHT_PURPLE = "#F3ECFA";
@@ -27,6 +28,7 @@ export default function AdminAiAuditScreen() {
   const navigation = useNavigation<any>();
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
 
   useEffect(() => {
     setTimeout(() => {
@@ -380,6 +382,9 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 14,
     paddingBottom: 24,
+    width: "100%",
+    maxWidth: 900,
+    alignSelf: "center",
   },
   msgWrapper: {
     flexDirection: "row",

@@ -13,6 +13,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminJob } from "../models/admin.types";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 const LIGHT_PURPLE = "#F3ECFA";
@@ -25,6 +26,7 @@ interface Props {
 
 export default function AdminJobsHistoryModal({ visible, onClose, jobs }: Props) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 

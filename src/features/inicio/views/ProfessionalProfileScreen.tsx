@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useProfessionalProfileController } from "../controllers/useProfessionalProfileController";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 const PURPLE_ACCENT = "#5A2D82";
@@ -35,6 +36,7 @@ export default function ProfessionalProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const vm = useProfessionalProfileController();
+  const { isLargeScreen } = useResponsive();
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showPricePicker, setShowPricePicker] = useState(false);
   const [selectedPriceType, setSelectedPriceType] = useState<string>("a_cotizar");
@@ -461,7 +463,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     alignSelf: 'center',
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
   },
 
   headerSection: {

@@ -15,6 +15,7 @@ import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 import type { RegisterStackParamList } from "../../../core/navigation/types";
 import { RegisterSharedProps } from "../models/register.types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 type Props = NativeStackScreenProps<RegisterStackParamList, "RegisterBirth"> &
   RegisterSharedProps;
@@ -42,6 +43,28 @@ function getDaysInMonth(month: number | null, year: number | null) {
   if (!month) return 31;
   const y = year || 2024;
   return new Date(y, month, 0).getDate();
+}
+
+function calculateAge(day: number, month: number, year: number) {
+  const today = new Date();
+  const birth = new Date(year, month - 1, day);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+function isValidHistoricalDate(day: number, month: number, year: number) {
+  const today = new Date();
+  const date = new Date(year, month - 1, day);
+  const min = new Date(
+    today.getFullYear() - 100,
+    today.getMonth(),
+    today.getDate()
+  );
+  return date >= min && date <= today;
 }
 
 const currentYear = new Date().getFullYear();
@@ -73,6 +96,7 @@ function isReasonableBirthDate(date: Date) {
 
 export default function RegisterBirth({ navigation, formData, setFormData }: Props) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
 
   const initialDate = useMemo(() => {
     const iso = String(formData?.birthDate || "");

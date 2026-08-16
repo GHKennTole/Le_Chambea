@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking, Platform
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import FloatingBackButton from '../../../shared/components/FloatingBackButton';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 const PURPLE_ACCENT = '#5A2D82';
@@ -10,6 +11,7 @@ const PURPLE_LIGHT = '#F3ECFA';
 
 export default function SupportScreen() {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
 
   const handleOpenURL = (url: string) => {
     Linking.openURL(url).catch(err => console.error("Error al abrir URL:", err));
@@ -175,7 +177,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
     alignSelf: 'center',
   },
   heroCard: {

@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, Image, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NotificationsDropdown from "./NotificationsDropdown";
 import { useNavigation } from "@react-navigation/native";
 import { useProfileController } from "../../features/perfil/controllers/useProfileController";
+import { useResponsive } from "../hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 
@@ -31,7 +32,7 @@ export default function HeaderHome({
   const navigation = useNavigation<any>();
   const [openNoti, setOpenNoti] = useState(false);
   const { profile } = useProfileController();
-  const { width } = useWindowDimensions();
+  const { isLargeScreen } = useResponsive();
 
   const handlePressNoti = () => {
     const nextVal = !openNoti;
@@ -51,7 +52,7 @@ export default function HeaderHome({
     }
   };
 
-  const isDesktop = Platform.OS === 'web' && width >= 1024;
+  const isDesktop = isLargeScreen;
   const userName = profile.nombre ? profile.nombre : "Usuario";
 
   return (

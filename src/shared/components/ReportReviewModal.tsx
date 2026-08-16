@@ -13,6 +13,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { submitReviewReport } from '../../services/reportService';
 import type { Review } from '../../features/perfil/models/profile.types';
+import { useResponsive } from '../hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 
@@ -36,6 +37,7 @@ export default function ReportReviewModal({
   review,
   professionalName,
 }: Props) {
+  const { isLargeScreen } = useResponsive();
   const [infractionBy, setInfractionBy] = useState<'client' | 'professional'>('client');
   const [reason, setReason] = useState("");
   const [inputHeight, setInputHeight] = useState(100);

@@ -8,6 +8,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 const { width } = Dimensions.get('window');
 
@@ -35,6 +36,7 @@ export default function OnboardingScreen({
   showSkip = false,
 }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
 
   return (
     <View

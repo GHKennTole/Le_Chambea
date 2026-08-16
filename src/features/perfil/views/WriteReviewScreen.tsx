@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import FloatingBackButton from '../../../shared/components/FloatingBackButton';
 import { useWriteReviewController } from '../controllers/useWriteReviewController';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 const STAR_COLOR = '#FFB800';
@@ -12,6 +13,7 @@ const STAR_COLOR = '#FFB800';
 export default function WriteReviewScreen({ route }: any) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { isLargeScreen } = useResponsive();
   const professionalProfileId = route.params?.profileId;
   const jobId = route.params?.jobId;
   const reviewId = route.params?.reviewId;
@@ -97,7 +99,13 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F6F6F8' },
   container: { flex: 1, backgroundColor: '#F6F6F8' },
   headerBanner: { position: 'absolute', top: 0, left: 0, right: 0, height: 180, backgroundColor: PURPLE, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 20 },
+  scrollContent: { 
+    paddingHorizontal: 16, 
+    paddingTop: 20,
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
+  },
   headerSection: { alignItems: 'center', marginBottom: 24, paddingTop: 10 },
   headerTitle: { fontSize: 22, fontWeight: 'bold', color: 'white', marginBottom: 6 },
   headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)' },

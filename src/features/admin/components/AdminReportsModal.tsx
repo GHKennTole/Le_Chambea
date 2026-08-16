@@ -14,6 +14,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminReport, AdminUser } from "../models/admin.types";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 
@@ -37,6 +38,7 @@ export default function AdminReportsModal({
   onDirectNotice,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
   const [search, setSearch] = useState("");
   const [filterTab, setFilterTab] = useState<"pending" | "resolved">("pending");
 

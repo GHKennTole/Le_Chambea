@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 import { RegisterStackParamList } from "../../../core/navigation/types";
 import { RegisterSharedProps } from "../models/register.types";
-
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 type Props = NativeStackScreenProps<RegisterStackParamList, "RegisterName"> & RegisterSharedProps;
 
@@ -46,6 +46,7 @@ function isValidHumanName(value: string) {
 
 export default function RegisterName({ navigation, formData, setFormData }: Props) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
   const [touched, setTouched] = useState({ name: false, lastName: false });
 
 

@@ -11,6 +11,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TableDiagnostic } from "../models/admin.types";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 
@@ -30,6 +31,7 @@ export default function AdminDbStatusModal({
   refreshing,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
   const totalRows = diagnostics.reduce((acc, d) => acc + d.count, 0);
 
   return (

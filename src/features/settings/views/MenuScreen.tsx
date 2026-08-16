@@ -18,6 +18,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import MainLayout from "../../../shared/components/MainLayout";
 import type { RootStackParamList } from "../../../core/navigation/types";
 import { useMenuController } from "../controllers/useMenuController";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -72,6 +73,7 @@ export default function MenuScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const vm = useMenuController();
+  const { isLargeScreen } = useResponsive();
 
   return (
     <MainLayout active="Menu">

@@ -1,11 +1,12 @@
 import React, { useState, useRef, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform, Alert, Image, Keyboard, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform, Alert, Image, Keyboard } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { RootStackParamList } from "../../../core/navigation/types";
 import { useChatController, Message } from "../controllers/useChatController";
 import { isSameDay, formatChatDividerDate } from "../../../shared/utils/dateUtils";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 
@@ -13,7 +14,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "Chat">;
 
 export default function ChatScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, isLargeScreen } = useResponsive();
   const ContainerComponent = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
   const { chatId, otherUserId } = route.params;
   const vm = useChatController(chatId, otherUserId);

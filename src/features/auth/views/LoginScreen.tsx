@@ -16,6 +16,7 @@ import type { RootStackParamList } from "../../../core/navigation/types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
 import { useLoginController } from "../controllers/useLoginController";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Login">;
 
@@ -23,6 +24,7 @@ export default function LoginScreen() {
   const vm = useLoginController();
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
   const [showPassword, setShowPassword] = React.useState(false);
 
   const extraBottom = vm.keyboardOpen ? (Platform.OS === "ios" ? 260 : 220) : 40;

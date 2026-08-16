@@ -1,18 +1,19 @@
 import React from "react";
-import { View, StyleSheet, Text, Image, TouchableOpacity, ActivityIndicator, Platform, useWindowDimensions } from "react-native";
+import { View, StyleSheet, Text, Image, TouchableOpacity, ActivityIndicator, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "../../../core/navigation/types";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Welcome">;
 
 export default function WelcomeScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === "web" && width > 768;
+  const { isLargeScreen } = useResponsive();
+  const isDesktop = isLargeScreen;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>

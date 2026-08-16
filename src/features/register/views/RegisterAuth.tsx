@@ -20,6 +20,7 @@ import type { RootStackParamList, RegisterStackParamList } from "../../../core/n
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useRegisterController } from "../controllers/useRegisterController";
 import type { RegisterSharedProps } from "../models/register.types";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 type Props = NativeStackScreenProps<RegisterStackParamList, "RegisterAuth"> & RegisterSharedProps;
 
@@ -29,6 +30,7 @@ const CURRENT_STEP = 3;
 export default function RegisterAuth({ navigation, formData, setFormData }: Props) {
   const insets = useSafeAreaInsets();
   const vm = useRegisterController();
+  const { isLargeScreen } = useResponsive();
 
 
 

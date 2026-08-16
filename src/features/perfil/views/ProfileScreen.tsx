@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useProfileController } from "../controllers/useProfileController";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 const PURPLE_ACCENT = "#5A2D82";
@@ -100,8 +101,9 @@ const NICARAGUA_LOCATIONS: Record<string, string[]> = {
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const vm = useProfileController();
+  const { isLargeScreen } = useResponsive();
 
   const [showDatePicker, setShowDatePicker] = React.useState(false);
   const [showGenderPicker, setShowGenderPicker] = React.useState(false);
@@ -609,7 +611,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     alignSelf: 'center',
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
   },
 
   avatarSection: {

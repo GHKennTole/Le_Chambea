@@ -14,6 +14,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FloatingBackButton from '../../../shared/components/FloatingBackButton';
 import { useSecurityController } from '../controllers/useSecurityController';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 const PURPLE_ACCENT = '#5A2D82';
@@ -22,6 +23,7 @@ const PURPLE_LIGHT = '#F3ECFA';
 export default function SecurityScreen() {
   const insets = useSafeAreaInsets();
   const vm = useSecurityController();
+  const { isLargeScreen } = useResponsive();
 
   const showStrength = vm.newPasswordFocus && vm.newPassword.length > 0;
   const showMatchStatus = vm.confirmPassword.length > 0;
@@ -216,6 +218,9 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
   },
   card: {
     backgroundColor: 'white',

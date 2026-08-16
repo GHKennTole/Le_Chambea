@@ -18,6 +18,7 @@ import type { RootStackParamList } from '../../../core/navigation/types';
 import FloatingBackButton from '../../../shared/components/FloatingBackButton';
 import { useForgotPasswordController } from '../controllers/useForgotPasswordController';
 import { supabase } from '../../../services/supabase';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 const PURPLE_LIGHT = '#816ab4';
@@ -27,6 +28,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 export default function ForgotPasswordScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const vm = useForgotPasswordController();
+  const { isLargeScreen } = useResponsive();
 
   const codeInputRef = useRef<TextInput>(null);
   const [codeFocused, setCodeFocused] = useState(false);

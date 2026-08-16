@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { submitServiceReport } from '../../services/reportService';
+import { useResponsive } from '../hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 
@@ -37,6 +38,7 @@ export default function ReportServiceModal({
   serviceName,
   professionalName,
 }: Props) {
+  const { isLargeScreen } = useResponsive();
   const [reason, setReason] = useState("");
   const [inputHeight, setInputHeight] = useState(100);
   const [submitting, setSubmitting] = useState(false);

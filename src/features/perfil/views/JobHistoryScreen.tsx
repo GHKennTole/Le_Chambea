@@ -16,6 +16,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import FloatingBackButton from '../../../shared/components/FloatingBackButton';
 import { useJobHistoryController, JobStatus, JobItem } from '../controllers/useJobHistoryController';
 import type { RootStackParamList } from '../../../core/navigation/types';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 const PURPLE_LIGHT = '#F3ECFA';
@@ -35,6 +36,7 @@ export default function JobHistoryScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
   const vm = useJobHistoryController();
+  const { isLargeScreen } = useResponsive();
 
   useFocusEffect(
     useCallback(() => {
@@ -444,7 +446,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
     alignSelf: 'center',
   },
   filtersSection: {

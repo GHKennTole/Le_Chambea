@@ -15,6 +15,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminUser } from "../models/admin.types";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const PURPLE = "#5A2D82";
 const LIGHT_PURPLE = "#F3ECFA";
@@ -45,6 +46,7 @@ export default function AdminUserDirectoryModal({
   actionLoading,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "cliente" | "profesional" | "suspendido">("all");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(initialSelectedUser || null);

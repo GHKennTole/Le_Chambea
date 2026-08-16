@@ -19,6 +19,7 @@ import { useMyReviewsController, MyReviewItem } from '../controllers/useMyReview
 import type { RootStackParamList } from '../../../core/navigation/types';
 import ReviewFilterBar, { ReplyFilterOption } from '../components/ReviewFilterBar';
 import ReportReviewModal from '../../../shared/components/ReportReviewModal';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 const PURPLE_ACCENT = '#5A2D82';
@@ -31,6 +32,7 @@ export default function MyReviewsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
   const vm = useMyReviewsController();
+  const { isLargeScreen } = useResponsive();
 
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
   const [selectedReviewForReport, setSelectedReviewForReport] = useState<any | null>(null);
@@ -336,7 +338,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
     alignSelf: 'center',
   },
 

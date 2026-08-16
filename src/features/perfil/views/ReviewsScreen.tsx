@@ -18,6 +18,7 @@ import { useReviewsController } from '../controllers/useReviewsController';
 import type { Review } from '../models/profile.types';
 import ReviewFilterBar, { ReplyFilterOption } from '../components/ReviewFilterBar';
 import ReportReviewModal from '../../../shared/components/ReportReviewModal';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 const PURPLE_ACCENT = '#5A2D82';
@@ -26,6 +27,7 @@ const STAR_COLOR = '#FFB800';
 
 export default function ReviewsScreen({ route }: any) {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
   const userId = route.params?.userId; // Si es undefined, usa el usuario actual
   const vm = useReviewsController(userId);
 
@@ -421,7 +423,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    maxWidth: 800,
     alignSelf: 'center',
   },
 

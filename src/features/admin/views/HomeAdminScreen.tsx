@@ -20,6 +20,7 @@ import { supabase } from "../../../services/supabase";
 import type { RootStackParamList } from "../../../core/navigation/types";
 import { useAdminController } from "../controllers/useAdminController";
 import { AdminUser, AdminReport, AdminWorkflowModule } from "../models/admin.types";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 // Modals
 import AdminUserDirectoryModal from "../components/AdminUserDirectoryModal";
@@ -55,6 +56,7 @@ type ModalType =
 export default function HomeAdminScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isLargeScreen } = useResponsive();
 
   // Controller hook
   const {

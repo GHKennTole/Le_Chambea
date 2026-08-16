@@ -8,6 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useResponsive } from '../hooks/useResponsive';
 
 export type AlertType = 'danger' | 'warning' | 'success';
 
@@ -28,6 +29,7 @@ export function triggerGlobalAlert(state: AlertState) {
 
 export default function GlobalFloatingAlert() {
   const insets = useSafeAreaInsets();
+  const { isLargeScreen } = useResponsive();
   const [alert, setAlert] = useState<AlertState>({
     visible: false,
     title: '',

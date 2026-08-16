@@ -5,6 +5,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { RootStackParamList } from "../../core/navigation/types";
 import { useAppBadges } from "../hooks/useAppBadges";
+import { useResponsive } from "../hooks/useResponsive";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -12,6 +13,7 @@ export default function BottomNav({ active }: { active: keyof RootStackParamList
   const nav = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { unreadChatsCount } = useAppBadges();
+  const { isLargeScreen } = useResponsive();
 
   return (
     <View style={[styles.wrapper, { paddingBottom: insets.bottom > 0 ? insets.bottom : 8 }]}>

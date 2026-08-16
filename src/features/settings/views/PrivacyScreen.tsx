@@ -12,6 +12,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FloatingBackButton from '../../../shared/components/FloatingBackButton';
 import { usePrivacyController } from '../controllers/usePrivacyController';
+import { useResponsive } from '../../../shared/hooks/useResponsive';
 
 const PURPLE = '#5A2D82';
 const PURPLE_ACCENT = '#5A2D82';
@@ -20,6 +21,7 @@ const PURPLE_LIGHT = '#F3ECFA';
 export default function PrivacyScreen() {
   const insets = useSafeAreaInsets();
   const vm = usePrivacyController();
+  const { isLargeScreen } = useResponsive();
 
   if (vm.loading) {
     return (
@@ -172,6 +174,9 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
   },
   description: {
     fontSize: 13.5,

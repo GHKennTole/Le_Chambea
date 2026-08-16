@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Pla
 import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { HomeProCard } from "../../features/inicio/controllers/useHomeController";
+import { useResponsive } from "../hooks/useResponsive";
 
 interface SearchResultsListProps {
   data: HomeProCard[];
@@ -12,6 +13,7 @@ interface SearchResultsListProps {
 
 export default function SearchResultsList({ data, loading, title }: SearchResultsListProps) {
   const navigation = useNavigation<any>();
+  const { isLargeScreen } = useResponsive();
 
   if (loading) {
     return (

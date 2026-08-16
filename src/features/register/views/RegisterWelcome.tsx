@@ -15,17 +15,16 @@ import { RegisterStackParamList } from "../../../core/navigation/types";
 import { RegisterSharedProps } from "../models/register.types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FloatingBackButton from "../../../shared/components/FloatingBackButton";
-
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 const { width: winWidth } = Dimensions.get("window");
 
 type Props = NativeStackScreenProps<RegisterStackParamList, "RegisterWelcome"> & RegisterSharedProps;
 
-
 export default function RegisterWelcome({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === "web" && width > 768;
+  const { isLargeScreen } = useResponsive();
+  const isDesktop = isLargeScreen;
 
 
   return (

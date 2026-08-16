@@ -1,20 +1,20 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { CATEGORIES_WITH_ICONS } from "../constants/categories";
+import { useResponsive } from "../hooks/useResponsive";
 
 interface CategoryScrollProps {
   selectedCategory: string | null;
   onSelectCategory: (categoria: string | null) => void;
 }
 
-const isWeb = Platform.OS === 'web';
-
 export default function CategoryScroll({ selectedCategory, onSelectCategory }: CategoryScrollProps) {
   const hasActiveFilter = selectedCategory !== null;
+  const { isLargeScreen } = useResponsive();
 
   return (
-    <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={isWeb ? true : false}>
+    <View style={[styles.container, { paddingHorizontal: isLargeScreen ? 16 : 10 }]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={isLargeScreen}>
         {/* Botón de Filtros / Eliminar filtros */}
         <TouchableOpacity
           style={styles.item}
@@ -67,7 +67,6 @@ export default function CategoryScroll({ selectedCategory, onSelectCategory }: C
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",
-    paddingHorizontal: Platform.OS === 'web' ? 16 : 10,
     paddingVertical: 10,
   },
 

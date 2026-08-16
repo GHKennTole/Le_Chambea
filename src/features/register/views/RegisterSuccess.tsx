@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import { supabase } from "../../../services/supabase";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RegisterStackParamList, RootStackParamList } from "../../../core/navigation/types";
+import { useResponsive } from "../../../shared/hooks/useResponsive";
 
 type RegisterNav = NativeStackNavigationProp<RegisterStackParamList, "RegisterSuccess">;
 
@@ -19,6 +20,7 @@ type ConfettiPiece = {
 export default function RegisterSuccess() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<RegisterNav>();
+  const { isLargeScreen } = useResponsive();
   const [leaving, setLeaving] = useState(false);
 
   const fade = useRef(new Animated.Value(0)).current;

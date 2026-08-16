@@ -7,6 +7,7 @@ import BottomNav from './BottomNav';
 import type { RootStackParamList } from '../../core/navigation/types';
 
 import { useAppBadges } from '../hooks/useAppBadges';
+import { useResponsive } from '../hooks/useResponsive';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -51,7 +52,7 @@ const SidebarItem = React.memo(({ name, icon, label, active, unreadChatsCount, n
 });
 
 export default function MainLayout({ children, active, hideBottomNav = false }: MainLayoutProps) {
-  const { width } = useWindowDimensions();
+  const { isLargeScreen } = useResponsive();
   const nav = useNavigation<Nav>();
   const [keyboardVisible, setKeyboardVisible] = React.useState(false);
   const { unreadChatsCount } = useAppBadges();
@@ -70,7 +71,7 @@ export default function MainLayout({ children, active, hideBottomNav = false }: 
     };
   }, []);
 
-  const isDesktop = Platform.OS === 'web' && width >= 1024;
+  const isDesktop = isLargeScreen;
 
   const [isButtonHovered, setIsButtonHovered] = React.useState(false);
   const [isMenuHovered, setIsMenuHovered] = React.useState(false);
