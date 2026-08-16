@@ -24,6 +24,7 @@ export default function ChatScreen({ route, navigation }: Props) {
   const [reportInputHeight, setReportInputHeight] = useState(100);
   const [submittingReport, setSubmittingReport] = useState(false);
   const [text, setText] = useState("");
+  const [chatInputHeight, setChatInputHeight] = useState(38);
   const flatListRef = useRef<FlatList>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -125,6 +126,7 @@ export default function ChatScreen({ route, navigation }: Props) {
     if (!text.trim()) return;
     const msg = text;
     setText("");
+    setChatInputHeight(38);
     await vm.sendMessage(msg);
   };
 
@@ -397,12 +399,28 @@ export default function ChatScreen({ route, navigation }: Props) {
           <TextInput
             style={[
               styles.textInput,
-              Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)
+              { height: chatInputHeight },
+              Platform.OS === 'web' && ({
+                outlineStyle: 'none',
+                resize: 'none',
+                overflowY: chatInputHeight >= 110 ? 'auto' : 'hidden',
+              } as any)
             ]}
             placeholder="Escribe un mensaje..."
             placeholderTextColor="#999"
             value={text}
-            onChangeText={setText}
+            onChangeText={(val) => {
+              setText(val);
+              if (!val.trim()) {
+                setChatInputHeight(38);
+              }
+            }}
+            onContentSizeChange={(e) => {
+              const h = e.nativeEvent?.contentSize?.height;
+              if (h) {
+                setChatInputHeight(Math.max(38, Math.min(110, h)));
+              }
+            }}
             multiline
             maxLength={1000}
             onSubmitEditing={handleSend}

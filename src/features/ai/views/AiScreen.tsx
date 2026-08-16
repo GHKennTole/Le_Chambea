@@ -41,6 +41,7 @@ export default function AiScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [webHeight, setWebHeight] = useState<number | null>(null);
+  const [aiInputHeight, setAiInputHeight] = useState(38);
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener(
@@ -114,10 +115,16 @@ export default function AiScreen() {
     }
   };
 
+  const onSendPress = () => {
+    if (!input.trim() || loading) return;
+    setAiInputHeight(38);
+    handleSend();
+  };
+
   const handleKeyPress = (e: any) => {
     if (Platform.OS === 'web' && e.nativeEvent?.key === 'Enter' && !e.shiftKey) {
       e.preventDefault?.();
-      handleSend();
+      onSendPress();
     }
   };
 
@@ -342,22 +349,38 @@ export default function AiScreen() {
           <TextInput
             style={[
               styles.input,
-              Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)
+              { height: aiInputHeight },
+              Platform.OS === 'web' && ({
+                outlineStyle: 'none',
+                resize: 'none',
+                overflowY: aiInputHeight >= 110 ? 'auto' : 'hidden',
+              } as any)
             ]}
             placeholder="Pregúntale a Sula sobre tu problema..."
             placeholderTextColor="#999"
             value={input}
-            onChangeText={setInput}
+            onChangeText={(val) => {
+              setInput(val);
+              if (!val.trim()) {
+                setAiInputHeight(38);
+              }
+            }}
+            onContentSizeChange={(e) => {
+              const h = e.nativeEvent?.contentSize?.height;
+              if (h) {
+                setAiInputHeight(Math.max(38, Math.min(110, h)));
+              }
+            }}
             multiline
             maxLength={500}
-            onSubmitEditing={handleSend}
+            onSubmitEditing={onSendPress}
             blurOnSubmit={false}
             onKeyPress={handleKeyPress}
             onFocus={handleFocus}
           />
           <TouchableOpacity 
             style={[styles.sendButton, !input.trim() && styles.disabledSendButton]}
-            onPress={handleSend}
+            onPress={onSendPress}
             disabled={!input.trim() || loading}
             activeOpacity={0.7}
           >
