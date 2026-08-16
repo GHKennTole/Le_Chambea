@@ -25,7 +25,7 @@ const PURPLE = "#5A2D82";
 const LIGHT_PURPLE = "#F3ECFA";
 const GRAY_BG = "#F6F6F8";
 
-const ContainerComponent = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
+const ContainerComponent = View;
 
 export default function AiScreen() {
   const { messages, loading, input, setInput, handleSend, reportAiIssue } = useAiController();
@@ -217,29 +217,23 @@ export default function AiScreen() {
       <ContainerComponent 
         style={[
           styles.container,
-          Platform.OS === 'android' && {
-            height: keyboardVisible ? windowHeight - keyboardHeight + 22 : '100%',
-            position: keyboardVisible ? 'absolute' : 'relative',
+          Platform.OS !== 'web' && {
+            paddingBottom: keyboardHeight > 0 ? (keyboardHeight + (Platform.OS === 'android' && insets.bottom > 0 ? insets.bottom : 0)) : 0,
+          },
+          Platform.OS === 'web' && ({
+            position: keyboardVisible ? 'fixed' : 'relative',
             top: 0,
             left: 0,
-            right: 0
-          },
-        Platform.OS === 'web' && ({
-          position: keyboardVisible ? 'fixed' : 'relative',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
-          maxHeight: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          zIndex: keyboardVisible ? 100 : 1,
-        } as any)
+            right: 0,
+            bottom: 0,
+            height: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
+            maxHeight: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            zIndex: keyboardVisible ? 100 : 1,
+          } as any)
         ]}
-        behavior="padding"
-        keyboardVerticalOffset={0}
       >
         {/* Cabecera Morada Dinámica de Sula AI - fija arriba */}
         <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
@@ -345,12 +339,12 @@ export default function AiScreen() {
         </ScrollView>
 
         {/* Input bar inferior */}
-        <View style={[styles.inputArea, { paddingBottom: keyboardVisible ? 8 : (Platform.OS === 'web' ? 10 : Math.max(insets.bottom, 10)) }]}>
+        <View style={[styles.inputArea, { paddingBottom: Platform.OS === 'web' ? 10 : (keyboardVisible ? 10 : 8) }]}>
           <TextInput
             style={[
               styles.input,
-              { height: aiInputHeight },
               Platform.OS === 'web' && ({
+                height: aiInputHeight,
                 outlineStyle: 'none',
                 resize: 'none',
                 overflowY: aiInputHeight >= 120 ? 'auto' : 'hidden',
@@ -510,9 +504,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
-    height: '100%',
-    minHeight: 0,
-    overflow: 'hidden',
+    ...Platform.select({
+      web: {
+        height: '100%',
+        minHeight: 0,
+        overflow: 'hidden',
+      } as any
+    })
   },
   header: {
     flexDirection: 'row',
@@ -593,12 +591,16 @@ const styles = StyleSheet.create({
   },
   contentWrapper: {
     flex: 1,
-    minHeight: 0,
+    ...Platform.select({
+      web: { minHeight: 0 } as any
+    })
   },
   chatArea: {
     flex: 1,
-    minHeight: 0,
     backgroundColor: '#F9F9FB',
+    ...Platform.select({
+      web: { minHeight: 0 } as any
+    })
   },
   chatContent: {
     flexGrow: 1,

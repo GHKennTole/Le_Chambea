@@ -92,8 +92,14 @@ export default function MainLayout({ children, active, hideBottomNav = false }: 
 
   if (!isDesktop) {
     return (
-      <View style={{ flex: 1, height: '100%', minHeight: 0, overflow: 'hidden', backgroundColor: 'white' }}>
-        <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <View style={[
+        { flex: 1, backgroundColor: 'white' },
+        Platform.OS === 'web' && ({ height: '100%', minHeight: 0, overflow: 'hidden' } as any)
+      ]}>
+        <View style={[
+          { flex: 1 },
+          Platform.OS === 'web' && ({ minHeight: 0, overflow: 'hidden' } as any)
+        ]}>
           {children}
         </View>
         {!hideBottomNav && !keyboardVisible && (

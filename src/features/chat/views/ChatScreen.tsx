@@ -15,7 +15,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "Chat">;
 export default function ChatScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { height: windowHeight, isLargeScreen } = useResponsive();
-  const ContainerComponent = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
+  const ContainerComponent = View;
   const { chatId, otherUserId } = route.params;
   const vm = useChatController(chatId, otherUserId);
   const [showServicePicker, setShowServicePicker] = useState(false);
@@ -299,12 +299,8 @@ export default function ChatScreen({ route, navigation }: Props) {
     <ContainerComponent 
       style={[
         styles.container,
-        Platform.OS === 'android' && {
-          height: keyboardVisible ? windowHeight - keyboardHeight + 22 : '100%',
-          position: keyboardVisible ? 'absolute' : 'relative',
-          top: 0,
-          left: 0,
-          right: 0
+        Platform.OS !== 'web' && {
+          paddingBottom: keyboardHeight > 0 ? (keyboardHeight + (Platform.OS === 'android' && insets.bottom > 0 ? insets.bottom : 0)) : 0,
         },
         Platform.OS === 'web' && ({
           position: 'fixed',
@@ -320,8 +316,6 @@ export default function ChatScreen({ route, navigation }: Props) {
           zIndex: 1,
         } as any)
       ]}
-      behavior="padding"
-      keyboardVerticalOffset={0}
     >
       <View style={[styles.header, { paddingTop: insets.top + 5, paddingBottom: 5, height: 60 + insets.top }]}>
         <View style={styles.headerContent}>
@@ -395,12 +389,12 @@ export default function ChatScreen({ route, navigation }: Props) {
       </View>
 
       {canChat ? (
-        <View style={[styles.inputBar, { paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom, 8) }]}>
+        <View style={[styles.inputBar, { paddingBottom: keyboardVisible ? 10 : (insets.bottom > 0 ? insets.bottom : 8) }]}>
           <TextInput
             style={[
               styles.textInput,
-              { height: chatInputHeight },
               Platform.OS === 'web' && ({
+                height: chatInputHeight,
                 outlineStyle: 'none',
                 resize: 'none',
                 overflowY: chatInputHeight >= 120 ? 'auto' : 'hidden',
@@ -588,9 +582,13 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: "#F6F6F8",
-    height: '100%',
-    minHeight: 0,
-    overflow: 'hidden',
+    ...Platform.select({
+      web: {
+        height: '100%',
+        minHeight: 0,
+        overflow: 'hidden',
+      } as any
+    })
   },
   header: { 
     backgroundColor: PURPLE, 
@@ -656,7 +654,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   reportHeaderBtn: { 
-    width: 36,
+    width: 36, 
     height: 36,
     borderRadius: 18,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -669,8 +667,12 @@ const styles = StyleSheet.create({
   listContainer: { 
     flex: 1, 
     backgroundColor: "#F6F6F8",
-    minHeight: 0,
-    overflow: 'hidden',
+    ...Platform.select({
+      web: {
+        minHeight: 0,
+        overflow: 'hidden',
+      } as any
+    })
   },
 
   bannerContainer: { backgroundColor: 'white', padding: 16, borderBottomWidth: 1, borderBottomColor: '#ECECF1' },
