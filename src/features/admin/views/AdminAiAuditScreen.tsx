@@ -126,7 +126,7 @@ export default function AdminAiAuditScreen() {
               <Text style={styles.pillDevText}>AUDITORÍA DEV</Text>
             </View>
             <View style={styles.pillModel}>
-              <Text style={styles.pillModelText}>Gemini 2.5 Flash</Text>
+              <Text style={styles.pillModelText}>Gemini 3.5 Flash Lite</Text>
             </View>
             <View style={styles.pillLatency}>
               <MaterialCommunityIcons name="speedometer" size={13} color="#2ECC71" />
