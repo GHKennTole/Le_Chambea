@@ -127,7 +127,7 @@ export default function SupportScreen() {
         </View>
       </ScrollView>
 
-      <FloatingBackButton />
+      <FloatingBackButton hideOnMobile />
     </View>
   );
 }

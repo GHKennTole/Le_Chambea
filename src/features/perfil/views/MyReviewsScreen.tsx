@@ -283,7 +283,7 @@ export default function MyReviewsScreen() {
         />
       )}
 
-      <FloatingBackButton />
+      <FloatingBackButton hideOnMobile />
     </View>
   );
 }

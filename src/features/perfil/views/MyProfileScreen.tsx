@@ -138,7 +138,7 @@ export default function MyProfileScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      <FloatingBackButton />
+      <FloatingBackButton hideOnMobile />
     </View>
   );
 }

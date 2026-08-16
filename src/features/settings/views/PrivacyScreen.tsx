@@ -143,7 +143,7 @@ export default function PrivacyScreen() {
         </View>
       </ScrollView>
 
-      <FloatingBackButton />
+      <FloatingBackButton hideOnMobile />
     </View>
   );
 }

@@ -65,7 +65,7 @@ export default function TermsScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      <FloatingBackButton />
+      <FloatingBackButton hideOnMobile />
     </View>
   );
 }

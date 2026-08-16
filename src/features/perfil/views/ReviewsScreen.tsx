@@ -339,7 +339,7 @@ export default function ReviewsScreen({ route }: any) {
         />
       )}
 
-      <FloatingBackButton />
+      <FloatingBackButton hideOnMobile />
     </View>
   );
 }

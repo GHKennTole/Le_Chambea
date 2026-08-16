@@ -345,7 +345,7 @@ export default function JobHistoryScreen() {
         </View>
       </ScrollView>
 
-      <FloatingBackButton />
+      <FloatingBackButton hideOnMobile />
     </View>
   );
 }

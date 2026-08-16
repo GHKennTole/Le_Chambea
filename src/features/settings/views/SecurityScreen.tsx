@@ -192,7 +192,7 @@ export default function SecurityScreen() {
           </View>
         </ScrollView>
 
-        <FloatingBackButton />
+        <FloatingBackButton hideOnMobile />
       </View>
     </KeyboardAvoidingView>
   );

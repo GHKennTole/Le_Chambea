@@ -331,7 +331,7 @@ export default function ProfileScreen() {
           <View style={{ height: 40 }} />
         </ScrollView>
 
-        <FloatingBackButton />
+        <FloatingBackButton hideOnMobile />
 
         {/* Modal Selección Fecha de Nacimiento */}
         <Modal

@@ -89,7 +89,7 @@ export default function WriteReviewScreen({ route }: any) {
           </TouchableOpacity>
 
         </ScrollView>
-        <FloatingBackButton />
+        <FloatingBackButton hideOnMobile />
       </View>
     </KeyboardAvoidingView>
   );

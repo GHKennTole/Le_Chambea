@@ -5,6 +5,7 @@ import {
   ViewStyle,
   GestureResponderEvent,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, type NavigationProp, type ParamListBase } from "@react-navigation/native";
@@ -19,6 +20,7 @@ interface FloatingBackButtonProps {
   backgroundColor?: string;
   iconColor?: string;
   iconSize?: number;
+  hideOnMobile?: boolean;
 }
 
 export default function FloatingBackButton({
@@ -28,9 +30,17 @@ export default function FloatingBackButton({
   backgroundColor = COLORS.purple,
   iconColor = "white",
   iconSize = 24,
+  hideOnMobile = false,
 }: FloatingBackButtonProps) {
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+
+  // On mobile devices (smartphones native & web mobile < 768px), hide if hideOnMobile is true
+  const isLargeScreen = width >= 768;
+  if (hideOnMobile && !isLargeScreen) {
+    return null;
+  }
 
   const positionStyles = {
     "top-left": { top: insets.top + 16, left: insets.left + 16 },

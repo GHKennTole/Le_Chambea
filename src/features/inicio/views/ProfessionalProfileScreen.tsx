@@ -348,7 +348,7 @@ export default function ProfessionalProfileScreen() {
           <View style={{ height: 40 }} />
         </ScrollView>
 
-        <FloatingBackButton />
+        <FloatingBackButton hideOnMobile />
 
         {/* Modal Selección de Tarifa / Precio */}
         <Modal
