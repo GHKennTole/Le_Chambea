@@ -6,6 +6,22 @@ import { useFonts, Sansita_700Bold_Italic } from "@expo-google-fonts/sansita";
 import AppNavigator from "./src/navigation/AppNavigator";
 
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  let meta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'viewport';
+    document.head.appendChild(meta);
+  }
+  meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover';
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
+    }, { passive: true });
+  }
+
   const style = document.createElement('style');
   style.textContent = `
     html, body, #root {

@@ -27,6 +27,7 @@ export default function ChatScreen({ route, navigation }: Props) {
   const flatListRef = useRef<FlatList>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [webHeight, setWebHeight] = useState<number | null>(null);
 
   React.useEffect(() => {
     const showSubscription = Keyboard.addListener(
@@ -47,32 +48,37 @@ export default function ChatScreen({ route, navigation }: Props) {
       }
     );
 
-    // Web visualViewport detection for mobile browsers & DevTools
+    // Web visualViewport detection to lock container height on mobile browsers
     let handleViewportResize: (() => void) | undefined;
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.visualViewport) {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
       handleViewportResize = () => {
-        if (window.visualViewport) {
-          const diff = window.innerHeight - window.visualViewport.height;
-          if (diff > 100) {
-            setKeyboardHeight(diff);
-            setKeyboardVisible(true);
-            setTimeout(() => {
-              flatListRef.current?.scrollToEnd({ animated: true });
-            }, 80);
-          } else {
-            setKeyboardHeight(0);
-            setKeyboardVisible(false);
-          }
+        const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        setWebHeight(h);
+        if (window.scrollY !== 0 || window.scrollX !== 0) {
+          window.scrollTo(0, 0);
         }
       };
-      window.visualViewport.addEventListener('resize', handleViewportResize);
+
+      handleViewportResize();
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', handleViewportResize);
+        window.visualViewport.addEventListener('scroll', handleViewportResize);
+      }
+      window.addEventListener('resize', handleViewportResize);
+      window.addEventListener('scroll', handleViewportResize);
     }
 
     return () => {
       showSubscription.remove();
       hideSubscription.remove();
-      if (handleViewportResize && window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleViewportResize);
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && handleViewportResize) {
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', handleViewportResize);
+          window.visualViewport.removeEventListener('scroll', handleViewportResize);
+        }
+        window.removeEventListener('resize', handleViewportResize);
+        window.removeEventListener('scroll', handleViewportResize);
       }
     };
   }, []);
@@ -126,6 +132,18 @@ export default function ChatScreen({ route, navigation }: Props) {
     if (Platform.OS === 'web' && e.nativeEvent?.key === 'Enter' && !e.shiftKey) {
       e.preventDefault?.();
       handleSend();
+    }
+  };
+
+  const handleFocus = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 50);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 200);
     }
   };
 
@@ -287,12 +305,17 @@ export default function ChatScreen({ route, navigation }: Props) {
           right: 0
         },
         Platform.OS === 'web' && ({
-          height: '100%',
-          maxHeight: '100%',
-          minHeight: 0,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: webHeight ? `${webHeight}px` : '100dvh',
+          maxHeight: webHeight ? `${webHeight}px` : '100dvh',
           display: 'flex',
           flexDirection: 'column',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          zIndex: 1,
         } as any)
       ]}
       behavior="padding"
@@ -385,6 +408,7 @@ export default function ChatScreen({ route, navigation }: Props) {
             onSubmitEditing={handleSend}
             blurOnSubmit={false}
             onKeyPress={handleKeyPress}
+            onFocus={handleFocus}
           />
           <TouchableOpacity 
             style={[styles.sendButton, (!text.trim() || vm.sending) && styles.sendButtonDisabled]} 

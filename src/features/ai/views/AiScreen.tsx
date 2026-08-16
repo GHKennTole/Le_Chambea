@@ -35,6 +35,37 @@ export default function AiScreen() {
   const [reportReason, setReportReason] = useState("");
   const [reportInputHeight, setReportInputHeight] = useState(100);
   const [submittingReport, setSubmittingReport] = useState(false);
+  const [webHeight, setWebHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const updateHeight = () => {
+        const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        setWebHeight(h);
+        if (window.scrollY !== 0 || window.scrollX !== 0) {
+          window.scrollTo(0, 0);
+        }
+      };
+
+      updateHeight();
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateHeight);
+        window.visualViewport.addEventListener('scroll', updateHeight);
+      }
+      window.addEventListener('resize', updateHeight);
+      window.addEventListener('scroll', updateHeight);
+
+      return () => {
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', updateHeight);
+          window.visualViewport.removeEventListener('scroll', updateHeight);
+        }
+        window.removeEventListener('resize', updateHeight);
+        window.removeEventListener('scroll', updateHeight);
+      };
+    }
+  }, []);
 
   const handleOpenReportModal = () => {
     setReportReason("");
@@ -58,6 +89,18 @@ export default function AiScreen() {
     if (Platform.OS === 'web' && e.nativeEvent?.key === 'Enter' && !e.shiftKey) {
       e.preventDefault?.();
       handleSend();
+    }
+  };
+
+  const handleFocus = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 50);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 200);
     }
   };
 
@@ -136,7 +179,22 @@ export default function AiScreen() {
   return (
     <MainLayout active="AI">
       <KeyboardAvoidingView 
-        style={styles.container}
+        style={[
+          styles.container,
+          Platform.OS === 'web' && ({
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: webHeight ? `${webHeight}px` : '100dvh',
+            maxHeight: webHeight ? `${webHeight}px` : '100dvh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            zIndex: 1,
+          } as any)
+        ]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
@@ -259,6 +317,7 @@ export default function AiScreen() {
             onSubmitEditing={handleSend}
             blurOnSubmit={false}
             onKeyPress={handleKeyPress}
+            onFocus={handleFocus}
           />
           <TouchableOpacity 
             style={[styles.sendButton, !input.trim() && styles.disabledSendButton]}
