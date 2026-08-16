@@ -217,19 +217,19 @@ export default function AiScreen() {
             left: 0,
             right: 0
           },
-          Platform.OS === 'web' && ({
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: webHeight ? `${webHeight}px` : '100dvh',
-            maxHeight: webHeight ? `${webHeight}px` : '100dvh',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            zIndex: 1,
-          } as any)
+        Platform.OS === 'web' && ({
+          position: keyboardVisible ? 'fixed' : 'relative',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
+          maxHeight: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          zIndex: keyboardVisible ? 100 : 1,
+        } as any)
         ]}
         behavior="padding"
         keyboardVerticalOffset={0}
@@ -338,7 +338,7 @@ export default function AiScreen() {
         </ScrollView>
 
         {/* Input bar inferior */}
-        <View style={[styles.inputArea, { paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom, 12) }]}>
+        <View style={[styles.inputArea, { paddingBottom: keyboardVisible ? 8 : (Platform.OS === 'web' ? 10 : Math.max(insets.bottom, 10)) }]}>
           <TextInput
             style={[
               styles.input,
@@ -662,11 +662,12 @@ const styles = StyleSheet.create({
   inputArea: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    marginTop: 5,
+    padding: 10,
+    marginTop: 0,
     borderTopWidth: 1,
     borderTopColor: '#ECECF1',
     backgroundColor: 'white',
+    flexShrink: 0,
   },
   input: {
     flex: 1,
