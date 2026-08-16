@@ -24,7 +24,7 @@ export default function ChatScreen({ route, navigation }: Props) {
   const [reportInputHeight, setReportInputHeight] = useState(100);
   const [submittingReport, setSubmittingReport] = useState(false);
   const [text, setText] = useState("");
-  const [chatInputHeight, setChatInputHeight] = useState(38);
+  const [chatInputHeight, setChatInputHeight] = useState(44);
   const flatListRef = useRef<FlatList>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -126,7 +126,7 @@ export default function ChatScreen({ route, navigation }: Props) {
     if (!text.trim()) return;
     const msg = text;
     setText("");
-    setChatInputHeight(38);
+    setChatInputHeight(44);
     await vm.sendMessage(msg);
   };
 
@@ -403,7 +403,7 @@ export default function ChatScreen({ route, navigation }: Props) {
               Platform.OS === 'web' && ({
                 outlineStyle: 'none',
                 resize: 'none',
-                overflowY: chatInputHeight >= 110 ? 'auto' : 'hidden',
+                overflowY: chatInputHeight >= 120 ? 'auto' : 'hidden',
               } as any)
             ]}
             placeholder="Escribe un mensaje..."
@@ -412,13 +412,13 @@ export default function ChatScreen({ route, navigation }: Props) {
             onChangeText={(val) => {
               setText(val);
               if (!val.trim()) {
-                setChatInputHeight(38);
+                setChatInputHeight(44);
               }
             }}
             onContentSizeChange={(e) => {
               const h = e.nativeEvent?.contentSize?.height;
               if (h) {
-                setChatInputHeight(Math.max(38, Math.min(110, h)));
+                setChatInputHeight(Math.max(44, Math.min(120, h)));
               }
             }}
             multiline
@@ -437,7 +437,7 @@ export default function ChatScreen({ route, navigation }: Props) {
             {vm.sending ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <MaterialCommunityIcons name="send" size={19} color="white" />
+              <MaterialCommunityIcons name="send" size={20} color="white" />
             )}
           </TouchableOpacity>
         </View>
@@ -744,8 +744,8 @@ const styles = StyleSheet.create({
   inputBar: { 
     flexDirection: 'row', 
     alignItems: 'flex-end', 
-    paddingHorizontal: 10, 
-    paddingTop: 6, 
+    paddingHorizontal: 12, 
+    paddingTop: 8, 
     backgroundColor: 'white', 
     borderTopWidth: 1, 
     borderTopColor: '#ECECF1', 
@@ -755,21 +755,21 @@ const styles = StyleSheet.create({
   textInput: { 
     flex: 1, 
     backgroundColor: '#F6F6F8', 
-    borderRadius: 20, 
-    paddingHorizontal: 14, 
-    paddingTop: 8, 
-    paddingBottom: 8, 
-    fontSize: 14.5, 
-    lineHeight: 19,
-    minHeight: 38, 
-    maxHeight: 110, 
+    borderRadius: 22, 
+    paddingHorizontal: 16, 
+    paddingTop: 11, 
+    paddingBottom: 11, 
+    fontSize: 15, 
+    lineHeight: 20,
+    minHeight: 44, 
+    maxHeight: 120, 
     color: '#333',
     textAlignVertical: 'center',
   },
   sendButton: { 
-    width: 38, 
-    height: 38, 
-    borderRadius: 19, 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
     backgroundColor: PURPLE, 
     justifyContent: 'center', 
     alignItems: 'center',

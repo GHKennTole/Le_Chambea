@@ -41,7 +41,7 @@ export default function AiScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [webHeight, setWebHeight] = useState<number | null>(null);
-  const [aiInputHeight, setAiInputHeight] = useState(38);
+  const [aiInputHeight, setAiInputHeight] = useState(44);
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener(
@@ -117,7 +117,7 @@ export default function AiScreen() {
 
   const onSendPress = () => {
     if (!input.trim() || loading) return;
-    setAiInputHeight(38);
+    setAiInputHeight(44);
     handleSend();
   };
 
@@ -353,7 +353,7 @@ export default function AiScreen() {
               Platform.OS === 'web' && ({
                 outlineStyle: 'none',
                 resize: 'none',
-                overflowY: aiInputHeight >= 110 ? 'auto' : 'hidden',
+                overflowY: aiInputHeight >= 120 ? 'auto' : 'hidden',
               } as any)
             ]}
             placeholder="Pregúntale a Sula sobre tu problema..."
@@ -362,13 +362,13 @@ export default function AiScreen() {
             onChangeText={(val) => {
               setInput(val);
               if (!val.trim()) {
-                setAiInputHeight(38);
+                setAiInputHeight(44);
               }
             }}
             onContentSizeChange={(e) => {
               const h = e.nativeEvent?.contentSize?.height;
               if (h) {
-                setAiInputHeight(Math.max(38, Math.min(110, h)));
+                setAiInputHeight(Math.max(44, Math.min(120, h)));
               }
             }}
             multiline
@@ -387,7 +387,7 @@ export default function AiScreen() {
             {loading ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <MaterialCommunityIcons name="send" size={18} color="white" />
+              <MaterialCommunityIcons name="send" size={20} color="white" />
             )}
           </TouchableOpacity>
         </View>
@@ -685,8 +685,8 @@ const styles = StyleSheet.create({
   inputArea: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 10,
-    paddingTop: 6,
+    paddingHorizontal: 12,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#ECECF1',
     backgroundColor: 'white',
@@ -696,14 +696,14 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     backgroundColor: '#F3F3F5',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingTop: 8,
-    paddingBottom: 8,
-    fontSize: 14.5,
-    lineHeight: 19,
-    minHeight: 38,
-    maxHeight: 110,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingTop: 11,
+    paddingBottom: 11,
+    fontSize: 15,
+    lineHeight: 20,
+    minHeight: 44,
+    maxHeight: 120,
     color: '#333',
     textAlignVertical: 'center',
     ...Platform.select({
@@ -711,9 +711,9 @@ const styles = StyleSheet.create({
     })
   },
   sendButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: PURPLE,
     justifyContent: 'center',
     alignItems: 'center',
