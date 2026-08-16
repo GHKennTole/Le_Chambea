@@ -386,6 +386,18 @@ export default function AiScreen() {
             }}
             multiline
             maxLength={500}
+            autoComplete="off"
+            autoCorrect={false}
+            spellCheck={false}
+            textContentType="none"
+            {...(Platform.OS === 'web' ? ({
+              'data-autocomplete': 'off',
+              'data-form-type': 'other',
+              'data-lpignore': 'true',
+              'data-1p-ignore': 'true',
+              name: 'ai_message_input',
+              id: 'ai_message_input',
+            } as any) : {})}
             onSubmitEditing={onSendPress}
             blurOnSubmit={false}
             onKeyPress={handleKeyPress}

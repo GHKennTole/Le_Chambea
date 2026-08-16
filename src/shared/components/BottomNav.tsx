@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { View, TouchableOpacity, StyleSheet, Image, Text, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -15,64 +15,6 @@ export default function BottomNav({ active }: { active: keyof RootStackParamList
   const insets = useSafeAreaInsets();
   const { unreadChatsCount } = useAppBadges();
   const { isLargeScreen } = useResponsive();
-
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-
-  useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined' || typeof document === 'undefined') {
-      return;
-    }
-
-    const handleFocusIn = (e: any) => {
-      const target = e.target as HTMLElement;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || (target as any).isContentEditable)) {
-        setIsKeyboardOpen(true);
-      }
-    };
-
-    const handleFocusOut = () => {
-      setTimeout(() => {
-        const activeEl = document.activeElement as HTMLElement;
-        if (!activeEl || (activeEl.tagName !== 'INPUT' && activeEl.tagName !== 'TEXTAREA' && !(activeEl as any).isContentEditable)) {
-          setIsKeyboardOpen(false);
-        }
-      }, 100);
-    };
-
-    const handleViewport = () => {
-      if (window.visualViewport) {
-        const isKb = window.innerHeight - window.visualViewport.height > 100 || (typeof window.outerHeight !== 'undefined' && window.outerHeight - window.visualViewport.height > 150 && window.visualViewport.height < window.innerHeight * 0.85);
-        if (isKb) {
-          setIsKeyboardOpen(true);
-        } else {
-          const activeEl = document.activeElement as HTMLElement;
-          if (!activeEl || (activeEl.tagName !== 'INPUT' && activeEl.tagName !== 'TEXTAREA' && !(activeEl as any).isContentEditable)) {
-            setIsKeyboardOpen(false);
-          }
-        }
-      }
-    };
-
-    document.addEventListener('focusin', handleFocusIn);
-    document.addEventListener('focusout', handleFocusOut);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewport);
-    }
-    window.addEventListener('resize', handleViewport);
-
-    return () => {
-      document.removeEventListener('focusin', handleFocusIn);
-      document.removeEventListener('focusout', handleFocusOut);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleViewport);
-      }
-      window.removeEventListener('resize', handleViewport);
-    };
-  }, []);
-
-  if (Platform.OS === 'web' && isKeyboardOpen) {
-    return null;
-  }
 
   return (
     <View style={[styles.wrapper, { paddingBottom: insets.bottom > 0 ? insets.bottom : 8 }]}>

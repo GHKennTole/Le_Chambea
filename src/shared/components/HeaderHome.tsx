@@ -81,6 +81,20 @@ export default function HeaderHome({
               style={[styles.input, Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]} 
               value={searchQuery}
               onChangeText={onSearchChange}
+              autoComplete="off"
+              autoCorrect={false}
+              spellCheck={false}
+              textContentType="none"
+              keyboardType="default"
+              inputMode="search"
+              {...(Platform.OS === 'web' ? ({
+                'data-autocomplete': 'off',
+                'data-form-type': 'other',
+                'data-lpignore': 'true',
+                'data-1p-ignore': 'true',
+                name: 'service_search_query_desktop',
+                id: 'service_search_query_desktop',
+              } as any) : {})}
             />
             <MaterialCommunityIcons name="magnify" size={22} color={PURPLE} />
           </View>
@@ -152,6 +166,20 @@ export default function HeaderHome({
               style={[styles.input, Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]} 
               value={searchQuery}
               onChangeText={onSearchChange}
+              autoComplete="off"
+              autoCorrect={false}
+              spellCheck={false}
+              textContentType="none"
+              keyboardType="default"
+              inputMode="search"
+              {...(Platform.OS === 'web' ? ({
+                'data-autocomplete': 'off',
+                'data-form-type': 'other',
+                'data-lpignore': 'true',
+                'data-1p-ignore': 'true',
+                name: 'service_search_query_mobile',
+                id: 'service_search_query_mobile',
+              } as any) : {})}
             />
             <MaterialCommunityIcons name="magnify" size={22} color={PURPLE} />
           </View>

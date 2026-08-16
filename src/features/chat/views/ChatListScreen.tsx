@@ -214,6 +214,20 @@ export default function ChatListScreen() {
               placeholderTextColor="rgba(255,255,255,0.6)"
               value={search}
               onChangeText={setSearch}
+              autoComplete="off"
+              autoCorrect={false}
+              spellCheck={false}
+              textContentType="none"
+              keyboardType="default"
+              inputMode="search"
+              {...(Platform.OS === 'web' ? ({
+                'data-autocomplete': 'off',
+                'data-form-type': 'other',
+                'data-lpignore': 'true',
+                'data-1p-ignore': 'true',
+                name: 'chat_list_search_query_mobile',
+                id: 'chat_list_search_query_mobile',
+              } as any) : {})}
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

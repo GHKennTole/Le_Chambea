@@ -417,6 +417,18 @@ export default function ChatScreen({ route, navigation }: Props) {
             }}
             multiline
             maxLength={1000}
+            autoComplete="off"
+            autoCorrect={false}
+            spellCheck={false}
+            textContentType="none"
+            {...(Platform.OS === 'web' ? ({
+              'data-autocomplete': 'off',
+              'data-form-type': 'other',
+              'data-lpignore': 'true',
+              'data-1p-ignore': 'true',
+              name: 'chat_message_input',
+              id: 'chat_message_input',
+            } as any) : {})}
             onSubmitEditing={handleSend}
             blurOnSubmit={false}
             onKeyPress={handleKeyPress}
