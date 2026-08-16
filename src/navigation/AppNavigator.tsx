@@ -3,7 +3,9 @@ import {
   NavigationContainer,
   createNavigationContainerRef,
   CommonActions,
+  type LinkingOptions,
 } from "@react-navigation/native";
+import * as Linking from "expo-linking";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../services/supabase";
@@ -40,6 +42,49 @@ import GlobalFloatingAlert from "../shared/components/GlobalFloatingAlert";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
+export const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: [Linking.createURL("/"), "/"],
+  config: {
+    screens: {
+      Welcome: "welcome",
+      Login: "login",
+      Register: {
+        screens: {
+          RegisterWelcome: "register",
+          RegisterName: "register/name",
+          RegisterBirth: "register/birth",
+          RegisterGender: "register/gender",
+          RegisterAuth: "register/auth",
+          RegisterSuccess: "register/success",
+        },
+      },
+      Onboarding: "onboarding",
+      Home: "home",
+      AI: "ai",
+      Favorites: "favorites",
+      Menu: "menu",
+      ForgotPassword: "forgot-password",
+      Profile: "profile",
+      MyProfile: "my-profile",
+      ProfessionalProfile: "professional-profile",
+      JobHistory: "job-history",
+      Reviews: "reviews/:userId?",
+      WriteReview: "write-review",
+      MyReviews: "my-reviews",
+      Search: "search",
+      PublicProfile: "public-profile/:id",
+      ChatList: "chats",
+      Chat: "chat/:chatId/:otherUserId",
+      Security: "security",
+      Privacy: "privacy",
+      Support: "support",
+      Terms: "terms",
+      HomeAdmin: "admin",
+      AdminAiAudit: "admin/ai-audit",
+    },
+  },
+};
 
 function resetTo(routeName: keyof RootStackParamList) {
   if (navigationRef.isReady()) {
@@ -143,6 +188,7 @@ export default function AppNavigator() {
   return (
     <NavigationContainer
       ref={navigationRef}
+      linking={linking}
       onReady={() => {
         const pending = pendingResetRef.current;
         if (pending) {
