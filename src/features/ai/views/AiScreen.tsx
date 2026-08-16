@@ -66,8 +66,10 @@ export default function AiScreen() {
     let handleViewportResize: (() => void) | undefined;
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       handleViewportResize = () => {
-        const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        setWebHeight(h);
+        const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        setWebHeight(vh);
+        const isKb = (window.innerHeight - vh > 120) || (typeof window.screen !== 'undefined' && window.screen.height - vh > 200 && vh < window.innerHeight * 0.85);
+        setKeyboardVisible(isKb);
         if (window.scrollY !== 0 || window.scrollX !== 0) {
           window.scrollTo(0, 0);
         }
@@ -129,14 +131,31 @@ export default function AiScreen() {
   };
 
   const handleFocus = () => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    if (Platform.OS === 'web') {
+      setKeyboardVisible(true);
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 50);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+        }, 200);
+      }
+    }
+  };
+
+  const handleBlur = () => {
+    if (Platform.OS === 'web') {
       setTimeout(() => {
-        window.scrollTo(0, 0);
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 50);
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-      }, 200);
+        if (typeof window !== 'undefined' && window.visualViewport) {
+          const vh = window.visualViewport.height;
+          const isKb = window.innerHeight - vh > 120;
+          setKeyboardVisible(isKb);
+        } else {
+          setKeyboardVisible(false);
+        }
+      }, 150);
     }
   };
 
@@ -371,6 +390,7 @@ export default function AiScreen() {
             blurOnSubmit={false}
             onKeyPress={handleKeyPress}
             onFocus={handleFocus}
+            onBlur={handleBlur}
           />
           <TouchableOpacity 
             style={[styles.sendButton, !input.trim() && styles.disabledSendButton]}
