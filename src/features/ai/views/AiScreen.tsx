@@ -10,6 +10,7 @@ import {
   Image, 
   Modal,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Dimensions
 } from 'react-native';
@@ -24,22 +25,46 @@ const PURPLE = "#5A2D82";
 const LIGHT_PURPLE = "#F3ECFA";
 const GRAY_BG = "#F6F6F8";
 
+const ContainerComponent = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
+
 export default function AiScreen() {
   const { messages, loading, input, setInput, handleSend, reportAiIssue } = useAiController();
   const navigation = useNavigation<any>();
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
-  const { isLargeScreen } = useResponsive();
+  const { height: windowHeight, isLargeScreen } = useResponsive();
 
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportInputHeight, setReportInputHeight] = useState(100);
   const [submittingReport, setSubmittingReport] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [webHeight, setWebHeight] = useState<number | null>(null);
 
   useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        setKeyboardVisible(true);
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 80);
+      }
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+        setKeyboardVisible(false);
+      }
+    );
+
+    // Web visualViewport detection to lock container height on mobile browsers
+    let handleViewportResize: (() => void) | undefined;
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const updateHeight = () => {
+      handleViewportResize = () => {
         const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
         setWebHeight(h);
         if (window.scrollY !== 0 || window.scrollX !== 0) {
@@ -47,24 +72,28 @@ export default function AiScreen() {
         }
       };
 
-      updateHeight();
+      handleViewportResize();
 
       if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', updateHeight);
-        window.visualViewport.addEventListener('scroll', updateHeight);
+        window.visualViewport.addEventListener('resize', handleViewportResize);
+        window.visualViewport.addEventListener('scroll', handleViewportResize);
       }
-      window.addEventListener('resize', updateHeight);
-      window.addEventListener('scroll', updateHeight);
-
-      return () => {
-        if (window.visualViewport) {
-          window.visualViewport.removeEventListener('resize', updateHeight);
-          window.visualViewport.removeEventListener('scroll', updateHeight);
-        }
-        window.removeEventListener('resize', updateHeight);
-        window.removeEventListener('scroll', updateHeight);
-      };
+      window.addEventListener('resize', handleViewportResize);
+      window.addEventListener('scroll', handleViewportResize);
     }
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && handleViewportResize) {
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', handleViewportResize);
+          window.visualViewport.removeEventListener('scroll', handleViewportResize);
+        }
+        window.removeEventListener('resize', handleViewportResize);
+        window.removeEventListener('scroll', handleViewportResize);
+      }
+    };
   }, []);
 
   const handleOpenReportModal = () => {
@@ -177,10 +206,17 @@ export default function AiScreen() {
   };
 
   return (
-    <MainLayout active="AI">
-      <KeyboardAvoidingView 
+    <MainLayout active="AI" hideBottomNav={keyboardVisible}>
+      <ContainerComponent 
         style={[
           styles.container,
+          Platform.OS === 'android' && {
+            height: keyboardVisible ? windowHeight - keyboardHeight + 22 : '100%',
+            position: keyboardVisible ? 'absolute' : 'relative',
+            top: 0,
+            left: 0,
+            right: 0
+          },
           Platform.OS === 'web' && ({
             position: 'fixed',
             top: 0,
@@ -195,7 +231,7 @@ export default function AiScreen() {
             zIndex: 1,
           } as any)
         ]}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         keyboardVerticalOffset={0}
       >
         {/* Cabecera Morada Dinámica de Sula AI - fija arriba */}
@@ -302,7 +338,7 @@ export default function AiScreen() {
         </ScrollView>
 
         {/* Input bar inferior */}
-        <View style={styles.inputArea}>
+        <View style={[styles.inputArea, { paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom, 12) }]}>
           <TextInput
             style={[
               styles.input,
@@ -332,7 +368,7 @@ export default function AiScreen() {
             )}
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </ContainerComponent>
 
       {/* Modal: Reportar Mal Funcionamiento de Sula AI 🚨 */}
       <Modal visible={showReportModal} transparent animationType="fade" onRequestClose={() => !submittingReport && setShowReportModal(false)}>
