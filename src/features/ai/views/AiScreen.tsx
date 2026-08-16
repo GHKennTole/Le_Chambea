@@ -54,11 +54,19 @@ export default function AiScreen() {
     }
   };
 
-  // Auto-scroll al final del chat cuando llega un mensaje nuevo
+  const handleKeyPress = (e: any) => {
+    if (Platform.OS === 'web' && e.nativeEvent?.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault?.();
+      handleSend();
+    }
+  };
+
+  // Auto-scroll al final del chat cuando llega un mensaje nuevo o cambia el estado
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    }, 80);
+    return () => clearTimeout(timer);
   }, [messages, loading]);
 
   // Render message text with simple markdown parsing for bold (**) and list elements
@@ -129,7 +137,7 @@ export default function AiScreen() {
     <MainLayout active="AI">
       <KeyboardAvoidingView 
         style={styles.container}
-        behavior="height"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
         {/* Cabecera Morada Dinámica de Sula AI - fija arriba */}
@@ -238,7 +246,10 @@ export default function AiScreen() {
         {/* Input bar inferior */}
         <View style={styles.inputArea}>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)
+            ]}
             placeholder="Pregúntale a Sula sobre tu problema..."
             placeholderTextColor="#999"
             value={input}
@@ -246,11 +257,14 @@ export default function AiScreen() {
             multiline
             maxLength={500}
             onSubmitEditing={handleSend}
+            blurOnSubmit={false}
+            onKeyPress={handleKeyPress}
           />
           <TouchableOpacity 
             style={[styles.sendButton, !input.trim() && styles.disabledSendButton]}
             onPress={handleSend}
             disabled={!input.trim() || loading}
+            activeOpacity={0.7}
           >
             {loading ? (
               <ActivityIndicator size="small" color="white" />

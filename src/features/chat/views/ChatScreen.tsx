@@ -34,6 +34,9 @@ export default function ChatScreen({ route, navigation }: Props) {
       (e) => {
         setKeyboardHeight(e.endCoordinates.height);
         setKeyboardVisible(true);
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 80);
       }
     );
     const hideSubscription = Keyboard.addListener(
@@ -44,9 +47,33 @@ export default function ChatScreen({ route, navigation }: Props) {
       }
     );
 
+    // Web visualViewport detection for mobile browsers & DevTools
+    let handleViewportResize: (() => void) | undefined;
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.visualViewport) {
+      handleViewportResize = () => {
+        if (window.visualViewport) {
+          const diff = window.innerHeight - window.visualViewport.height;
+          if (diff > 100) {
+            setKeyboardHeight(diff);
+            setKeyboardVisible(true);
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({ animated: true });
+            }, 80);
+          } else {
+            setKeyboardHeight(0);
+            setKeyboardVisible(false);
+          }
+        }
+      };
+      window.visualViewport.addEventListener('resize', handleViewportResize);
+    }
+
     return () => {
       showSubscription.remove();
       hideSubscription.remove();
+      if (handleViewportResize && window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportResize);
+      }
     };
   }, []);
 
@@ -93,6 +120,13 @@ export default function ChatScreen({ route, navigation }: Props) {
     const msg = text;
     setText("");
     await vm.sendMessage(msg);
+  };
+
+  const handleKeyPress = (e: any) => {
+    if (Platform.OS === 'web' && e.nativeEvent?.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault?.();
+      handleSend();
+    }
   };
 
   const renderJobBanner = () => {
@@ -251,7 +285,14 @@ export default function ChatScreen({ route, navigation }: Props) {
           top: 0,
           left: 0,
           right: 0
-        }
+        },
+        Platform.OS === 'web' && {
+          height: keyboardVisible ? `calc(100% - ${keyboardHeight}px)` : '100%',
+          maxHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        } as any
       ]}
       behavior="padding"
       keyboardVerticalOffset={0}
@@ -306,22 +347,23 @@ export default function ChatScreen({ route, navigation }: Props) {
 
       <View style={styles.listContainer}>
         <FlatList
-        ref={flatListRef}
-        data={vm.messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        contentContainerStyle={[
-          styles.messagesList, 
-          vm.messages.length === 0 && styles.messagesEmpty
-        ]}
-        ListEmptyComponent={
-          <View style={styles.emptyChat}>
-            <MaterialCommunityIcons name="chat-outline" size={48} color="#DDD" />
-            <Text style={styles.emptyChatText}>
-              {canChat ? "Envía el primer mensaje" : "No hay mensajes aún"}
-            </Text>
-          </View>
-        }
+          ref={flatListRef}
+          data={vm.messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            styles.messagesList, 
+            vm.messages.length === 0 && styles.messagesEmpty
+          ]}
+          ListEmptyComponent={
+            <View style={styles.emptyChat}>
+              <MaterialCommunityIcons name="chat-outline" size={48} color="#DDD" />
+              <Text style={styles.emptyChatText}>
+                {canChat ? "Envía el primer mensaje" : "No hay mensajes aún"}
+              </Text>
+            </View>
+          }
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
         />
       </View>
@@ -329,7 +371,10 @@ export default function ChatScreen({ route, navigation }: Props) {
       {canChat ? (
         <View style={[styles.inputBar, { paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom, 8) }]}>
           <TextInput
-            style={styles.textInput}
+            style={[
+              styles.textInput,
+              Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)
+            ]}
             placeholder="Escribe un mensaje..."
             placeholderTextColor="#999"
             value={text}
@@ -338,11 +383,13 @@ export default function ChatScreen({ route, navigation }: Props) {
             maxLength={1000}
             onSubmitEditing={handleSend}
             blurOnSubmit={false}
+            onKeyPress={handleKeyPress}
           />
           <TouchableOpacity 
             style={[styles.sendButton, (!text.trim() || vm.sending) && styles.sendButtonDisabled]} 
             onPress={handleSend}
             disabled={!text.trim() || vm.sending}
+            activeOpacity={0.7}
           >
             {vm.sending ? (
               <ActivityIndicator size="small" color="white" />

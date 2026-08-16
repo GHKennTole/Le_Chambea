@@ -65,9 +65,23 @@ export default function MainLayout({ children, active, hideBottomNav = false }: 
       setKeyboardVisible(false);
     });
 
+    let handleViewportResize: (() => void) | undefined;
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.visualViewport) {
+      handleViewportResize = () => {
+        if (window.visualViewport) {
+          const isKeyboard = window.innerHeight - window.visualViewport.height > 150;
+          setKeyboardVisible(isKeyboard);
+        }
+      };
+      window.visualViewport.addEventListener('resize', handleViewportResize);
+    }
+
     return () => {
       showSubscription.remove();
       hideSubscription.remove();
+      if (handleViewportResize && window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportResize);
+      }
     };
   }, []);
 
