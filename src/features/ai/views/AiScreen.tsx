@@ -9,8 +9,9 @@ import {
   ActivityIndicator, 
   Image, 
   Modal,
-  Animated,
-  Platform
+  KeyboardAvoidingView,
+  Platform,
+  Dimensions
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -18,7 +19,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MainLayout from '../../../shared/components/MainLayout';
 import { useAiController, RecommendedProfessional } from '../controllers/useAiController';
 import { useResponsive } from '../../../shared/hooks/useResponsive';
-import { useKeyboardAdjustment } from '../../../shared/hooks/useKeyboardAdjustment';
 
 const PURPLE = "#5A2D82";
 const LIGHT_PURPLE = "#F3ECFA";
@@ -30,7 +30,6 @@ export default function AiScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const { isLargeScreen } = useResponsive();
-  const { keyboardVisible, keyboardOffset, animatedPaddingBottom, viewportHeight } = useKeyboardAdjustment();
 
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
@@ -55,12 +54,12 @@ export default function AiScreen() {
     }
   };
 
-  // Auto-scroll al final del chat cuando llega un mensaje nuevo o se abre el teclado
+  // Auto-scroll al final del chat cuando llega un mensaje nuevo
   useEffect(() => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
-  }, [messages.length, loading, keyboardVisible, keyboardOffset]);
+  }, [messages, loading]);
 
   // Render message text with simple markdown parsing for bold (**) and list elements
   const renderMessageText = (text: string, isUser: boolean) => {
@@ -126,25 +125,15 @@ export default function AiScreen() {
     );
   };
 
-  const isKbActive = keyboardVisible || keyboardOffset > 0;
-  const headerTopPadding = isLargeScreen ? 16 : insets.top + 12;
-
   return (
     <MainLayout active="AI">
-      <View 
-        style={[
-          styles.container, 
-          isLargeScreen && styles.containerLarge,
-          Platform.OS === 'web' && viewportHeight ? { height: viewportHeight } : null
-        ]}
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior="height"
+        keyboardVerticalOffset={0}
       >
-        {/* Cabecera Morada de Sula AI - 100% FIJA E INMÓVIL ARRIBA */}
-        <View style={[
-          styles.header, 
-          isLargeScreen 
-            ? styles.headerLarge 
-            : { paddingTop: headerTopPadding }
-        ]}>
+        {/* Cabecera Morada Dinámica de Sula AI - fija arriba */}
+        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
           <View style={styles.headerAvatarContainer}>
             <Image 
               source={require('../../../assets/images/logo.png')} 
@@ -174,115 +163,110 @@ export default function AiScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Zona dinámica de mensajes y cuadro de texto que sube suavemente con el teclado */}
-        <Animated.View style={[styles.chatBody, { paddingBottom: animatedPaddingBottom }]}>
-          {/* Zona de Mensajes del Chat */}
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.chatArea}
-            contentContainerStyle={styles.chatContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            {messages.map((msg) => {
-              const isUser = msg.sender === 'user';
-              return (
-                <View 
-                  key={msg.id} 
-                  style={[
-                    styles.messageRow, 
-                    isUser ? styles.userRow : styles.botRow
-                  ]}
-                >
-                  {/* Avatar para respuestas de Sula */}
-                  {!isUser && (
-                    <Image 
-                      source={require('../../../assets/images/logo.png')} 
-                      style={styles.botAvatarImage} 
-                      resizeMode="contain"
-                    />
-                  )}
+        {/* Zona de Mensajes del Chat */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.chatArea}
+          contentContainerStyle={styles.chatContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {messages.map((msg) => {
+            const isUser = msg.sender === 'user';
+            return (
+              <View 
+                key={msg.id} 
+                style={[
+                  styles.messageRow, 
+                  isUser ? styles.userRow : styles.botRow
+                ]}
+              >
+                {/* Avatar para respuestas de Sula */}
+                {!isUser && (
+                  <Image 
+                    source={require('../../../assets/images/logo.png')} 
+                    style={styles.botAvatarImage} 
+                    resizeMode="contain"
+                  />
+                )}
 
-                  <View style={styles.bubbleContainer}>
-                    <View 
-                      style={[
-                        styles.bubble, 
-                        isUser ? styles.userBubble : styles.botBubble
-                      ]}
-                    >
-                      {renderMessageText(msg.text, isUser)}
-                    </View>
-
-                    {/* Renderizar Carrusel Horizontal de Profesionales Recomendados */}
-                    {msg.professionals && msg.professionals.length > 0 && (
-                      <View style={styles.recommendationSection}>
-                        <Text style={styles.recommendationTitle}>
-                          Profesionales sugeridos por Sula:
-                        </Text>
-                        <ScrollView 
-                          horizontal 
-                          showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={styles.proCarousel}
-                        >
-                          {msg.professionals.map(renderProfessionalCard)}
-                        </ScrollView>
-                      </View>
-                    )}
+                <View style={styles.bubbleContainer}>
+                  <View 
+                    style={[
+                      styles.bubble, 
+                      isUser ? styles.userBubble : styles.botBubble
+                    ]}
+                  >
+                    {renderMessageText(msg.text, isUser)}
                   </View>
-                </View>
-              );
-            })}
 
-            {/* Indicador de escritura animado */}
-            {loading && (
-              <View style={[styles.messageRow, styles.botRow]}>
-                <Image 
-                  source={require('../../../assets/images/logo.png')} 
-                  style={styles.botAvatarImage} 
-                  resizeMode="contain"
-                />
-                <View style={[styles.bubble, styles.botBubble, styles.loadingBubble]}>
-                  <ActivityIndicator size="small" color={PURPLE} />
-                  <Text style={styles.loadingText}>Sula está analizando tu caso...</Text>
+                  {/* Renderizar Carrusel Horizontal de Profesionales Recomendados */}
+                  {msg.professionals && msg.professionals.length > 0 && (
+                    <View style={styles.recommendationSection}>
+                      <Text style={styles.recommendationTitle}>
+                        Profesionales sugeridos por Sula:
+                      </Text>
+                      <ScrollView 
+                        horizontal 
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.proCarousel}
+                      >
+                        {msg.professionals.map(renderProfessionalCard)}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
               </View>
-            )}
-          </ScrollView>
+            );
+          })}
 
-          {/* Input bar inferior */}
-          <View style={[
-            styles.inputArea, 
-            { paddingBottom: isKbActive ? 8 : 12 }
-          ]}>
-            <TextInput
-              style={styles.input}
-              placeholder="Pregúntale a Sula sobre tu problema..."
-              placeholderTextColor="#999"
-              value={input}
-              onChangeText={setInput}
-              multiline
-              maxLength={500}
-              onSubmitEditing={handleSend}
-              blurOnSubmit={false}
-            />
-            <TouchableOpacity 
-              style={[styles.sendButton, !input.trim() && styles.disabledSendButton]}
-              onPress={handleSend}
-              disabled={!input.trim() || loading}
-              activeOpacity={0.8}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <MaterialCommunityIcons name="send" size={20} color="white" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </View>
+          {/* Indicador de escritura animado */}
+          {loading && (
+            <View style={[styles.messageRow, styles.botRow]}>
+              <Image 
+                source={require('../../../assets/images/logo.png')} 
+                style={styles.botAvatarImage} 
+                resizeMode="contain"
+              />
+              <View style={[styles.bubble, styles.botBubble, styles.loadingBubble]}>
+                <ActivityIndicator size="small" color={PURPLE} />
+                <Text style={styles.loadingText}>Sula está analizando tu caso...</Text>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Input bar inferior */}
+        <View style={styles.inputArea}>
+          <TextInput
+            style={styles.input}
+            placeholder="Pregúntale a Sula sobre tu problema..."
+            placeholderTextColor="#999"
+            value={input}
+            onChangeText={setInput}
+            multiline
+            maxLength={500}
+            onSubmitEditing={handleSend}
+          />
+          <TouchableOpacity 
+            style={[styles.sendButton, !input.trim() && styles.disabledSendButton]}
+            onPress={handleSend}
+            disabled={!input.trim() || loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <MaterialCommunityIcons name="send" size={20} color="white" />
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
 
       {/* Modal: Reportar Mal Funcionamiento de Sula AI 🚨 */}
       <Modal visible={showReportModal} transparent animationType="fade" onRequestClose={() => !submittingReport && setShowReportModal(false)}>
-        <View style={styles.reportModalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.reportModalOverlay}
+        >
           <TouchableOpacity 
             style={styles.reportModalBackdrop} 
             activeOpacity={1} 
@@ -384,7 +368,7 @@ export default function AiScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </MainLayout>
   );
@@ -393,26 +377,7 @@ export default function AiScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    height: '100%',
-    maxHeight: '100%',
-    overflow: 'hidden',
     backgroundColor: 'white',
-  },
-  containerLarge: {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ECECF1',
-    overflow: 'hidden',
-    ...Platform.select({
-      web: { boxShadow: '0px 4px 16px rgba(0,0,0,0.06)' } as any,
-      default: {
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-      }
-    })
   },
   header: {
     flexDirection: 'row',
@@ -432,12 +397,6 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
       }
     }),
-  },
-  headerLarge: {
-    paddingTop: 18,
-    paddingBottom: 18,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
   },
   headerAvatarContainer: {
     position: 'relative',
@@ -495,17 +454,11 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.9)',
     marginTop: 1,
   },
-  chatBody: {
+  contentWrapper: {
     flex: 1,
-    minHeight: 0,
-    overflow: 'hidden',
-    width: '100%',
-    backgroundColor: '#F9F9FB',
   },
   chatArea: {
     flex: 1,
-    minHeight: 0,
-    overflow: 'hidden',
     backgroundColor: '#F9F9FB',
   },
   chatContent: {
@@ -594,6 +547,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
+    marginTop: 5,
     borderTopWidth: 1,
     borderTopColor: '#ECECF1',
     backgroundColor: 'white',
@@ -722,14 +676,14 @@ const styles = StyleSheet.create({
   },
 
   reportHeaderBtn: { 
-    width: 36, 
-    height: 36, 
-    borderRadius: 18, 
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', 
-    borderWidth: 1, 
-    borderColor: 'rgba(255, 255, 255, 0.25)', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: 8,
   },
 
@@ -828,10 +782,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB', 
     padding: 12, 
     fontSize: 14, 
-    color: '#1F2937',
-    ...Platform.select({
-      web: { outlineStyle: 'none' } as any
-    })
+    color: '#1F2937' 
   },
   reportCharCount: { 
     alignSelf: 'flex-end', 

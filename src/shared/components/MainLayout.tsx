@@ -8,7 +8,6 @@ import type { RootStackParamList } from '../../core/navigation/types';
 
 import { useAppBadges } from '../hooks/useAppBadges';
 import { useResponsive } from '../hooks/useResponsive';
-import { useKeyboardAdjustment } from '../hooks/useKeyboardAdjustment';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -55,8 +54,22 @@ const SidebarItem = React.memo(({ name, icon, label, active, unreadChatsCount, n
 export default function MainLayout({ children, active, hideBottomNav = false }: MainLayoutProps) {
   const { isLargeScreen } = useResponsive();
   const nav = useNavigation<Nav>();
-  const { keyboardVisible } = useKeyboardAdjustment();
+  const [keyboardVisible, setKeyboardVisible] = React.useState(false);
   const { unreadChatsCount } = useAppBadges();
+
+  React.useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const isDesktop = isLargeScreen;
 

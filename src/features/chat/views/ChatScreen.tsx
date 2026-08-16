@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, Animated, Platform, Image } from "react-native";
+import React, { useState, useRef, useCallback } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform, Alert, Image, Keyboard } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -7,7 +7,6 @@ import type { RootStackParamList } from "../../../core/navigation/types";
 import { useChatController, Message } from "../controllers/useChatController";
 import { isSameDay, formatChatDividerDate } from "../../../shared/utils/dateUtils";
 import { useResponsive } from "../../../shared/hooks/useResponsive";
-import { useKeyboardAdjustment } from "../../../shared/hooks/useKeyboardAdjustment";
 
 const PURPLE = "#5A2D82";
 
@@ -15,8 +14,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "Chat">;
 
 export default function ChatScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { isLargeScreen } = useResponsive();
-  const { keyboardVisible, keyboardOffset, animatedPaddingBottom, viewportHeight } = useKeyboardAdjustment();
+  const { height: windowHeight, isLargeScreen } = useResponsive();
+  const ContainerComponent = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
   const { chatId, otherUserId } = route.params;
   const vm = useChatController(chatId, otherUserId);
   const [showServicePicker, setShowServicePicker] = useState(false);
@@ -26,15 +25,30 @@ export default function ChatScreen({ route, navigation }: Props) {
   const [submittingReport, setSubmittingReport] = useState(false);
   const [text, setText] = useState("");
   const flatListRef = useRef<FlatList>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
-  // Auto-scroll al final del chat cuando se abre el teclado o llegan nuevos mensajes
-  useEffect(() => {
-    if (keyboardVisible || keyboardOffset > 0) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }
-  }, [keyboardVisible, keyboardOffset, vm.messages.length]);
+  React.useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        setKeyboardVisible(true);
+      }
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const canChat = true;
 
@@ -202,10 +216,7 @@ export default function ChatScreen({ route, navigation }: Props) {
     if (vm.activeJob?.estado === 'rejected') lockMessage = "Solicita un trabajo para iniciar el chat";
 
     return (
-      <View style={[
-        styles.lockedInputBar, 
-        { paddingBottom: (keyboardVisible || keyboardOffset > 0) ? 8 : (isLargeScreen ? 12 : Math.max(insets.bottom, 8)) }
-      ]}>
+      <View style={[styles.lockedInputBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
         <MaterialCommunityIcons name="lock" size={18} color="#999" />
         <Text style={styles.lockedText}>{lockMessage}</Text>
       </View>
@@ -230,138 +241,121 @@ export default function ChatScreen({ route, navigation }: Props) {
     }
   };
 
-  const isKbActive = keyboardVisible || keyboardOffset > 0;
-  const headerTopPadding = isLargeScreen ? 8 : insets.top + 4;
-  const headerTotalHeight = isLargeScreen ? 64 : 60 + insets.top;
-
   return (
-    <View 
+    <ContainerComponent 
       style={[
         styles.container,
-        Platform.OS === 'web' && viewportHeight ? { height: viewportHeight } : null
+        Platform.OS === 'android' && {
+          height: keyboardVisible ? windowHeight - keyboardHeight + 22 : '100%',
+          position: keyboardVisible ? 'absolute' : 'relative',
+          top: 0,
+          left: 0,
+          right: 0
+        }
       ]}
+      behavior="padding"
+      keyboardVerticalOffset={0}
     >
-      <View style={[styles.chatCardWrapper, isLargeScreen && styles.chatCardWrapperLarge]}>
-        {/* Cabecera del Chat - 100% FIJA E INMÓVIL EN LA PARTE SUPERIOR */}
-        <View style={[
-          styles.header, 
-          isLargeScreen 
-            ? styles.headerLarge 
-            : { paddingTop: headerTopPadding, paddingBottom: 4, height: headerTotalHeight }
-        ]}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backHeaderBtn} activeOpacity={0.7}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="white" />
-            </TouchableOpacity>
+      <View style={[styles.header, { paddingTop: insets.top + 5, paddingBottom: 5, height: 60 + insets.top }]}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backHeaderBtn} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="white" />
+          </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.userInfoContainer}
-              activeOpacity={0.8}
-              onPress={() => navigation.navigate("PublicProfile", { id: otherUserId, fromChat: true })}
-            >
-              {vm.otherUser?.foto_perfil ? (
-                <Image
-                  source={{ uri: vm.otherUser.foto_perfil }}
-                  style={styles.headerAvatar}
-                />
-              ) : (
-                <View style={styles.headerAvatarPlaceholder}>
-                  <Text style={styles.headerAvatarInitials}>
-                    {vm.otherUser ? `${vm.otherUser.nombre?.[0] || ''}${vm.otherUser.apellidos?.[0] || ''}`.toUpperCase() : 'U'}
-                  </Text>
-                </View>
-              )}
-              <View style={styles.headerTextCol}>
-                <Text style={styles.headerTitle} numberOfLines={1}>
-                  {vm.otherUser ? `${vm.otherUser.nombre} ${vm.otherUser.apellidos}`.trim() : 'Usuario'}
-                </Text>
-                <Text style={styles.headerSubtitleText} numberOfLines={1}>
-                  {vm.activeJob?.perfiles_profesionales?.profesion 
-                    ? vm.activeJob.perfiles_profesionales.profesion 
-                    : 'Toca para ver perfil'}
+          <TouchableOpacity 
+            style={styles.userInfoContainer}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate("PublicProfile", { id: otherUserId, fromChat: true })}
+          >
+            {vm.otherUser?.foto_perfil ? (
+              <Image
+                source={{ uri: vm.otherUser.foto_perfil }}
+                style={styles.headerAvatar}
+              />
+            ) : (
+              <View style={styles.headerAvatarPlaceholder}>
+                <Text style={styles.headerAvatarInitials}>
+                  {vm.otherUser ? `${vm.otherUser.nombre?.[0] || ''}${vm.otherUser.apellidos?.[0] || ''}`.toUpperCase() : 'U'}
                 </Text>
               </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={handleOpenReportModal} 
-              style={styles.reportHeaderBtn} 
-              activeOpacity={0.7}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <MaterialCommunityIcons name="shield-alert-outline" size={20} color="#FFA8A8" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {renderJobBanner()}
-
-        {/* Zona dinámica de mensajes y cuadro de texto que sube suavemente con el teclado */}
-        <Animated.View style={[styles.chatBody, { paddingBottom: animatedPaddingBottom }]}>
-          {/* Lista de Mensajes */}
-          <View style={styles.listContainer}>
-            <FlatList
-              ref={flatListRef}
-              data={vm.messages}
-              keyExtractor={(item) => item.id}
-              renderItem={renderMessage}
-              contentContainerStyle={[
-                styles.messagesList, 
-                vm.messages.length === 0 && styles.messagesEmpty
-              ]}
-              keyboardShouldPersistTaps="handled"
-              ListEmptyComponent={
-                <View style={styles.emptyChat}>
-                  <MaterialCommunityIcons name="chat-outline" size={48} color="#DDD" />
-                  <Text style={styles.emptyChatText}>
-                    {canChat ? "Envía el primer mensaje" : "No hay mensajes aún"}
-                  </Text>
-                </View>
-              }
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-              onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-            />
-          </View>
-
-          {/* Barra de Entrada de Texto */}
-          {canChat ? (
-            <View style={[
-              styles.inputBar, 
-              { 
-                paddingBottom: isKbActive ? 8 : (isLargeScreen ? 12 : Math.max(insets.bottom, 8)) 
-              }
-            ]}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Escribe un mensaje..."
-                placeholderTextColor="#999"
-                value={text}
-                onChangeText={setText}
-                multiline
-                maxLength={1000}
-                onSubmitEditing={handleSend}
-                blurOnSubmit={false}
-              />
-              <TouchableOpacity 
-                style={[styles.sendButton, (!text.trim() || vm.sending) && styles.sendButtonDisabled]} 
-                onPress={handleSend}
-                disabled={!text.trim() || vm.sending}
-                activeOpacity={0.8}
-              >
-                {vm.sending ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <MaterialCommunityIcons name="send" size={22} color="white" />
-                )}
-              </TouchableOpacity>
+            )}
+            <View style={styles.headerTextCol}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {vm.otherUser ? `${vm.otherUser.nombre} ${vm.otherUser.apellidos}`.trim() : 'Usuario'}
+              </Text>
+              <Text style={styles.headerSubtitleText} numberOfLines={1}>
+                {vm.activeJob?.perfiles_profesionales?.profesion 
+                  ? vm.activeJob.perfiles_profesionales.profesion 
+                  : 'Toca para ver perfil'}
+              </Text>
             </View>
-          ) : (
-            renderLockedInput()
-          )}
-        </Animated.View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={handleOpenReportModal} 
+            style={styles.reportHeaderBtn} 
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <MaterialCommunityIcons name="shield-alert-outline" size={20} color="#FFA8A8" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Modal Selección de Servicio */}
+      {renderJobBanner()}
+
+      <View style={styles.listContainer}>
+        <FlatList
+        ref={flatListRef}
+        data={vm.messages}
+        keyExtractor={(item) => item.id}
+        renderItem={renderMessage}
+        contentContainerStyle={[
+          styles.messagesList, 
+          vm.messages.length === 0 && styles.messagesEmpty
+        ]}
+        ListEmptyComponent={
+          <View style={styles.emptyChat}>
+            <MaterialCommunityIcons name="chat-outline" size={48} color="#DDD" />
+            <Text style={styles.emptyChatText}>
+              {canChat ? "Envía el primer mensaje" : "No hay mensajes aún"}
+            </Text>
+          </View>
+        }
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+        />
+      </View>
+
+      {canChat ? (
+        <View style={[styles.inputBar, { paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom, 8) }]}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Escribe un mensaje..."
+            placeholderTextColor="#999"
+            value={text}
+            onChangeText={setText}
+            multiline
+            maxLength={1000}
+            onSubmitEditing={handleSend}
+            blurOnSubmit={false}
+          />
+          <TouchableOpacity 
+            style={[styles.sendButton, (!text.trim() || vm.sending) && styles.sendButtonDisabled]} 
+            onPress={handleSend}
+            disabled={!text.trim() || vm.sending}
+          >
+            {vm.sending ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <MaterialCommunityIcons name="send" size={22} color="white" />
+            )}
+          </TouchableOpacity>
+        </View>
+      ) : (
+        renderLockedInput()
+      )}
+
+
       <Modal visible={showServicePicker} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -388,7 +382,10 @@ export default function ChatScreen({ route, navigation }: Props) {
 
       {/* Modal: 🚨 Reportar Chat */}
       <Modal visible={showReportModal} transparent animationType="fade" onRequestClose={() => !submittingReport && setShowReportModal(false)}>
-        <View style={styles.reportModalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.reportModalOverlay}
+        >
           <TouchableOpacity 
             style={styles.reportModalBackdrop} 
             activeOpacity={1} 
@@ -490,61 +487,21 @@ export default function ChatScreen({ route, navigation }: Props) {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </ContainerComponent>
   );
 }
 
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F6F6F8" },
-  container: { 
-    flex: 1, 
-    height: '100%',
-    maxHeight: '100%',
-    overflow: 'hidden',
-    backgroundColor: "#F6F6F8" 
-  },
-  chatCardWrapper: {
-    flex: 1,
-    height: '100%',
-    overflow: 'hidden',
-    width: '100%',
-    backgroundColor: '#F6F6F8',
-  },
-  chatCardWrapperLarge: {
-    maxWidth: 960,
-    alignSelf: 'center',
-    backgroundColor: 'white',
-    borderRadius: 20,
-    marginVertical: 14,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#ECECF1',
-    ...Platform.select({
-      web: { boxShadow: '0px 8px 24px rgba(0,0,0,0.08)' } as any,
-      default: {
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 10,
-      }
-    })
-  },
+  container: { flex: 1, backgroundColor: "#F6F6F8" },
   header: { 
     backgroundColor: PURPLE, 
     paddingHorizontal: 8, 
     justifyContent: 'center',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)'
-  },
-  headerLarge: {
-    height: 64,
-    paddingTop: 8,
-    paddingBottom: 8,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
   },
   headerContent: { 
     flexDirection: 'row', 
@@ -601,29 +558,17 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   reportHeaderBtn: { 
-    width: 36, 
-    height: 36, 
-    borderRadius: 18, 
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', 
-    borderWidth: 1, 
-    borderColor: 'rgba(255, 255, 255, 0.25)', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: 8,
   },
-  chatBody: {
-    flex: 1,
-    minHeight: 0,
-    overflow: 'hidden',
-    width: '100%',
-    backgroundColor: '#F6F6F8',
-  },
-  listContainer: { 
-    flex: 1, 
-    minHeight: 0,
-    overflow: 'hidden',
-    backgroundColor: "#F6F6F8" 
-  },
+  listContainer: { flex: 1, backgroundColor: "#F6F6F8" },
 
   bannerContainer: { backgroundColor: 'white', padding: 16, borderBottomWidth: 1, borderBottomColor: '#ECECF1' },
   bannerPending: { backgroundColor: '#fff3cd', flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -693,43 +638,12 @@ const styles = StyleSheet.create({
   msgTime: { fontSize: 11, color: '#999', marginTop: 4, textAlign: 'right' },
   msgTimeMe: { color: 'rgba(255,255,255,0.7)' },
 
-  inputBar: { 
-    flexDirection: 'row', 
-    alignItems: 'flex-end', 
-    paddingHorizontal: 12, 
-    paddingTop: 8, 
-    backgroundColor: 'white', 
-    borderTopWidth: 1, 
-    borderTopColor: '#ECECF1', 
-    gap: 8 
-  },
-  textInput: { 
-    flex: 1, 
-    backgroundColor: '#F6F6F8', 
-    borderRadius: 20, 
-    paddingHorizontal: 16, 
-    paddingVertical: 10, 
-    fontSize: 15, 
-    maxHeight: 120, 
-    color: '#333',
-    ...Platform.select({
-      web: { outlineStyle: 'none' } as any
-    })
-  },
+  inputBar: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 12, paddingTop: 8, backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#ECECF1', gap: 8 },
+  textInput: { flex: 1, backgroundColor: '#F6F6F8', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, maxHeight: 100, color: '#333' },
   sendButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: PURPLE, justifyContent: 'center', alignItems: 'center' },
   sendButtonDisabled: { opacity: 0.5 },
 
-  lockedInputBar: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    paddingHorizontal: 16, 
-    paddingTop: 12, 
-    backgroundColor: '#F0F0F0', 
-    borderTopWidth: 1, 
-    borderTopColor: '#ECECF1', 
-    gap: 8 
-  },
+  lockedInputBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingTop: 12, backgroundColor: '#F0F0F0', borderTopWidth: 1, borderTopColor: '#ECECF1', gap: 8 },
   lockedText: { color: '#999', fontSize: 13, fontWeight: '600' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
@@ -836,10 +750,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB', 
     padding: 12, 
     fontSize: 14, 
-    color: '#1F2937',
-    ...Platform.select({
-      web: { outlineStyle: 'none' } as any
-    })
+    color: '#1F2937' 
   },
   reportCharCount: { 
     alignSelf: 'flex-end', 
