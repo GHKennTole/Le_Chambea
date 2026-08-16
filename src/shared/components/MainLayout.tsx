@@ -92,8 +92,8 @@ export default function MainLayout({ children, active, hideBottomNav = false }: 
 
   if (!isDesktop) {
     return (
-      <View style={{ flex: 1, backgroundColor: 'white' }}>
-        <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, height: '100%', minHeight: 0, overflow: 'hidden', backgroundColor: 'white' }}>
+        <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
           {children}
         </View>
         {!hideBottomNav && !keyboardVisible && (

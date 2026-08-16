@@ -286,13 +286,14 @@ export default function ChatScreen({ route, navigation }: Props) {
           left: 0,
           right: 0
         },
-        Platform.OS === 'web' && {
-          height: keyboardVisible ? `calc(100% - ${keyboardHeight}px)` : '100%',
-          maxHeight: '100vh',
+        Platform.OS === 'web' && ({
+          height: '100%',
+          maxHeight: '100%',
+          minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden'
-        } as any
+        } as any)
       ]}
       behavior="padding"
       keyboardVerticalOffset={0}
@@ -542,13 +543,21 @@ export default function ChatScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F6F6F8" },
-  container: { flex: 1, backgroundColor: "#F6F6F8" },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#F6F6F8",
+    height: '100%',
+    minHeight: 0,
+    overflow: 'hidden',
+  },
   header: { 
     backgroundColor: PURPLE, 
     paddingHorizontal: 8, 
     justifyContent: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)'
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+    zIndex: 10,
+    flexShrink: 0,
   },
   headerContent: { 
     flexDirection: 'row', 
@@ -615,7 +624,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 8,
   },
-  listContainer: { flex: 1, backgroundColor: "#F6F6F8" },
+  listContainer: { 
+    flex: 1, 
+    backgroundColor: "#F6F6F8",
+    minHeight: 0,
+    overflow: 'hidden',
+  },
 
   bannerContainer: { backgroundColor: 'white', padding: 16, borderBottomWidth: 1, borderBottomColor: '#ECECF1' },
   bannerPending: { backgroundColor: '#fff3cd', flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -10,11 +10,18 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
   style.textContent = `
     html, body, #root {
       height: 100%;
+      width: 100%;
       margin: 0;
       padding: 0;
+      overflow: hidden;
+      position: fixed;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
-      overscroll-behavior-y: none;
+      overscroll-behavior: none;
     }
     input, textarea, [contenteditable] {
       outline: none !important;

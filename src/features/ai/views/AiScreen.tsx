@@ -392,6 +392,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
+    height: '100%',
+    minHeight: 0,
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
@@ -401,6 +404,8 @@ const styles = StyleSheet.create({
     backgroundColor: PURPLE,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
+    zIndex: 10,
+    flexShrink: 0,
     ...Platform.select({
       web: { boxShadow: '0px 4px 12px rgba(90,45,130,0.2)' } as any,
       default: {
@@ -470,9 +475,11 @@ const styles = StyleSheet.create({
   },
   contentWrapper: {
     flex: 1,
+    minHeight: 0,
   },
   chatArea: {
     flex: 1,
+    minHeight: 0,
     backgroundColor: '#F9F9FB',
   },
   chatContent: {
