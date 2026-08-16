@@ -419,7 +419,7 @@ export default function ChatScreen({ route, navigation }: Props) {
             {vm.sending ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <MaterialCommunityIcons name="send" size={22} color="white" />
+              <MaterialCommunityIcons name="send" size={19} color="white" />
             )}
           </TouchableOpacity>
         </View>
@@ -723,9 +723,40 @@ const styles = StyleSheet.create({
   msgTime: { fontSize: 11, color: '#999', marginTop: 4, textAlign: 'right' },
   msgTimeMe: { color: 'rgba(255,255,255,0.7)' },
 
-  inputBar: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 12, paddingTop: 8, backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#ECECF1', gap: 8 },
-  textInput: { flex: 1, backgroundColor: '#F6F6F8', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, maxHeight: 100, color: '#333' },
-  sendButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: PURPLE, justifyContent: 'center', alignItems: 'center' },
+  inputBar: { 
+    flexDirection: 'row', 
+    alignItems: 'flex-end', 
+    paddingHorizontal: 10, 
+    paddingTop: 6, 
+    backgroundColor: 'white', 
+    borderTopWidth: 1, 
+    borderTopColor: '#ECECF1', 
+    gap: 8, 
+    flexShrink: 0 
+  },
+  textInput: { 
+    flex: 1, 
+    backgroundColor: '#F6F6F8', 
+    borderRadius: 20, 
+    paddingHorizontal: 14, 
+    paddingTop: 8, 
+    paddingBottom: 8, 
+    fontSize: 14.5, 
+    lineHeight: 19,
+    minHeight: 38, 
+    maxHeight: 110, 
+    color: '#333',
+    textAlignVertical: 'center',
+  },
+  sendButton: { 
+    width: 38, 
+    height: 38, 
+    borderRadius: 19, 
+    backgroundColor: PURPLE, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    marginBottom: 0,
+  },
   sendButtonDisabled: { opacity: 0.5 },
 
   lockedInputBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingTop: 12, backgroundColor: '#F0F0F0', borderTopWidth: 1, borderTopColor: '#ECECF1', gap: 8 },

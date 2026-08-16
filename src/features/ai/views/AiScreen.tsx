@@ -364,7 +364,7 @@ export default function AiScreen() {
             {loading ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <MaterialCommunityIcons name="send" size={20} color="white" />
+              <MaterialCommunityIcons name="send" size={18} color="white" />
             )}
           </TouchableOpacity>
         </View>
@@ -661,35 +661,41 @@ const styles = StyleSheet.create({
   },
   inputArea: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    marginTop: 0,
+    alignItems: 'flex-end',
+    paddingHorizontal: 10,
+    paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: '#ECECF1',
     backgroundColor: 'white',
+    gap: 8,
     flexShrink: 0,
   },
   input: {
     flex: 1,
     backgroundColor: '#F3F3F5',
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 15,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    paddingBottom: 8,
+    fontSize: 14.5,
+    lineHeight: 19,
+    minHeight: 38,
+    maxHeight: 110,
     color: '#333',
-    maxHeight: 100,
+    textAlignVertical: 'center',
     ...Platform.select({
       web: { outlineStyle: 'none' } as any
     })
   },
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: PURPLE,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 10,
+    marginLeft: 0,
+    marginBottom: 0,
   },
   disabledSendButton: {
     backgroundColor: '#C5B3D8',
