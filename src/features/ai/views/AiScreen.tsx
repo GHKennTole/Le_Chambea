@@ -321,11 +321,13 @@ export default function AiScreen() {
                     {renderMessageText(msg.text, isUser)}
                   </View>
 
-                  {/* Renderizar Carrusel Horizontal de Profesionales Recomendados */}
+                  {/* Renderizar Tarjeta o Carrusel de Profesional Recomendado */}
                   {msg.professionals && msg.professionals.length > 0 && (
                     <View style={styles.recommendationSection}>
                       <Text style={styles.recommendationTitle}>
-                        Profesionales sugeridos por Sula:
+                        {msg.professionals.length > 1
+                          ? "Profesionales sugeridos por Sula:"
+                          : "Profesional sugerido por Sula:"}
                       </Text>
                       <ScrollView 
                         horizontal 

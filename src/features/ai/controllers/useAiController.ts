@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Platform, Alert } from 'react-native';
 import { supabase } from '../../../services/supabase';
 import { 
@@ -26,6 +26,29 @@ export type RecommendedProfessional = {
   totalResenas: number;
   descripcion: string;
 };
+
+export type QueryProfessionalsResult = {
+  chosen: RecommendedProfessional | null;
+  totalMatches: number;
+  hasMore: boolean;
+  allAlreadyShown: boolean;
+};
+
+const STOP_WORDS = new Set([
+  'de', 'la', 'el', 'los', 'las', 'un', 'una', 'unos', 'unas', 'del', 'al',
+  'y', 'o', 'en', 'para', 'por', 'con', 'sin', 'sobre', 'que', 'se', 'mi',
+  'su', 'tu', 'como', 'busco', 'necesito', 'quiero', 'ayuda', 'servicio',
+  'urgente', 'alguien', 'quien', 'haga', 'arregle', 'favor'
+]);
+
+function extractKeywords(rawQuery: string): string[] {
+  return rawQuery
+    .toLowerCase()
+    .replace(/[^\w\sáéíóúüñ]/gi, ' ')
+    .split(/\s+/)
+    .map(w => w.trim())
+    .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
+}
 
 const getFriendlyErrorMessage = (errMessage: string): string => {
   const msg = (errMessage || '').toLowerCase();
@@ -66,19 +89,40 @@ export function useAiController() {
     {
       id: 'welcome',
       sender: 'bot',
-      text: '¡Hola! Soy Sula, tu asistente de Le Chambea. 🛠️\n\n¿En qué te puedo ayudar hoy?',
+      text: '¡Hola! Soy Sula, el asistente virtual de Le Chambea. 🛠️\n\n¿En qué te puedo ayudar hoy?',
       createdAt: new Date()
     }
   ]);
   const [loading, setLoading] = useState(false);
   const [input, setInput] = useState('');
 
-  // Busca profesionales en Supabase basándose en el término deducido
-  const queryProfessionals = async (query: string): Promise<RecommendedProfessional[]> => {
+  // Registro de IDs de profesionales ya recomendados en la sesión actual para evitar repeticiones inmediatas
+  const shownProfessionalIdsRef = useRef<Set<string>>(new Set());
+
+  // Busca profesionales en Supabase basados en coincidencia de palabras clave y selecciona 1 al azar sin favoritismos
+  const queryProfessionals = async (query: string): Promise<QueryProfessionalsResult> => {
     try {
       const cleanQuery = query.trim().toLowerCase();
-      
-      // Consultar perfiles de profesionales activos que coincidan en profesión, descripción o categoría
+      const keywords = extractKeywords(cleanQuery);
+
+      // Condiciones de búsqueda OR: coincidencia con la frase completa y con palabras clave individuales
+      const conditions: string[] = [
+        `profesion.ilike.%${cleanQuery}%`,
+        `categoria.ilike.%${cleanQuery}%`,
+        `descripcion.ilike.%${cleanQuery}%`
+      ];
+
+      keywords.forEach(kw => {
+        if (kw !== cleanQuery) {
+          conditions.push(`profesion.ilike.%${kw}%`);
+          conditions.push(`categoria.ilike.%${kw}%`);
+          conditions.push(`descripcion.ilike.%${kw}%`);
+        }
+      });
+
+      const orFilter = Array.from(new Set(conditions)).join(',');
+
+      // Consultar perfiles de profesionales activos que coincidan
       const { data: profilesData, error: profilesError } = await supabase
         .from('perfiles_profesionales')
         .select(`
@@ -91,24 +135,29 @@ export function useAiController() {
           usuarios:usuario_id(nombre, apellidos, foto_perfil)
         `)
         .eq('esta_activo', true)
-        .or(`profesion.ilike.%${cleanQuery}%,categoria.ilike.%${cleanQuery}%,descripcion.ilike.%${cleanQuery}%`)
-        .limit(6);
+        .or(orFilter)
+        .limit(30);
 
       if (profilesError) throw profilesError;
-      if (!profilesData || profilesData.length === 0) return [];
+      if (!profilesData || profilesData.length === 0) {
+        return {
+          chosen: null,
+          totalMatches: 0,
+          hasMore: false,
+          allAlreadyShown: false
+        };
+      }
 
       const profileIds = profilesData.map(p => p.id);
 
-      // Consultar reseñas de estos profesionales para calcular el rating y total de comentarios
-      const { data: reviewsData, error: reviewsError } = await supabase
+      // Consultar reseñas de estos profesionales
+      const { data: reviewsData } = await supabase
         .from('resenas')
         .select('perfil_profesional_id, calificacion')
         .in('perfil_profesional_id', profileIds);
 
-      if (reviewsError) throw reviewsError;
-
-      // Mapear los profesionales y calcular sus ratings promedio
-      return profilesData.map((p: any) => {
+      // Mapear los profesionales encontrados
+      const allMatchingPros: RecommendedProfessional[] = profilesData.map((p: any) => {
         const profileReviews = reviewsData?.filter(r => r.perfil_profesional_id === p.id) || [];
         const count = profileReviews.length;
         const sum = profileReviews.reduce((acc, curr) => acc + curr.calificacion, 0);
@@ -126,9 +175,44 @@ export function useAiController() {
           descripcion: p.descripcion || ''
         };
       });
+
+      // FILOSOFÍA DE CERO FAVORITISMO:
+      // Filtramos los que no se hayan mostrado todavía en la sesión
+      const unshownPros = allMatchingPros.filter(p => !shownProfessionalIdsRef.current.has(p.id));
+
+      let chosenPro: RecommendedProfessional;
+      let allAlreadyShown = false;
+
+      if (unshownPros.length > 0) {
+        // Seleccionar 1 al azar entre los no mostrados
+        const randomIndex = Math.floor(Math.random() * unshownPros.length);
+        chosenPro = unshownPros[randomIndex];
+        shownProfessionalIdsRef.current.add(chosenPro.id);
+      } else {
+        // Si todos los candidatos ya fueron mostrados previamente, reiniciar el ciclo y seleccionar 1 al azar
+        allAlreadyShown = true;
+        const randomIndex = Math.floor(Math.random() * allMatchingPros.length);
+        chosenPro = allMatchingPros[randomIndex];
+        shownProfessionalIdsRef.current.clear();
+        shownProfessionalIdsRef.current.add(chosenPro.id);
+      }
+
+      const hasMore = allMatchingPros.length > 1;
+
+      return {
+        chosen: chosenPro,
+        totalMatches: allMatchingPros.length,
+        hasMore,
+        allAlreadyShown
+      };
     } catch (error) {
       console.error('❌ Error buscando profesionales en Supabase:', error);
-      return [];
+      return {
+        chosen: null,
+        totalMatches: 0,
+        hasMore: false,
+        allAlreadyShown: false
+      };
     }
   };
 
@@ -151,9 +235,9 @@ export function useAiController() {
     setLoading(true);
 
     try {
-      // 1. Construir el historial compatible con Gemini API
-      // Transformamos los mensajes locales a formato Gemini
-      const geminiHistory: GeminiMessage[] = newMessages.map(msg => ({
+      // 1. Construir el historial compatible con Gemini API (iniciando siempre con rol 'user')
+      const conversationMessages = newMessages.filter(msg => msg.id !== 'welcome');
+      const geminiHistory: GeminiMessage[] = conversationMessages.map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'model',
         parts: [{ text: msg.text }]
       }));
@@ -177,43 +261,43 @@ export function useAiController() {
 
         if (name === 'search_professionals') {
           const searchQuery = args.searchQuery || '';
-          console.log(`🤖 Sula solicitó buscar profesionales para: "${searchQuery}"`);
+          console.log(`🤖 Sula solicitó buscar profesional para: "${searchQuery}"`);
 
-          // 3. Ejecutar la búsqueda de Supabase
-          const databaseResults = await queryProfessionals(searchQuery);
+          // 3. Ejecutar la búsqueda de Supabase y selección aleatoria equitativa
+          const searchResult = await queryProfessionals(searchQuery);
+
+          const functionResponseData = searchResult.chosen
+            ? {
+                candidato_seleccionado_al_azar: {
+                  id: searchResult.chosen.id,
+                  nombre: searchResult.chosen.nombre,
+                  profesion: searchResult.chosen.profesion,
+                  categoria: searchResult.chosen.categoria,
+                  descripcion: searchResult.chosen.descripcion
+                },
+                total_candidatos_coincidentes: searchResult.totalMatches,
+                hay_mas_opciones_disponibles: searchResult.hasMore,
+                todos_mostrados_previamente: searchResult.allAlreadyShown
+              }
+            : {
+                candidatos_encontrados: 0,
+                mensaje: "No se encontraron profesionales con esas palabras clave en la base de datos."
+              };
 
           // 4. Construir el historial expandido con la llamada a función y su resultado
           const expandedHistory: GeminiMessage[] = [
             ...geminiHistory,
-            // Agregamos la intención de llamada a función del modelo
             {
               role: 'model',
-              parts: [
-                {
-                  functionCall: {
-                    name: 'search_professionals',
-                    args: { searchQuery }
-                  }
-                }
-              ]
+              parts: parts
             },
-            // Agregamos la respuesta de la base de datos (Supabase) como functionResponse
             {
               role: 'user',
               parts: [
                 {
                   functionResponse: {
                     name: 'search_professionals',
-                    response: {
-                      candidatos: databaseResults.map(p => ({
-                        id: p.id,
-                        nombre: p.nombre,
-                        profesion: p.profesion,
-                        calificacion: p.calificacion,
-                        total_resenas: p.totalResenas,
-                        descripcion: p.descripcion.substring(0, 100) + '...'
-                      }))
-                    }
+                    response: functionResponseData
                   }
                 }
               ]
@@ -226,13 +310,13 @@ export function useAiController() {
           const finalParts = finalCandidate?.content?.parts || [];
           const finalText = finalParts.map((p: any) => p.text || '').join('');
 
-          // Agregar el mensaje final con las tarjetas de profesionales recomendados adjuntos
+          // Agregar el mensaje final con la tarjeta del profesional recomendado adjunta
           const botMessage: Message = {
             id: `bot-${Date.now()}`,
             sender: 'bot',
-            text: finalText || 'He encontrado a algunos profesionales que te pueden ayudar. Puedes revisar sus perfiles a continuación:',
+            text: finalText || 'Te presento la siguiente opción para tu requerimiento. ¿Te parece bien o prefieres que busque a otro profesional?',
             createdAt: new Date(),
-            professionals: databaseResults
+            professionals: searchResult.chosen ? [searchResult.chosen] : undefined
           };
 
           setMessages(prev => [...prev, botMessage]);

@@ -156,7 +156,7 @@ export function useAdminAiAuditController() {
           ...geminiHistory,
           {
             role: "model",
-            parts: [functionCallPart],
+            parts: modelParts,
           },
           {
             role: "user",

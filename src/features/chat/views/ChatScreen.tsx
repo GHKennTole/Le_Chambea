@@ -7,6 +7,7 @@ import type { RootStackParamList } from "../../../core/navigation/types";
 import { useChatController, Message } from "../controllers/useChatController";
 import { isSameDay, formatChatDividerDate } from "../../../shared/utils/dateUtils";
 import { useResponsive } from "../../../shared/hooks/useResponsive";
+import MainLayout from "../../../shared/components/MainLayout";
 
 const PURPLE = "#5A2D82";
 
@@ -296,32 +297,40 @@ export default function ChatScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ContainerComponent 
-      style={[
-        styles.container,
-        Platform.OS !== 'web' && {
-          paddingBottom: keyboardHeight > 0 ? (keyboardHeight + (Platform.OS === 'android' && insets.bottom > 0 ? insets.bottom : 0)) : 0,
-        },
-        Platform.OS === 'web' && ({
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: webHeight ? `${webHeight}px` : '100dvh',
-          maxHeight: webHeight ? `${webHeight}px` : '100dvh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          zIndex: 1,
-        } as any)
-      ]}
-    >
-      <View style={[styles.header, { paddingTop: insets.top + 5, paddingBottom: 5, height: 60 + insets.top }]}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backHeaderBtn} activeOpacity={0.7}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="white" />
-          </TouchableOpacity>
+    <MainLayout active="ChatList" hideBottomNav={true}>
+      <ContainerComponent 
+        style={[
+          styles.container,
+          Platform.OS !== 'web' && {
+            paddingBottom: keyboardHeight > 0 ? (keyboardHeight + (Platform.OS === 'android' && insets.bottom > 0 ? insets.bottom : 0)) : 0,
+          },
+          Platform.OS === 'web' && ({
+            position: keyboardVisible ? 'fixed' : 'relative',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
+            maxHeight: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            zIndex: keyboardVisible ? 100 : 1,
+          } as any)
+        ]}
+      >
+        <View style={[
+          styles.header, 
+          { 
+            paddingTop: isLargeScreen ? 12 : insets.top + 5, 
+            paddingBottom: isLargeScreen ? 12 : 5, 
+            height: isLargeScreen ? 64 : (60 + insets.top) 
+          }
+        ]}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backHeaderBtn} activeOpacity={0.7}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color="white" />
+            </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.userInfoContainer}
@@ -586,6 +595,7 @@ export default function ChatScreen({ route, navigation }: Props) {
         </KeyboardAvoidingView>
       </Modal>
     </ContainerComponent>
+    </MainLayout>
   );
 }
 

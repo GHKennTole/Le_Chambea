@@ -59,20 +59,6 @@ export default function HeaderHome({
     <View style={[styles.container, { paddingTop: isDesktop ? 16 : insets.top + 12 }]}>
       {isDesktop ? (
         <View style={styles.webHeaderRow}>
-          {/* Logo y Marca Oficial con estilo Welcome */}
-          <View style={styles.brandContainer}>
-            <View style={styles.logoCircle}>
-              <Image 
-                source={require('../../assets/images/logo.png')} 
-                style={styles.brandLogo} 
-                resizeMode="contain" 
-              />
-            </View>
-            <Text style={styles.appTitle}>
-              LE CHAMBEA
-            </Text>
-          </View>
-
           {/* Buscador de escritorio en blanco contrastante */}
           <View style={[styles.searchBox, styles.webSearchBox]}>
             <TextInput 
