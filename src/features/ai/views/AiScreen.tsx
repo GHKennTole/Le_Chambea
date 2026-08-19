@@ -41,7 +41,7 @@ export default function AiScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [webHeight, setWebHeight] = useState<number | null>(null);
-  const [aiInputHeight, setAiInputHeight] = useState(44);
+  const [aiInputHeight, setAiInputHeight] = useState(42);
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener(
@@ -68,7 +68,7 @@ export default function AiScreen() {
       handleViewportResize = () => {
         const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
         setWebHeight(vh);
-        const isKb = (window.innerHeight - vh > 120) || (typeof window.screen !== 'undefined' && window.screen.height - vh > 200 && vh < window.innerHeight * 0.85);
+        const isKb = !isLargeScreen && ((window.innerHeight - vh > 120) || (typeof window.screen !== 'undefined' && window.screen.height - vh > 200 && vh < window.innerHeight * 0.85));
         setKeyboardVisible(isKb);
         if (window.scrollY !== 0 || window.scrollX !== 0) {
           window.scrollTo(0, 0);
@@ -97,7 +97,7 @@ export default function AiScreen() {
         window.removeEventListener('scroll', handleViewportResize);
       }
     };
-  }, []);
+  }, [isLargeScreen]);
 
   const handleOpenReportModal = () => {
     setReportReason("");
@@ -119,7 +119,7 @@ export default function AiScreen() {
 
   const onSendPress = () => {
     if (!input.trim() || loading) return;
-    setAiInputHeight(44);
+    setAiInputHeight(42);
     handleSend();
   };
 
@@ -132,7 +132,9 @@ export default function AiScreen() {
 
   const handleFocus = () => {
     if (Platform.OS === 'web') {
-      setKeyboardVisible(true);
+      if (!isLargeScreen) {
+        setKeyboardVisible(true);
+      }
       if (typeof window !== 'undefined') {
         setTimeout(() => {
           window.scrollTo(0, 0);
@@ -148,7 +150,7 @@ export default function AiScreen() {
   const handleBlur = () => {
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        if (typeof window !== 'undefined' && window.visualViewport) {
+        if (!isLargeScreen && typeof window !== 'undefined' && window.visualViewport) {
           const vh = window.visualViewport.height;
           const isKb = window.innerHeight - vh > 120;
           setKeyboardVisible(isKb);
@@ -232,7 +234,7 @@ export default function AiScreen() {
   };
 
   return (
-    <MainLayout active="AI" hideBottomNav={keyboardVisible}>
+    <MainLayout active="AI" hideBottomNav={!isLargeScreen && keyboardVisible}>
       <ContainerComponent 
         style={[
           styles.container,
@@ -240,22 +242,22 @@ export default function AiScreen() {
             paddingBottom: keyboardHeight > 0 ? (keyboardHeight + (Platform.OS === 'android' && insets.bottom > 0 ? insets.bottom : 0)) : 0,
           },
           Platform.OS === 'web' && ({
-            position: keyboardVisible ? 'fixed' : 'relative',
+            position: (!isLargeScreen && keyboardVisible) ? 'fixed' : 'relative',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            height: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
-            maxHeight: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
+            height: (!isLargeScreen && keyboardVisible) ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
+            maxHeight: (!isLargeScreen && keyboardVisible) ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            zIndex: keyboardVisible ? 100 : 1,
+            zIndex: (!isLargeScreen && keyboardVisible) ? 100 : 1,
           } as any)
         ]}
       >
         {/* Cabecera Morada Dinámica de Sula AI - fija arriba */}
-        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+        <View style={[styles.header, { paddingTop: isLargeScreen ? 14 : insets.top + 14 }]}>
           <View style={styles.headerAvatarContainer}>
             <Image 
               source={require('../../../assets/images/logo.png')} 
@@ -371,19 +373,19 @@ export default function AiScreen() {
                 overflowY: aiInputHeight >= 120 ? 'auto' : 'hidden',
               } as any)
             ]}
-            placeholder="Pregúntale a Sula sobre tu problema..."
+            placeholder="Pide ayuda a Sula..."
             placeholderTextColor="#999"
             value={input}
             onChangeText={(val) => {
               setInput(val);
               if (!val.trim()) {
-                setAiInputHeight(44);
+                setAiInputHeight(42);
               }
             }}
             onContentSizeChange={(e) => {
               const h = e.nativeEvent?.contentSize?.height;
               if (h) {
-                setAiInputHeight(Math.max(44, Math.min(120, h)));
+                setAiInputHeight(Math.max(42, Math.min(120, h)));
               }
             }}
             multiline
@@ -734,11 +736,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F3F5',
     borderRadius: 22,
     paddingHorizontal: 16,
-    paddingTop: 11,
-    paddingBottom: 11,
-    fontSize: 15,
+    paddingTop: Platform.OS === 'ios' ? 10 : (Platform.OS === 'android' ? 8 : 10),
+    paddingBottom: Platform.OS === 'ios' ? 10 : (Platform.OS === 'android' ? 8 : 10),
+    fontSize: 14.5,
     lineHeight: 20,
-    minHeight: 44,
+    minHeight: 42,
     maxHeight: 120,
     color: '#333',
     textAlignVertical: 'center',
@@ -747,9 +749,9 @@ const styles = StyleSheet.create({
     })
   },
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: PURPLE,
     justifyContent: 'center',
     alignItems: 'center',

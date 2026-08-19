@@ -89,7 +89,7 @@ export function useAiController() {
     {
       id: 'welcome',
       sender: 'bot',
-      text: '¡Hola! Soy Sula, el asistente virtual de Le Chambea. 🛠️\n\n¿En qué te puedo ayudar hoy?',
+      text: '¡Hola! Soy Sula, el asistente virtual de **"Le Chambea"**. 🛠️\n\n¿En qué te puedo ayudar hoy?',
       createdAt: new Date()
     }
   ]);

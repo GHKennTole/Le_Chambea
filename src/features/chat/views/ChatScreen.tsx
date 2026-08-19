@@ -56,6 +56,8 @@ export default function ChatScreen({ route, navigation }: Props) {
       handleViewportResize = () => {
         const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
         setWebHeight(h);
+        const isKb = !isLargeScreen && ((window.innerHeight - h > 120) || (typeof window.screen !== 'undefined' && window.screen.height - h > 200 && h < window.innerHeight * 0.85));
+        setKeyboardVisible(isKb);
         if (window.scrollY !== 0 || window.scrollX !== 0) {
           window.scrollTo(0, 0);
         }
@@ -83,7 +85,7 @@ export default function ChatScreen({ route, navigation }: Props) {
         window.removeEventListener('scroll', handleViewportResize);
       }
     };
-  }, []);
+  }, [isLargeScreen]);
 
   const canChat = true;
 
@@ -305,17 +307,17 @@ export default function ChatScreen({ route, navigation }: Props) {
             paddingBottom: keyboardHeight > 0 ? (keyboardHeight + (Platform.OS === 'android' && insets.bottom > 0 ? insets.bottom : 0)) : 0,
           },
           Platform.OS === 'web' && ({
-            position: keyboardVisible ? 'fixed' : 'relative',
+            position: (!isLargeScreen && keyboardVisible) ? 'fixed' : 'relative',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            height: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
-            maxHeight: keyboardVisible ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
+            height: (!isLargeScreen && keyboardVisible) ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
+            maxHeight: (!isLargeScreen && keyboardVisible) ? (webHeight ? `${webHeight}px` : '100dvh') : '100%',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            zIndex: keyboardVisible ? 100 : 1,
+            zIndex: (!isLargeScreen && keyboardVisible) ? 100 : 1,
           } as any)
         ]}
       >

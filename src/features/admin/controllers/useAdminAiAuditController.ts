@@ -26,7 +26,7 @@ export function useAdminAiAuditController() {
     {
       id: "welcome_audit",
       sender: "bot",
-      text: "👋 ¡Hola, Administrador! Modo Auditoría y Sandbox de Sula AI activado.\n\nEn este entorno puedes probar prompts, simular consultas de clientes, auditar cómo consulto la base de datos de profesionales en Supabase y validar el comportamiento del modelo Gemini sin alterar registros de usuarios.",
+      text: "👋 ¡Hola, Administrador! Modo Auditoría y Sandbox de Sula AI activado en **\"Le Chambea\"**.\n\nEn este entorno puedes probar prompts, simular consultas de clientes, auditar cómo consulto la base de datos de profesionales en Supabase y validar el comportamiento del modelo Gemini sin alterar registros de usuarios.",
       createdAt: new Date(),
       auditMeta: {
         latencyMs: 120,
