@@ -6,7 +6,7 @@ import {
   GeminiMessagePart,
 } from "../../../services/gemini";
 import { logAiQuery } from "../../../services/aiLogService";
-import { RecommendedProfessional } from "../../ai/controllers/useAiController";
+import { RecommendedProfessional, extractKeywords } from "../../ai/controllers/useAiController";
 import { CATEGORIES } from "../../../shared/constants/categories";
 
 export interface AuditMessage {
@@ -45,6 +45,24 @@ export function useAdminAiAuditController() {
   const queryProfessionals = async (query: string): Promise<RecommendedProfessional[]> => {
     try {
       const cleanQuery = query.trim().toLowerCase();
+      const keywords = extractKeywords(cleanQuery);
+
+      const conditions: string[] = [
+        `profesion.ilike.%${cleanQuery}%`,
+        `categoria.ilike.%${cleanQuery}%`,
+        `descripcion.ilike.%${cleanQuery}%`
+      ];
+
+      keywords.forEach(kw => {
+        if (kw !== cleanQuery) {
+          conditions.push(`profesion.ilike.%${kw}%`);
+          conditions.push(`categoria.ilike.%${kw}%`);
+          conditions.push(`descripcion.ilike.%${kw}%`);
+        }
+      });
+
+      const orFilter = Array.from(new Set(conditions)).join(',');
+
       const { data: profilesData, error: profilesError } = await supabase
         .from("perfiles_profesionales")
         .select(`
@@ -57,7 +75,7 @@ export function useAdminAiAuditController() {
           usuarios:usuario_id(nombre, apellidos, foto_perfil)
         `)
         .eq("esta_activo", true)
-        .or(`profesion.ilike.%${cleanQuery}%,categoria.ilike.%${cleanQuery}%,descripcion.ilike.%${cleanQuery}%`)
+        .or(orFilter)
         .limit(6);
 
       if (profilesError) throw profilesError;

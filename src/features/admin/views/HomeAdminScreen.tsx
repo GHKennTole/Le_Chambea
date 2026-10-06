@@ -466,10 +466,10 @@ export default function HomeAdminScreen() {
 
           {/* Inner Container Centrado e Impecable para Pantallas Pequeñas y Grandes */}
           <View style={[styles.innerContainer, isLargeScreen && styles.innerContainerDesktop]}>
-            {/* Sección de Menú Rápido */}
+            {/* Sección de Resumen General */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Menú Rápido</Text>
-              <Text style={styles.sectionSubtitle}>Resumen e indicadores en tiempo real de la plataforma</Text>
+              <Text style={styles.sectionTitle}>Resumen General</Text>
+              <Text style={styles.sectionSubtitle}>Métricas e indicadores en tiempo real de la plataforma</Text>
             </View>
 
           {/* Grid Responsivo de Métricas */}

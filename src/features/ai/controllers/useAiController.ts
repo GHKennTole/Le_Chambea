@@ -43,13 +43,91 @@ const STOP_WORDS = new Set([
   'urgente', 'alguien', 'quien', 'haga', 'arregle', 'favor'
 ]);
 
-function extractKeywords(rawQuery: string): string[] {
-  return rawQuery
+function stripAccentsPreservingEnie(str: string): string {
+  return str
+    .replace(/[áàäâ]/gi, 'a')
+    .replace(/[éèëê]/gi, 'e')
+    .replace(/[íìïî]/gi, 'i')
+    .replace(/[óòöô]/gi, 'o')
+    .replace(/[úùüû]/gi, 'u');
+}
+
+/**
+ * Extrae la raíz léxica (stem) en español eliminando flexiones de género, número y sufijos de oficio.
+ * Ej: 'enfermero', 'enfermera', 'enfermeros' -> 'enferm'
+ *     'cocinero', 'cocinera' -> 'cocin'
+ *     'plomero', 'plomera', 'plomería' -> 'plom'
+ *     'carpintero', 'carpintera' -> 'carpint'
+ *     'pintor', 'pintora', 'pintores' -> 'pint'
+ *     'electricista', 'electricistas' -> 'electric'
+ *     'albañil', 'albañiles' -> 'albañil'
+ */
+export function getSpanishStem(word: string): string {
+  if (!word || word.length < 4) return word;
+  const w = stripAccentsPreservingEnie(word.toLowerCase().trim());
+
+  const suffixes = [
+    /er[ií]as?$/,          // enfermería, plomería
+    /er[oa]s?$/,           // enfermero, enfermera, enfermeros, enfermeras, carpintero
+    /(ores|oras|ora|or)$/, // pintor, pintora, pintores, pintoras
+    /(istas|ista)$/,       // electricista, electricistas
+    /[ií]c[oa]s?$/,        // mecánico, mecánica, médico
+    /ari[oa]s?$/,          // veterinario, veterinaria
+    /ad[oa]s?$/,           // abogado, abogada
+    /(dores|doras|dora|dor)$/, // soldador, soldadora
+    /(eros|eras|ero|era)$/,
+    /(eñas|eños|eño|eña)$/,
+    /(es|s)$/,             // albañiles -> albañil, choferes -> chofer
+    /[oa]s?$/              // maestro, maestra
+  ];
+
+  for (const regex of suffixes) {
+    if (regex.test(w)) {
+      const stem = w.replace(regex, '');
+      if (stem.length >= 3) return stem;
+    }
+  }
+  return w;
+}
+
+export function extractKeywords(rawQuery: string): string[] {
+  const baseWords = rawQuery
     .toLowerCase()
     .replace(/[^\w\sáéíóúüñ]/gi, ' ')
     .split(/\s+/)
     .map(w => w.trim())
     .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
+
+  const allKeywords = new Set<string>();
+
+  baseWords.forEach(word => {
+    allKeywords.add(word);
+    const cleanNoAccents = stripAccentsPreservingEnie(word);
+    if (cleanNoAccents !== word) {
+      allKeywords.add(cleanNoAccents);
+    }
+    const stem = getSpanishStem(word);
+    if (stem && stem.length >= 3) {
+      allKeywords.add(stem);
+    }
+  });
+
+  return Array.from(allKeywords);
+}
+
+export function stripContactInfo(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/(?:(?:escr[ií]beme|cont[aá]ctame|ll[aá]mame|comun[ií]cate|cotizaciones|consultas|pedidos)?\s*(?:al|por|en|v[ií]a|mi)?\s*(?:n[uú]mero\s+de\s+)?(?:celular|tel[eé]fono|whatsapp|wsp|ws|m[oó]vil)?(?:\s+(?:claro|tigo))?[\s:.\-_]*\(?\+?\d{1,4}[^\w\n]*\d{3,4}[^\w\n]*\d{3,4}\)?)/gi, '')
+    .replace(/(?:\b|[\(\[])(?:\+?\d{1,4}[\s\-_.]*)?\d{3,4}[\s\-_.]\d{3,4}(?:[\)\]]|\b)/g, '')
+    .replace(/\b\d{7,11}\b/g, '')
+    .replace(/(?:escr[ií]beme|cont[aá]ctame|ll[aá]mame|comun[ií]cate)?\s*(?:al|por|en|v[ií]a|mi)?\s*(?:celular|tel[eé]fono|whatsapp|wsp|ws)\s*(?:claro|tigo)?\s*[\(\)\s\-_.]*/gi, '')
+    .replace(/\s+([.,;:])/g, '$1')
+    .replace(/\(\s*\)/g, '')
+    .replace(/([.,;:])\s*\1+/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/[,;:\-]\s*$/, '.')
+    .trim();
 }
 
 const getFriendlyErrorMessage = (errMessage: string): string => {
@@ -57,17 +135,17 @@ const getFriendlyErrorMessage = (errMessage: string): string => {
   
   // 1. No internet or network failure
   if (msg.includes("network request failed") || msg.includes("failed to fetch") || msg.includes("network error") || msg.includes("fetch error")) {
-    return "Lo siento mucho, pero parece que no tienes una conexión activa a internet... 🔌\n\nPor favor, revisa tu Wi-Fi o datos móviles e intenta de nuevo en unos momentos.";
+    return "Lo siento mucho, parece que no tienes una conexión activa a internet... 🔌\n\nPor favor, revisa tu conexión e intenta de nuevo en unos momentos.";
   }
   
   // 2. Quota Exceeded (429)
   if (msg.includes("429") || msg.includes("quota") || msg.includes("resource_exhausted") || msg.includes("resourceexhausted") || msg.includes("rate limit")) {
-    return "Lo siento, pero la bandeja de peticiones está un poco saturada en este momento... ⏳\n\nEstamos procesando muchas consultas simultáneamente. Por favor, regálanos unos segundos e inténtalo nuevamente.";
+    return "Lo siento, en este momento estoy recibiendo muchos mensajes simultáneos... ⏳\n\nPor favor, regálame unos segundos e inténtalo nuevamente.";
   }
   
   // 3. Server Busy / Unavailable (503)
   if (msg.includes("503") || msg.includes("unavailable") || msg.includes("high demand") || msg.includes("service unavailable")) {
-    return "Lo siento, en este momento nuestros servidores de IA están muy congestionados debido a una alta demanda... 🚀\n\nLos servidores están trabajando a tope para procesar todo. Por favor, dale un respiro al bot e intenta de nuevo en un minuto.";
+    return "Lo siento, en este momento hay una gran cantidad de consultas al mismo tiempo... ⏳\n\nPor favor, intenta de nuevo en un minuto.";
   }
   
   // 4. API / Model Mismatch / Maintenance (400, 404, etc.)
@@ -79,11 +157,11 @@ const getFriendlyErrorMessage = (errMessage: string): string => {
     msg.includes("api key") || 
     msg.includes("badrequest")
   ) {
-    return "Lo siento, pero las funciones del bot de IA están temporalmente desactivadas o en mantenimiento técnico... 🛠️\n\nEstamos afinando algunos detalles para darte la mejor experiencia posible. ¡Regresaremos muy pronto!";
+    return "Lo siento, la asistencia interactiva no está disponible temporalmente... 🛠️\n\nEstamos haciendo mejoras para darte una mejor experiencia. ¡Regresaremos muy pronto!";
   }
   
   // 5. Fallback
-  return "Lo siento, ha ocurrido un pequeño inconveniente técnico al intentar procesar tu consulta... 🔧\n\nNo te preocupes, ya estamos trabajando para resolverlo. Por favor, intenta de nuevo en unos momentos.";
+  return "Lo siento, ocurrió un pequeño problema al procesar tu consulta... 🔧\n\nPor favor, intenta de nuevo en unos momentos.";
 };
 
 export function useAiController() {
@@ -100,6 +178,8 @@ export function useAiController() {
 
   // Registro de IDs de profesionales ya recomendados en la sesión actual para evitar repeticiones inmediatas
   const shownProfessionalIdsRef = useRef<Set<string>>(new Set());
+  // Referencia al profesional actualmente activo o recomendado en la conversación
+  const currentProfessionalRef = useRef<RecommendedProfessional | null>(null);
 
   // Busca profesionales en Supabase basados en coincidencia de palabras clave y selecciona 1 al azar sin favoritismos
   const queryProfessionals = async (query: string): Promise<QueryProfessionalsResult> => {
@@ -174,7 +254,7 @@ export function useAiController() {
           foto: p.usuarios?.foto_perfil || 'https://via.placeholder.com/150',
           calificacion: avg,
           totalResenas: count,
-          descripcion: p.descripcion || ''
+          descripcion: stripContactInfo(p.descripcion || '')
         };
       });
 
@@ -246,8 +326,26 @@ export function useAiController() {
         parts: [{ text: msg.text }]
       }));
 
-      // 2. Enviar petición inicial a Gemini
-      const response = await sendMessageToGemini(geminiHistory);
+      // Preparar contexto del profesional actualmente activo si existe
+      const activePro = currentProfessionalRef.current;
+      let activeProContext = '';
+      if (activePro) {
+        activeProContext = `DATOS DEL PROFESIONAL ACTUALMENTE EN CONVERSACIÓN:
+- Nombre: ${activePro.nombre}
+- Oficio / Especialidad: ${activePro.profesion}
+- Categoría: ${activePro.categoria}
+- Calificación en estrellas: ${activePro.calificacion > 0 ? `${activePro.calificacion} estrellas` : 'Nuevo (Sin reseñas todavía)'}
+- Cantidad de reseñas: ${activePro.totalResenas}
+- Lo que el profesional describe en su perfil: ${activePro.descripcion || 'Sin descripción adicional'}
+
+INSTRUCCIONES CLAVE DE DESCARGO Y ATRIBUCIÓN PARA ESTE PROFESIONAL:
+1. DESCARGO DE RESPONSABILIDAD OBLIGATORIO: NUNCA afirmes como verdad absoluta o garantía personal de la plataforma que el profesional "tiene mucha experiencia", "es un experto" o "hace muy bien su trabajo". Debes ATRIBUIRLO SIEMPRE a su perfil diciendo frases como: "El profesional indica en su perfil que...", "Según describe en su perfil...", "En su información comenta que...", etc.
+2. Si el cliente pregunta sobre sus estrellas, reseñas o experiencia: responde de forma DIRECTA, BREVE y TRANSPARENTE. Si no tiene reseñas, di con total naturalidad que es nuevo en la plataforma y aún no cuenta con opiniones de clientes para verificarlo, pero que en su perfil indica dedicarse a dicho oficio. Si tuviera reseñas, atribúyelas diciendo "Los clientes que lo han contratado comentan que...". PROHIBIDO dar discursos o sermones sobre por qué la plataforma no se basa en estrellas.
+3. NO repitas mecánicamente frases cliché como "Recuerda que con el botón Ver Perfil en su tarjeta..." en cada mensaje. Solo menciónalo si el usuario pregunta cómo contactarlo, cómo chatear con él o dónde ver sus detalles.`;
+      }
+
+      // 2. Enviar petición inicial a Gemini con el contexto del profesional activo
+      const response = await sendMessageToGemini(geminiHistory, activeProContext);
 
       if (response.error) {
         throw new Error(response.error);
@@ -270,6 +368,11 @@ export function useAiController() {
           // 3. Ejecutar la búsqueda de Supabase y selección aleatoria equitativa
           const searchResult = await queryProfessionals(searchQuery);
 
+          // Actualizar la referencia al profesional activo
+          if (searchResult.chosen) {
+            currentProfessionalRef.current = searchResult.chosen;
+          }
+
           const functionResponseData = searchResult.chosen
             ? {
                 candidato_seleccionado_al_azar: {
@@ -277,7 +380,10 @@ export function useAiController() {
                   nombre: searchResult.chosen.nombre,
                   profesion: searchResult.chosen.profesion,
                   categoria: searchResult.chosen.categoria,
-                  descripcion: searchResult.chosen.descripcion
+                  calificacion_estrellas: searchResult.chosen.calificacion,
+                  total_resenas: searchResult.chosen.totalResenas,
+                  es_nuevo_sin_resenas: searchResult.chosen.totalResenas === 0,
+                  descripcion: stripContactInfo(searchResult.chosen.descripcion)
                 },
                 total_candidatos_coincidentes: searchResult.totalMatches,
                 hay_mas_opciones_disponibles: searchResult.hasMore,
@@ -285,7 +391,7 @@ export function useAiController() {
               }
             : {
                 candidatos_encontrados: 0,
-                mensaje: "No se encontraron profesionales con esas palabras clave en la base de datos."
+                mensaje: "En este momento no hay profesionales ni personas registradas con ese oficio o servicio en la plataforma Le Chambea."
               };
 
           // 4. Construir el historial expandido con la llamada a función y su resultado
@@ -309,7 +415,7 @@ export function useAiController() {
           ];
 
           // 5. Enviar el historial enriquecido de vuelta a Gemini
-          const finalResponse = await sendMessageToGemini(expandedHistory);
+          const finalResponse = await sendMessageToGemini(expandedHistory, activeProContext);
           const finalCandidate = finalResponse.candidates?.[0];
           const finalParts = finalCandidate?.content?.parts || [];
           const finalText = finalParts.map((p: any) => p.text || '').join('');
@@ -341,7 +447,7 @@ export function useAiController() {
           const botMessage: Message = {
             id: `bot-${Date.now()}`,
             sender: 'bot',
-            text: finalText || 'Te presento la siguiente opción para tu requerimiento. ¿Te parece bien o prefieres que busque a otro profesional?',
+            text: stripContactInfo(finalText) || 'Te presento la siguiente opción para tu requerimiento. ¿Te parece bien o prefieres que busque a otra persona registrada en la plataforma?',
             createdAt: new Date(),
             professionals: searchResult.chosen ? [searchResult.chosen] : undefined
           };
@@ -351,6 +457,7 @@ export function useAiController() {
       } else {
         // Flujo A: Respuesta de texto directa (DIY / Consejos / Conversación general)
         const textResponse = parts.map((p: any) => p.text || '').join('');
+        const cleanText = stripContactInfo(textResponse);
         const latency = Date.now() - startTime;
 
         // Registrar consulta en Supabase sin categoría inventada
@@ -361,11 +468,20 @@ export function useAiController() {
           responseTimeMs: latency,
         }).catch(err => console.warn('No se pudo registrar log de IA:', err));
         
+        // Determinar si debemos re-mostrar la tarjeta del profesional activo
+        const currentPro = currentProfessionalRef.current;
+        const userAsksCardOrPro = /tarjeta|bot[oó]n|perfil|reseña|opini[oó]n|estrella|calificaci[oó]n|precio|costo|cobra|caro|barato|experiencia|contacto|llamar|chatear|escribir|d[oó]nde|qui[eé]n|ver\b/i.test(userMessageText);
+        const botMentionsCardOrPro = /tarjeta|perfil|ver perfil|chatear|contactar/i.test(cleanText) ||
+          Boolean(currentPro && cleanText.toLowerCase().includes(currentPro.nombre.toLowerCase().split(' ')[0]));
+
+        const shouldAttachCard = Boolean(currentPro && (userAsksCardOrPro || botMentionsCardOrPro));
+
         const botMessage: Message = {
           id: `bot-${Date.now()}`,
           sender: 'bot',
-          text: textResponse || 'No he podido procesar tu solicitud. Por favor intenta reformular tu consulta.',
-          createdAt: new Date()
+          text: cleanText || 'No he podido procesar tu solicitud. Por favor intenta reformular tu consulta.',
+          createdAt: new Date(),
+          professionals: shouldAttachCard && currentPro ? [currentPro] : undefined
         };
 
         setMessages(prev => [...prev, botMessage]);

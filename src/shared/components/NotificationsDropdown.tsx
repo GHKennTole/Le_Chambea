@@ -150,7 +150,18 @@ export default function NotificationsDropdown({
                     >
                       <Text style={styles.itemTitle}>{n.title}</Text>
                       {!!cleanNotificationBody(n.body) && (
-                        <Text style={styles.itemBody}>{cleanNotificationBody(n.body)}</Text>
+                        <Text style={styles.itemBody}>
+                          {cleanNotificationBody(n.body)
+                            .split("**")
+                            .map((part, index) => (
+                              <Text
+                                key={index}
+                                style={index % 2 === 1 ? styles.itemBodyBold : undefined}
+                              >
+                                {part}
+                              </Text>
+                            ))}
+                        </Text>
                       )}
                     </TouchableOpacity>
                     {onDelete && (
@@ -292,7 +303,8 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   itemTitle: { fontWeight: "900", color: "#222" },
-  itemBody: { marginTop: 2, color: "#666", fontWeight: "600" },
+  itemBody: { marginTop: 2, color: "#555", fontWeight: "400", fontSize: 13, lineHeight: 18 },
+  itemBodyBold: { fontWeight: "bold", color: "#111" },
   deleteAllBtn: {
     flexDirection: "row",
     backgroundColor: "#FEE2E2",

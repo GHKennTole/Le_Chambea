@@ -94,12 +94,33 @@ export default function AdminReportsModal({
         targetUser = users.find((u) => u.id === idMatch[1]);
       }
     }
+    if (!targetUser && report.cuerpo) {
+      const reporterMatch =
+        report.cuerpo.match(/Quien reporta:\s*([^(\n\r]+)(?:\(([^)\n\r]+)\))?/i) ||
+        report.cuerpo.match(/El (?:Cliente|Profesional|usuario)\s+([^\n\r]+?)\s+solicita/i) ||
+        report.cuerpo.match(/El usuario\s+([^\n\r]+?)\s+report[oó]/i);
+      if (reporterMatch) {
+        const rName = reporterMatch[1].trim().toLowerCase();
+        targetUser = users.find((u) => {
+          const full = `${u.nombre || ""} ${u.apellidos || ""}`.trim().toLowerCase();
+          const first = (u.nombre || "").trim().toLowerCase();
+          return full === rName || first === rName;
+        });
+      }
+    }
     if (!targetUser) {
       // Fallback pseudo user object if user ID is present
       const fallbackId = report.usuario_id || report.usuario?.id || "";
+      const reporterMatch =
+        report.cuerpo?.match(/Quien reporta:\s*([^(\n\r]+)(?:\(([^)\n\r]+)\))?/i) ||
+        report.cuerpo?.match(/El (?:Cliente|Profesional|usuario)\s+([^\n\r]+?)\s+solicita/i) ||
+        report.cuerpo?.match(/El usuario\s+([^\n\r]+?)\s+report[oó]/i);
+      const repName =
+        report.usuario?.nombre || (reporterMatch ? reporterMatch[1].trim() : "Usuario Reportante");
+
       targetUser = {
         id: fallbackId,
-        nombre: report.usuario?.nombre || "Usuario Reportante",
+        nombre: repName,
         apellidos: report.usuario?.apellidos || "",
         correo: report.usuario?.correo || "",
         telefono: "",

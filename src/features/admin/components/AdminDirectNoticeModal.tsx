@@ -9,11 +9,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  Alert,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminUser, AdminReport, DirectNoticePayload } from "../models/admin.types";
 import { useResponsive } from "../../../shared/hooks/useResponsive";
+import { supabase } from "../../../services/supabase";
 
 const PURPLE = "#5A2D82";
 const LIGHT_PURPLE = "#F3ECFA";
@@ -44,53 +46,259 @@ export default function AdminDirectNoticeModal({
   const [body, setBody] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (preselectedUser?.id) {
-      setSelectedUserId(preselectedUser.id);
-    } else if (users.length > 0 && !selectedUserId) {
-      setSelectedUserId(users[0].id);
+  // Estados para participantes cuando proviene de un reporte
+  const [reporterUser, setReporterUser] = useState<AdminUser | null>(null);
+  const [reportedUser, setReportedUser] = useState<AdminUser | null>(null);
+  const [selectedRole, setSelectedRole] = useState<"reporter" | "reported">("reporter");
+
+  const resolveParticipants = async (
+    report: AdminReport,
+    allUsers: AdminUser[],
+    preselected?: AdminUser | null
+  ) => {
+    const rawBody = report.cuerpo || "";
+    const rawTitle = report.titulo || "";
+
+    // 1. Resolver Reportante
+    let rep: AdminUser | undefined = undefined;
+    if (report.usuario_id) {
+      rep = allUsers.find((u) => u.id === report.usuario_id);
+    }
+    if (!rep && report.usuario?.id) {
+      rep = allUsers.find((u) => u.id === report.usuario.id);
+    }
+    if (!rep && rawBody) {
+      const repIdMatch = rawBody.match(/(?:ID de usuario|SolicitadoPor):\s*([a-f0-9-]{10,})/i);
+      if (repIdMatch) {
+        rep = allUsers.find((u) => u.id === repIdMatch[1]);
+      }
+    }
+    if (!rep && preselected && preselected.id) {
+      rep = preselected;
+    }
+    if (!rep) {
+      const repMatch =
+        rawBody.match(/Quien reporta:\s*([^(\n\r]+)(?:\(([^)\n\r]+)\))?/i) ||
+        rawBody.match(/El (?:Cliente|Profesional|usuario)\s+([^\n\r]+?)\s+solicita/i) ||
+        rawBody.match(/El usuario\s+([^\n\r]+?)\s+report[oó]/i);
+      const name = report.usuario
+        ? `${report.usuario.nombre || ""} ${report.usuario.apellidos || ""}`.trim()
+        : repMatch
+        ? repMatch[1].trim()
+        : "Usuario Reportante";
+      rep = {
+        id: report.usuario_id || report.usuario?.id || preselected?.id || "",
+        nombre: name || "Usuario Reportante",
+        apellidos: "",
+        correo: report.usuario?.correo || "",
+        telefono: "",
+        ciudad: "",
+        foto_perfil: report.usuario?.foto_perfil || null,
+        rol: "usuario",
+        onboarding_completado: true,
+        fecha_creacion: "",
+      };
     }
 
-    if (reportContext) {
-      applyTemplate("gratitude");
-    } else {
-      setTitle("");
-      setBody("");
-      setSelectedTemplate(null);
+    // 2. Resolver Reportado / Contraparte
+    let reported: AdminUser | undefined = undefined;
+
+    // Buscar si hay ID de contraparte en el cuerpo
+    const reportedIdMatch = rawBody.match(/(?:CanceladoPor|AbortadoPor|RechazadoPor):\s*([a-f0-9-]{10,})/i);
+    if (reportedIdMatch) {
+      reported = allUsers.find((u) => u.id === reportedIdMatch[1]);
     }
-  }, [preselectedUser, reportContext, visible]);
 
-  const targetUser = users.find((u) => u.id === selectedUserId) || preselectedUser;
+    // Extraer nombre del reportado
+    const reportedNameMatch =
+      rawBody.match(/Usuario reportado:\s*([^(\n\r]+)(?:\(([^)\n\r]+)\))?/i) ||
+      rawBody.match(/Contraparte que canceló:\s*([^\n\r]+)/i) ||
+      rawTitle.match(/reportó a (?:Profesional|Cliente|usuario)\s*\(([^)]+)\)/i) ||
+      rawBody.match(/profesional\s+([^.\n\r]+)/i);
 
-  const applyTemplate = (type: "gratitude" | "warning" | "moderation") => {
+    const reportedName = reportedNameMatch ? reportedNameMatch[1].trim() : null;
+
+    if (!reported && reportedName) {
+      const normName = reportedName.toLowerCase();
+      reported = allUsers.find((u) => {
+        const full = `${u.nombre || ""} ${u.apellidos || ""}`.trim().toLowerCase();
+        const first = (u.nombre || "").trim().toLowerCase();
+        return full === normName || first === normName || (normName.length > 3 && (full.includes(normName) || normName.includes(full)));
+      });
+    }
+
+    // Si aún no se encuentra y hay chatId, buscar en la tabla 'chats'
+    const chatMatch =
+      rawBody.match(/(?:ID del Chat|ID de Chat|Chat ID|\(ID)\s*[:=]?\s*([a-f0-9-]{10,})/i) ||
+      rawBody.match(/chat_id\s*[:=]\s*([a-f0-9-]{10,})/i);
+    const chatId = chatMatch ? chatMatch[1].trim() : null;
+
+    if ((!reported || !reported.id) && chatId) {
+      try {
+        const { data: chatData } = await supabase
+          .from("chats")
+          .select("cliente_id, profesional_id")
+          .eq("id", chatId)
+          .maybeSingle();
+
+        if (chatData) {
+          const otherId = chatData.cliente_id === rep?.id ? chatData.profesional_id : chatData.cliente_id;
+          if (otherId) {
+            const fromUsers = allUsers.find((u) => u.id === otherId);
+            if (fromUsers) {
+              reported = fromUsers;
+            } else {
+              const { data: dbUser } = await supabase
+                .from("usuarios")
+                .select("id, nombre, apellidos, correo, telefono, ciudad, foto_perfil, rol, onboarding_completado, fecha_creacion")
+                .eq("id", otherId)
+                .maybeSingle();
+              if (dbUser) {
+                reported = dbUser as AdminUser;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Error fetching chat participants for reported user:", err);
+      }
+    }
+
+    if (!reported && reportedName) {
+      reported = {
+        id: "",
+        nombre: reportedName,
+        apellidos: "",
+        correo: "",
+        telefono: "",
+        ciudad: "",
+        foto_perfil: null,
+        rol: "usuario",
+        onboarding_completado: true,
+        fecha_creacion: "",
+      };
+    }
+
+    return { reporter: rep, reported };
+  };
+
+  const applyTemplate = (
+    type: "gratitude" | "warning" | "moderation",
+    overrideUser?: AdminUser | null
+  ) => {
     setSelectedTemplate(type);
-    const uName = targetUser?.nombre || "usuario";
+    const activeUser =
+      overrideUser !== undefined
+        ? overrideUser
+        : (reportContext && selectedRole === "reported" ? reportedUser : reporterUser) || targetUser;
+    const uName = activeUser?.nombre || "usuario";
 
     if (type === "gratitude") {
       setTitle("Agradecimiento por tu reporte");
       setBody(
-        `Hola ${uName}, agradecemos profundamente tu colaboración al reportar una incongruencia o problema en la plataforma. Nuestro equipo administrativo ha revisado el caso y tomado las medidas pertinentes. ¡Gracias por ayudarnos a mantener Le Chambea seguro y confiable!`
+        `Hola ${uName},\n\nGracias por tu reporte. Nuestro equipo ha revisado la situación y está tomando las medidas correspondientes.\n\n- Administración de **"Le Chambea"**`
       );
     } else if (type === "warning") {
       setTitle("Advertencia por infracción a los términos de uso");
       setBody(
-        `Estimado/a ${uName}, la administración ha recibido alertas sobre tu actividad reciente que no cumplen con los lineamientos de la comunidad de Le Chambea. Te exhortamos a mantener un trato profesional y respetuoso para evitar la suspensión definitiva de tu cuenta.`
+        `Hola ${uName},\n\nHemos detectado actividad reciente en tu cuenta que no cumple con las normas y lineamientos de convivencia de la plataforma. Te recordamos la importancia de mantener un comportamiento respetuoso y profesional para evitar sanciones o la suspensión definitiva de tu cuenta.\n\n- Administración de **"Le Chambea"**`
       );
     } else if (type === "moderation") {
       setTitle("Aviso de moderación de contenido");
       setBody(
-        `Hola ${uName}, te informamos que uno de tus comentarios, servicios o fotos publicados fue retirado por nuestro equipo de moderación debido a que no cumplía con las normas comunitarias de la plataforma.`
+        `Hola ${uName},\n\nTe informamos que hemos retirado contenido asociado a tu cuenta debido a que no cumple con las normas comunitarias de la plataforma. Te invitamos a seguir las normas de la comunidad para evitar futuras restricciones, sanciones o la suspensión definitiva de tu cuenta.\n\n- Administración de **"Le Chambea"**`
       );
     }
   };
 
-  const handleSend = async () => {
-    if (!selectedUserId || !title.trim() || !body.trim()) return;
+  useEffect(() => {
+    let isMounted = true;
 
-    const uName = `${targetUser?.nombre || ""} ${targetUser?.apellidos || ""}`.trim() || targetUser?.correo;
+    const initModal = async () => {
+      if (!visible) return;
+
+      if (reportContext) {
+        const { reporter, reported } = await resolveParticipants(reportContext, users, preselectedUser);
+        if (!isMounted) return;
+
+        setReporterUser(reporter || null);
+        setReportedUser(reported || null);
+        setSelectedRole("reporter");
+
+        if (reporter?.id) {
+          setSelectedUserId(reporter.id);
+        } else if (preselectedUser?.id) {
+          setSelectedUserId(preselectedUser.id);
+        }
+
+        applyTemplate("gratitude", reporter);
+      } else {
+        setReporterUser(null);
+        setReportedUser(null);
+        setSelectedRole("reporter");
+
+        if (preselectedUser?.id) {
+          setSelectedUserId(preselectedUser.id);
+        } else if (users.length > 0 && !selectedUserId) {
+          setSelectedUserId(users[0].id);
+        }
+
+        setTitle("");
+        setBody("");
+        setSelectedTemplate(null);
+      }
+    };
+
+    initModal();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [preselectedUser, reportContext, visible, users]);
+
+  const targetUser =
+    (reportContext && selectedRole === "reported" ? reportedUser : reporterUser) ||
+    users.find((u) => u.id === selectedUserId) ||
+    preselectedUser;
+
+  const handleSelectRecipientRole = (role: "reporter" | "reported") => {
+    setSelectedRole(role);
+    const user = role === "reporter" ? reporterUser : reportedUser;
+    if (user?.id) {
+      setSelectedUserId(user.id);
+    } else {
+      setSelectedUserId("");
+    }
+
+    if (role === "reported" && (selectedTemplate === "gratitude" || !selectedTemplate)) {
+      applyTemplate("warning", user);
+    } else if (role === "reporter" && (selectedTemplate === "warning" || selectedTemplate === "moderation" || !selectedTemplate)) {
+      applyTemplate("gratitude", user);
+    } else if (selectedTemplate) {
+      applyTemplate(selectedTemplate as any, user);
+    }
+  };
+
+  const handleSend = async () => {
+    const recipient =
+      (reportContext && selectedRole === "reported" ? reportedUser : reporterUser) ||
+      targetUser;
+    const finalUserId = recipient?.id || selectedUserId;
+
+    if (!finalUserId || !title.trim() || !body.trim()) {
+      if (!finalUserId) {
+        Alert.alert(
+          "Destinatario no identificado",
+          "No se encontró el ID del usuario seleccionado para recibir la notificación."
+        );
+      }
+      return;
+    }
+
+    const uName = `${recipient?.nombre || ""} ${recipient?.apellidos || ""}`.trim() || recipient?.correo;
 
     const success = await onSendNotice({
-      userId: selectedUserId,
+      userId: finalUserId,
       userName: uName,
       title: title.trim(),
       body: body.trim(),
@@ -142,7 +350,82 @@ export default function AdminDirectNoticeModal({
           {/* Target User Selector Box */}
           <View style={styles.sectionBox}>
             <Text style={styles.label}>Destinatario:</Text>
-            {preselectedUser ? (
+            {reportContext && (reporterUser || reportedUser) ? (
+              <View style={styles.reportRecipientWrap}>
+                <Text style={styles.helperText}>
+                  Selecciona a cuál de los usuarios deseas notificar:
+                </Text>
+                <View style={styles.reportRecipientGrid}>
+                  {/* Tarjeta Reportante */}
+                  {reporterUser && (
+                    <TouchableOpacity
+                      style={[
+                        styles.recipientCard,
+                        selectedRole === "reporter" && styles.recipientCardActive,
+                      ]}
+                      onPress={() => handleSelectRecipientRole("reporter")}
+                      activeOpacity={0.8}
+                    >
+                      <View style={styles.recipientHeaderRow}>
+                        <View style={[styles.roleBadge, { backgroundColor: "#EBF3FF" }]}>
+                          <MaterialCommunityIcons name="bullhorn-outline" size={13} color="#007AFF" />
+                          <Text style={[styles.roleBadgeText, { color: "#007AFF" }]}>Usuario Reportante</Text>
+                        </View>
+                        <MaterialCommunityIcons
+                          name={selectedRole === "reporter" ? "radiobox-marked" : "radiobox-blank"}
+                          size={19}
+                          color={selectedRole === "reporter" ? PURPLE : "#AAA"}
+                        />
+                      </View>
+                      <View style={styles.recipientInfo}>
+                        <Text style={styles.recipientName} numberOfLines={1}>
+                          {`${reporterUser.nombre || ""} ${reporterUser.apellidos || ""}`.trim() || "Usuario Reportante"}
+                        </Text>
+                        {!!reporterUser.correo && (
+                          <Text style={styles.recipientEmail} numberOfLines={1}>
+                            {reporterUser.correo}
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Tarjeta Reportado */}
+                  {reportedUser && (
+                    <TouchableOpacity
+                      style={[
+                        styles.recipientCard,
+                        selectedRole === "reported" && styles.recipientCardActiveDanger,
+                      ]}
+                      onPress={() => handleSelectRecipientRole("reported")}
+                      activeOpacity={0.8}
+                    >
+                      <View style={styles.recipientHeaderRow}>
+                        <View style={[styles.roleBadge, { backgroundColor: "#FDEDEC" }]}>
+                          <MaterialCommunityIcons name="alert-octagon-outline" size={13} color="#E74C3C" />
+                          <Text style={[styles.roleBadgeText, { color: "#E74C3C" }]}>Usuario Reportado</Text>
+                        </View>
+                        <MaterialCommunityIcons
+                          name={selectedRole === "reported" ? "radiobox-marked" : "radiobox-blank"}
+                          size={19}
+                          color={selectedRole === "reported" ? "#E74C3C" : "#AAA"}
+                        />
+                      </View>
+                      <View style={styles.recipientInfo}>
+                        <Text style={styles.recipientName} numberOfLines={1}>
+                          {`${reportedUser.nombre || ""} ${reportedUser.apellidos || ""}`.trim() || "Usuario Reportado"}
+                        </Text>
+                        {!!reportedUser.correo && (
+                          <Text style={styles.recipientEmail} numberOfLines={1}>
+                            {reportedUser.correo}
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            ) : preselectedUser ? (
               <View style={styles.selectedUserCard}>
                 <MaterialCommunityIcons name="account-circle" size={28} color={PURPLE} />
                 <View style={styles.selectedUserInfo}>
@@ -395,6 +678,67 @@ const styles = StyleSheet.create({
   selectedUserEmail: {
     fontSize: 12,
     color: "#666",
+  },
+  reportRecipientWrap: {
+    marginTop: 4,
+  },
+  helperText: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 8,
+  },
+  reportRecipientGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  recipientCard: {
+    flex: 1,
+    minWidth: 160,
+    backgroundColor: "#F9F9FB",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1.5,
+    borderColor: "#E5E7EB",
+  },
+  recipientCardActive: {
+    backgroundColor: LIGHT_PURPLE,
+    borderColor: PURPLE,
+  },
+  recipientCardActiveDanger: {
+    backgroundColor: "#FDEDEC",
+    borderColor: "#E74C3C",
+  },
+  recipientHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  roleBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
+  },
+  roleBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  recipientInfo: {
+    marginTop: 2,
+  },
+  recipientName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#222",
+  },
+  recipientEmail: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
   },
   userPickerScroll: {
     maxHeight: 40,

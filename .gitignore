@@ -45,3 +45,8 @@ yarn-error.*
 # local documentation / temp files
 Documentos/
 dump_documento.txt
+temps de Antigravity/
+*antigravity*
+*.tmp
+*.temp
+
